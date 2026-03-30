@@ -45,6 +45,7 @@ import { stateType } from '@/common/common'
 import LogModal from '@/components/log-modal'
 import LogViewerModal from './log-viewer-modal'
 import { SearchOutlined, ReloadOutlined } from '@vicons/antd'
+import { SyncOutlined } from '@vicons/antd'
 import { useAsyncState } from '@vueuse/core'
 import { queryLog } from '@/service/log'
 import { LogRes } from '@/service/log/types'
@@ -184,6 +185,10 @@ const SyncTask = defineComponent({
       }
     }
 
+    const handleRefresh = () => {
+      requestData()
+    }
+
     const initSearch = () => {
       const { startDate, endDate } = route.query
       if (startDate && endDate) {
@@ -239,6 +244,7 @@ const SyncTask = defineComponent({
       onUpdatePageSize,
       refreshLogs,
       handleSearch,
+      handleRefresh,
       onReset,
       handleKeyup,
       handleChangeColumn,
@@ -299,6 +305,11 @@ const SyncTask = defineComponent({
                 <NButton onClick={this.onReset}>
                   <NIcon>
                     <ReloadOutlined />
+                  </NIcon>
+                </NButton>
+                <NButton onClick={this.handleRefresh}>
+                  <NIcon>
+                    <SyncOutlined />
                   </NIcon>
                 </NButton>
                 <NButton type='primary' onClick={this.handleSearch}>

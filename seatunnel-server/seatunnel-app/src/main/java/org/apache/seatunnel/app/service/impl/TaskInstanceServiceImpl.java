@@ -158,6 +158,10 @@ public class TaskInstanceServiceImpl extends SeatunnelBaseServiceImpl
                 }
             }
 
+            if (CollectionUtils.isEmpty(jobInstanceIdList)) {
+                return;
+            }
+
             Map<Long, JobSummaryMetricsRes> jobSummaryMetrics =
                     jobMetricsService.getALLJobSummaryMetrics(
                             jobInstanceIdAndJobEngineIdMap, jobInstanceIdList, jobMode);

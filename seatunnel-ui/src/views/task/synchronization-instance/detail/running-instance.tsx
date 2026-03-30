@@ -28,11 +28,12 @@ const RunningInstance = defineComponent({
   name: 'RunningInstance',
   setup() {
     const { t } = useI18n()
-    const { variables, getTableData, createColumns } = useRunningInstance()
+    const { variables, getTableData, createColumns, startAutoRefresh } = useRunningInstance()
 
     onMounted(() => {
       createColumns(variables)
       getTableData()
+      startAutoRefresh()
     })
 
     watch(useI18n().locale, () => {

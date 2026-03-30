@@ -68,7 +68,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     page: ref(1),
     pageSize: ref(10),
     totalPage: ref(1),
-    loadingRef: ref(false),
+    loadingRef: false,
     logRef: '',
     logLoadingRef: ref(true),
     showModalRef: ref(false),
@@ -234,17 +234,16 @@ export function useSyncTask(syncTaskType = 'BATCH') {
   const getTableData = (params: any) => {
     if (variables.loadingRef) return
     variables.loadingRef = true
-
-    variables.loadingRef = false
     querySyncTaskInstancePaging(params)
       .then((res: any) => {
         variables.tableData = res.totalList as any
         variables.totalPage = res.totalPage
-        variables.loadingRef = false
       })
       .catch(() => {
-        variables.loadingRef = false
         variables.tableData = [] as any
+      })
+      .finally(() => {
+        variables.loadingRef = false
       })
   }
   const handleRecover = (id: number) => {

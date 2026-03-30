@@ -73,6 +73,22 @@ service.interceptors.response.use((res: AxiosResponse) => {
 
   if (res.data.success) return res.data.data
 
+  // Job execution submission may return failure while still providing a jobInstanceId
+  // (job instance is created first, then submission happens). In that case we should
+  // keep the UI flow by returning the instance id and let the instance page/polling
+  // reflect the real execution status.
+  if (
+    typeof res.config?.url === 'string' &&
+    res.config.url.includes('/job/executor/execute') &&
+    res.data?.data !== undefined &&
+    res.data?.data !== null
+  ) {
+    if (res.data.msg) {
+      window.$message.warning(res.data.msg)
+    }
+    return res.data.data
+  }
+
   switch (res.data.code) {
     case 0:
       return res.data.data

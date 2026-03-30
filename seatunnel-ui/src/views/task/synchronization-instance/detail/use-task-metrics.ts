@@ -297,6 +297,34 @@ export function useTaskMetrics() {
       const res = await queryJobMetricsHistory(params)
       variables.metricsData = res
 
+      // If history is empty (common for short batch jobs or before persistence),
+      // fallback to a single realtime point so the UI is not blank.
+      if (!variables.metricsData || variables.metricsData.length === 0) {
+        try {
+          const detail = await querySyncTaskInstanceDetail({
+            jobInstanceId: route.query.jobInstanceId as string
+          })
+          const realtime = Array.isArray(detail) ? detail : []
+          const readRowCount = realtime.reduce((acc: number, it: any) => acc + Number(it.readRowCount || 0), 0)
+          const writeRowCount = realtime.reduce((acc: number, it: any) => acc + Number(it.writeRowCount || 0), 0)
+          const readQps = realtime.reduce((acc: number, it: any) => acc + Number(it.readQps || 0), 0)
+          const writeQps = realtime.reduce((acc: number, it: any) => acc + Number(it.writeQps || 0), 0)
+          const recordDelay = realtime.reduce((acc: number, it: any) => acc + Number(it.recordDelay || 0), 0)
+          variables.metricsData = [
+            {
+              createTime: new Date().toISOString(),
+              readRowCount,
+              writeRowCount,
+              readQps,
+              writeQps,
+              recordDelay
+            }
+          ]
+        } catch {
+          // ignore fallback errors
+        }
+      }
+
       if (variables.readRowCountChart) {
         variables.readRowCountChart.setOption(
           getChartOption(getChartTitle('read_row_count'), variables.metricsData, 'readRowCount')

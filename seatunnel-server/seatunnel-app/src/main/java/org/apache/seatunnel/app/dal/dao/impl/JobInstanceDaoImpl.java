@@ -33,6 +33,7 @@ import lombok.NonNull;
 import javax.annotation.Resource;
 
 import java.util.Date;
+import java.util.Collections;
 import java.util.List;
 
 @Repository
@@ -94,6 +95,9 @@ public class JobInstanceDaoImpl implements IJobInstanceDao {
 
     @Override
     public List<JobInstance> getAllJobInstance(@NonNull List<Long> jobInstanceIdList) {
+        if (jobInstanceIdList.isEmpty()) {
+            return Collections.emptyList();
+        }
         return jobInstanceMapper.selectList(
                 new LambdaQueryWrapper<JobInstance>()
                         .in(JobInstance::getId, jobInstanceIdList)

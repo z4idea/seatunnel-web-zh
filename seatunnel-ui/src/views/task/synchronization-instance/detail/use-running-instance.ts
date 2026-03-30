@@ -15,9 +15,12 @@
  * limitations under the License.
  */
 
-import { reactive, ref } from 'vue'
+import { reactive, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { queryRunningInstancePaging } from '@/service/sync-task-instance'
+import {
+  queryRunningInstancePaging,
+  queryJobExecutionStatus
+} from '@/service/sync-task-instance'
 import { useRoute } from 'vue-router'
 
 export function useRunningInstance() {
@@ -27,7 +30,8 @@ export function useRunningInstance() {
   const variables = reactive({
     columns: [],
     tableData: [],
-    loadingRef: ref(false)
+    loadingRef: false,
+    refreshTimer: 0 as unknown as number
   })
 
   const createColumns = (variables: any) => {
@@ -81,16 +85,58 @@ export function useRunningInstance() {
     })
       .then((res: any) => {
         variables.tableData = res
-        variables.loadingRef = false
       })
       .catch(() => {
+        // ignore
+      })
+      .finally(() => {
         variables.loadingRef = false
       })
   }
 
+  const isJobEndStatus = (status?: string) => {
+    if (!status) return false
+    const s = String(status).toUpperCase()
+    return s === 'FINISHED' || s === 'FAILED' || s === 'CANCELED'
+  }
+
+  const startAutoRefresh = () => {
+    stopAutoRefresh()
+    const jobInstanceId = route.query.jobInstanceId as string
+    if (!jobInstanceId) return
+
+    variables.refreshTimer = window.setInterval(async () => {
+      try {
+        const statusRes = await queryJobExecutionStatus({ jobInstanceId })
+        if (isJobEndStatus(statusRes?.jobStatus)) {
+          getTableData()
+          stopAutoRefresh()
+          return
+        }
+        getTableData()
+      } catch {
+        // status unavailable, still try to refresh table data
+        getTableData()
+      }
+    }, 2000)
+  }
+
+  const stopAutoRefresh = () => {
+    if (variables.refreshTimer) {
+      clearInterval(variables.refreshTimer)
+      variables.refreshTimer = 0 as unknown as number
+    }
+  }
+
+  onUnmounted(() => {
+    stopAutoRefresh()
+  })
+
   return {
     variables,
     createColumns,
-    getTableData
+    getTableData,
+    startAutoRefresh,
+    stopAutoRefresh
   }
 }

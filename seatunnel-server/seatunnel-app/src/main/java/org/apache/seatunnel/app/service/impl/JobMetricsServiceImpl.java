@@ -116,6 +116,9 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
         log.info("jobInstanceIdAndJobEngineIdMap={}", jobInstanceIdAndJobEngineIdMap);
         int userId = ServletUtils.getCurrentUserId();
         funcPermissionCheck(SeatunnelFuncPermissionKeyConstant.JOB_METRICS_SUMMARY, userId);
+        if (CollectionUtils.isEmpty(jobInstanceIdList)) {
+            return new HashMap<>();
+        }
         List<JobInstance> allJobInstance = jobInstanceDao.getAllJobInstance(jobInstanceIdList);
         if (allJobInstance.isEmpty()) {
             log.warn(
