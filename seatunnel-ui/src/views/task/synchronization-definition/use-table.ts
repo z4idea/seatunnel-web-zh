@@ -55,7 +55,7 @@ export function useTable() {
 
   const message = useMessage()
 
-  const loadingStates = ref(new Map())
+  const loadingStates = ref(new Map<number | string, boolean>())
 
   const createColumns = (variables: any) => {
     variables.columns = [
@@ -111,7 +111,9 @@ export function useTable() {
                 if (loadingStates.value.get(row.id)) return
                 handleRun(row)
               },
-              icon: h(PlayCircleOutlined)
+              icon: h(PlayCircleOutlined),
+              loading: (row: any) => !!loadingStates.value.get(row.id),
+              disabled: (row: any) => !!loadingStates.value.get(row.id),
             },
             {
               isDelete: true,
@@ -143,20 +145,24 @@ export function useTable() {
   const handleRun = (row: any) => {
     // Prevent duplicate task submissions
     loadingStates.value.set(row.id, true)
-   
-    executeJob(row.id).then((res: any) => {
-      message.success(t('project.synchronization_definition.start_success'))
-      router.push({
-        path: `/task/synchronization-instance/${row.id}`,
-        query: {
-          jobInstanceId: res,
-          taskName: row.name
-        }
+
+    executeJob(row.id)
+      .then((res: any) => {
+        message.success(t('project.synchronization_definition.start_success'))
+        router.push({
+          path: `/task/synchronization-instance/${row.id}`,
+          query: {
+            jobInstanceId: res,
+            taskName: row.name
+          }
+        })
       })
-    }).catch((error) => {
-      message.error(t('project.synchronization_definition.start_failed'))
-      loadingStates.value.set(row.id, false)
-    })
+      .catch(() => {
+        message.error(t('project.synchronization_definition.start_failed'))
+      })
+      .finally(() => {
+        loadingStates.value.set(row.id, false)
+      })
   }
 
   const handleDelete = (row: any) => {

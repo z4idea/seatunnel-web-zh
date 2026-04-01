@@ -50,6 +50,7 @@ export const useTableOperation = (
       icon?: VNode | ((rowData: any) => VNode)
       auth?: any
       // accessType?: accessTypeKey
+      loading?: boolean | ((rowData: any) => boolean)
       disabled?: boolean | ((rowData: any) => boolean)
       class?: string
       value?: string | number | boolean | undefined
@@ -69,6 +70,10 @@ export const useTableOperation = (
     return params.buttons
       .filter((button) => !(button.isHidden && button.isHidden(rowData)))
       .map((button) => {
+        const mergedLoading =
+          typeof button.loading === 'function'
+            ? button.loading(rowData)
+            : !!button.loading
         const mergedDisabled =
           typeof button.disabled === 'function'
             ? button.disabled(rowData) || rowData.isEdit === false
@@ -81,7 +86,8 @@ export const useTableOperation = (
           typeof button.text === 'function' ? button.text(rowData) : button.text
 
         const commonProps = {
-          disabled: mergedDisabled,
+          disabled: mergedDisabled || mergedLoading,
+          loading: mergedLoading,
           tag: 'div',
           circle: true,
           size: 'small',
