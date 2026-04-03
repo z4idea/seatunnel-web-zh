@@ -1188,5 +1188,18 @@ export default {
   all_project: 'All projects',
   next_step: 'Next step',
   pre_step: 'Last step',
-  project_name: 'Project Name'
+  project_name: 'Project Name',
+  metrics: {
+    last_1_minute: 'Last 1 minute',
+    last_10_minutes: 'Last 10 minutes',
+    last_1_hour: 'Last 1 hour',
+    last_3_hours: 'Last 3 hours',
+    last_1_day: 'Last 1 day',
+    last_7_days: 'Last 7 days',
+    custom_time: 'Custom Time',
+    start_time: 'Start Time',
+    end_time: 'End Time',
+    metrics_title: 'Task metrics',
+    no_data: 'No metric data in the selected time range'
+  }
 }

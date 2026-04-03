@@ -27,11 +27,19 @@ const TaskMetrics = defineComponent({
     const { variables, initCharts, updateCharts, handleDateRangeChange, handleTimeOptionChange } = useTaskMetrics()
     let timer: ReturnType<typeof setInterval>
     const { t } = useI18n()
+    const handleResize = () => {
+      variables.readRowCountChart?.resize()
+      variables.writeRowCountChart?.resize()
+      variables.readQpsChart?.resize()
+      variables.writeQpsChart?.resize()
+      variables.delayChart?.resize()
+    }
 
     onMounted(async () => {
       await nextTick()
       initCharts()
       updateCharts()
+      window.addEventListener('resize', handleResize)
       timer = setInterval(() => {
         updateCharts()
       }, 10000)
@@ -41,6 +49,7 @@ const TaskMetrics = defineComponent({
       if (timer) {
         clearInterval(timer)
       }
+      window.removeEventListener('resize', handleResize)
       variables.readRowCountChart?.dispose()
       variables.writeRowCountChart?.dispose()
       variables.readQpsChart?.dispose()

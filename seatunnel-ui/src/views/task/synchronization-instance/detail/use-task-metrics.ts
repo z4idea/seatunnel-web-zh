@@ -23,10 +23,24 @@ import { useI18n } from 'vue-i18n'
 import { format, subDays, subHours, subMinutes } from 'date-fns'
 import { 
   queryJobMetricsHistory,
-  querySyncTaskInstanceDag,
-  querySyncTaskInstanceDetail,
-  queryRunningInstancePaging 
+  querySyncTaskInstanceDetail
 } from '@/service/sync-task-instance'
+
+type MetricField =
+  | 'readRowCount'
+  | 'writeRowCount'
+  | 'readQps'
+  | 'writeQps'
+  | 'recordDelay'
+
+type MetricRecord = {
+  createTime: number
+  readRowCount: number
+  writeRowCount: number
+  readQps: number
+  writeQps: number
+  recordDelay: number
+}
 
 export function useTaskMetrics() {
   const route = useRoute()
@@ -80,7 +94,7 @@ export function useTaskMetrics() {
     readQpsChart: null as echarts.ECharts | null,
     writeQpsChart: null as echarts.ECharts | null,
     delayChart: null as echarts.ECharts | null,
-    metricsData: [] as any[],
+    metricsData: [] as MetricRecord[],
     dateRange: null as [number, number] | null,
     selectedTimeOption: '1hour',
     showDatePicker: false,
@@ -91,19 +105,128 @@ export function useTaskMetrics() {
     return format(timestamp, 'yyyy-MM-dd HH:mm:ss')
   }
 
-  const formatTimeData = (data: any[]) => {
-    return data.map(item => {
-      try {
-        const date = new Date(item.createTime)
-        return format(date, 'HH:mm:ss')
-      } catch (err) {
-        console.error('Error formatting time:', err)
-        return ''
-      }
-    })
+  const toNumber = (value: unknown): number => {
+    const result = Number(value)
+    return Number.isFinite(result) ? result : 0
   }
 
-  const getChartOption = (title: string, data: any[], key: string): EChartsOption => ({
+  const normalizeMetricsData = (data: any[]): MetricRecord[] => {
+    return (Array.isArray(data) ? data : [])
+      .map((item) => {
+        const time = new Date(item.createTime).getTime()
+        return {
+          createTime: Number.isFinite(time) ? time : Date.now(),
+          readRowCount: toNumber(item.readRowCount),
+          writeRowCount: toNumber(item.writeRowCount),
+          readQps: toNumber(item.readQps),
+          writeQps: toNumber(item.writeQps),
+          recordDelay: toNumber(item.recordDelay)
+        }
+      })
+      .sort((a, b) => a.createTime - b.createTime)
+  }
+
+  const getTimeRange = (data: MetricRecord[]): [number, number] => {
+    if (variables.dateRange) {
+      return variables.dateRange
+    }
+
+    if (data.length >= 2) {
+      return [data[0].createTime, data[data.length - 1].createTime]
+    }
+
+    if (data.length === 1) {
+      const single = data[0].createTime
+      return [single - 30 * 60 * 1000, single + 30 * 60 * 1000]
+    }
+
+    const option = timeOptions.find((opt) => opt.value === variables.selectedTimeOption)
+    if (option?.getTime) {
+      const [start, end] = option.getTime()
+      return [start.getTime(), end.getTime()]
+    }
+
+    const now = Date.now()
+    return [now - 60 * 60 * 1000, now]
+  }
+
+  const buildSeriesData = (
+    data: MetricRecord[],
+    key: MetricField
+  ): { points: Array<[number, number]>; hasRealData: boolean; isSinglePoint: boolean } => {
+    if (data.length === 0) {
+      return {
+        points: [],
+        hasRealData: false,
+        isSinglePoint: false
+      }
+    }
+
+    if (data.length === 1) {
+      const [start, end] = getTimeRange(data)
+      const value = data[0][key]
+      const pointTime = data[0].createTime
+      const left = Math.max(start, pointTime - Math.max((end - start) / 4, 1000))
+      const right = Math.min(end, pointTime + Math.max((end - start) / 4, 1000))
+
+      return {
+        points: [
+          [left, value],
+          [pointTime, value],
+          [right, value]
+        ],
+        hasRealData: true,
+        isSinglePoint: true
+      }
+    }
+
+    return {
+      points: data.map((item) => [item.createTime, item[key]] as [number, number]),
+      hasRealData: true,
+      isSinglePoint: false
+    }
+  }
+
+  const createYAxisRange = (values: number[]) => {
+    if (!values.length) {
+      return {
+        min: 0,
+        max: 1
+      }
+    }
+
+    const minValue = Math.min(...values)
+    const maxValue = Math.max(...values)
+
+    if (minValue === maxValue) {
+      if (minValue === 0) {
+        return {
+          min: 0,
+          max: 1
+        }
+      }
+
+      const padding = Math.max(Math.abs(minValue) * 0.1, 1)
+      return {
+        min: Math.max(0, Math.floor(minValue - padding)),
+        max: Math.ceil(maxValue + padding)
+      }
+    }
+
+    const padding = Math.max((maxValue - minValue) * 0.1, 1)
+    return {
+      min: Math.max(0, Math.floor(minValue - padding)),
+      max: Math.ceil(maxValue + padding)
+    }
+  }
+
+  const getChartOption = (title: string, data: MetricRecord[], key: MetricField): EChartsOption => {
+    const { points, hasRealData, isSinglePoint } = buildSeriesData(data, key)
+    const values = points.map(([, value]) => value)
+    const yAxisRange = createYAxisRange(values)
+    const [startTime, endTime] = getTimeRange(data)
+
+    return ({
     title: { 
       text: title,
       textStyle: {
@@ -114,9 +237,13 @@ export function useTaskMetrics() {
     },
     tooltip: { 
       show: true,
-      trigger: 'item',
+      trigger: 'axis',
       axisPointer: {
-        type: 'none'
+        type: 'line',
+        lineStyle: {
+          color: '#BFBFBF',
+          type: 'dashed'
+        }
       },
       position: 'top',
       backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -129,7 +256,12 @@ export function useTaskMetrics() {
         fontSize: 13
       },
       formatter: (params: any) => {
-        let value = params.value
+        const point = Array.isArray(params) ? params[0] : params
+        if (!point) {
+          return ''
+        }
+
+        let value = Array.isArray(point.value) ? point.value[1] : point.value
         if (key.includes('Qps')) {
           value = value.toFixed(2)
         } else if (value >= 10000) {
@@ -139,15 +271,15 @@ export function useTaskMetrics() {
         }
         
         try {
-          const date = new Date(variables.metricsData[params.dataIndex].createTime)
-          const fullDateTime = format(date, 'yyyy-MM-dd HH:mm:ss')
+          const timeValue = Array.isArray(point.value) ? point.value[0] : point.axisValue
+          const fullDateTime = formatTimeToString(Number(timeValue))
           
           return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
             <div style="color: #8c8c8c; font-size: 12px; margin-bottom: 4px">
               ${fullDateTime}
             </div>
             <div style="display: flex; align-items: center">
-              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: ${params.color}; margin-right: 8px"></span>
+              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: ${point.color}; margin-right: 8px"></span>
               <span style="font-weight: 500">${value}</span>
             </div>
             <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px">
@@ -161,16 +293,17 @@ export function useTaskMetrics() {
       }
     },
     grid: {
-      top: '15%',
+      top: '18%',
       left: '3%',
       right: '4%',
-      bottom: '3%',
+      bottom: '8%',
       containLabel: true
     },
     xAxis: {
-      type: 'category',
+      type: 'time',
       boundaryGap: false,
-      data: formatTimeData(data),
+      min: startTime,
+      max: endTime,
       axisLine: {
         lineStyle: {
           color: '#E5E5E5'
@@ -178,13 +311,21 @@ export function useTaskMetrics() {
       },
       axisLabel: {
         color: '#7F7F7F',
-        formatter: (value: string) => {
-          return value.substring(value.indexOf(' ') + 1)
+        hideOverlap: true,
+        showMinLabel: true,
+        showMaxLabel: false,
+        margin: 12,
+        formatter: (value: number) => {
+          return format(value, 'HH:mm')
         }
       }
     },
     yAxis: { 
       type: 'value',
+      min: yAxisRange.min,
+      max: yAxisRange.max,
+      minInterval: key.includes('Qps') ? 0.01 : 1,
+      splitNumber: 4,
       splitLine: {
         lineStyle: {
           type: 'dashed',
@@ -201,23 +342,30 @@ export function useTaskMetrics() {
         color: '#7F7F7F',
         formatter: (value: number) => {
           if (key.includes('Qps')) {
+            if (Math.abs(value) >= 100) {
+              return value.toFixed(0)
+            }
+            if (Math.abs(value) >= 10) {
+              return value.toFixed(1)
+            }
             return value.toFixed(2)
           }
           if (value >= 10000) {
             return (value / 10000).toFixed(1) + 'w'
           }
-          return Math.round(value).toString()
+          return Number.isInteger(value) ? value.toString() : value.toFixed(1)
         }
       }
     },
     series: [{
       type: 'line',
-      data: data.map(item => item[key]),
+      data: points,
       smooth: true,
       symbol: 'circle',
-      symbolSize: 4,
+      symbolSize: isSinglePoint ? 8 : 6,
       showSymbol: true,
       triggerEvent: true,
+      connectNulls: true,
       emphasis: {
         focus: 'series',
         itemStyle: {
@@ -232,10 +380,11 @@ export function useTaskMetrics() {
         color: '#1890FF',
         borderWidth: 1,
         borderColor: '#fff',
-        opacity: 0.3
+        opacity: hasRealData ? 0.9 : 0
       },
       lineStyle: {
-        width: 2
+        width: 2,
+        opacity: hasRealData ? 1 : 0
       },
       areaStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -248,9 +397,26 @@ export function useTaskMetrics() {
             color: 'rgba(24,144,255,0.1)'
           }
         ])
-      }
+      },
+      animationDuration: 400
     } as LineSeriesOption],
+    graphic: !hasRealData
+      ? [
+          {
+            type: 'text',
+            left: 'center',
+            top: 'middle',
+            style: {
+              text: t('project.metrics.no_data'),
+              fill: '#8C8C8C',
+              fontSize: 14,
+              fontWeight: 400
+            }
+          }
+        ]
+      : undefined
   })
+  }
 
   const initCharts = () => {
     try {
@@ -295,7 +461,7 @@ export function useTaskMetrics() {
       }
 
       const res = await queryJobMetricsHistory(params)
-      variables.metricsData = res
+      variables.metricsData = normalizeMetricsData(res)
 
       // If history is empty (common for short batch jobs or before persistence),
       // fallback to a single realtime point so the UI is not blank.
@@ -310,7 +476,7 @@ export function useTaskMetrics() {
           const readQps = realtime.reduce((acc: number, it: any) => acc + Number(it.readQps || 0), 0)
           const writeQps = realtime.reduce((acc: number, it: any) => acc + Number(it.writeQps || 0), 0)
           const recordDelay = realtime.reduce((acc: number, it: any) => acc + Number(it.recordDelay || 0), 0)
-          variables.metricsData = [
+          variables.metricsData = normalizeMetricsData([
             {
               createTime: new Date().toISOString(),
               readRowCount,
@@ -319,7 +485,7 @@ export function useTaskMetrics() {
               writeQps,
               recordDelay
             }
-          ]
+          ])
         } catch {
           // ignore fallback errors
         }

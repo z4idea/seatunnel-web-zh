@@ -1182,6 +1182,7 @@ export default {
     custom_time: '自定义时间',
     start_time: '开始时间',
     end_time: '结束时间',
-    metrics_title: '任务指标'
+    metrics_title: '任务指标',
+    no_data: '当前时间范围内暂无指标数据'
   }
 }
