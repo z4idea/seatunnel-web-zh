@@ -42,5 +42,7 @@ export default {
   save_failed: '保存失败',
   delete_failed: '删除失败',
   create_failed: '创建失败',
-  update_failed: '更新失败'
+  update_failed: '更新失败',
+  job_env_cannot_be_empty: '任务运行环境不能为空，请先完善配置',
+  config_invalid_please_change: '当前配置无效，请修改后重试'
 }

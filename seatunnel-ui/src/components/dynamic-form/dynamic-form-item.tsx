@@ -87,6 +87,10 @@ const DynamicFormItem = defineComponent({
       const normalizedLabel = normalizeKey(label)
       const normalizedField = field ? normalizeKey(field) : ''
       const keys = [
+        `i18n.${label}_${suffix}`,
+        field ? `i18n.${field}_${suffix}` : '',
+        `i18n.${normalizedLabel}_${suffix}`,
+        normalizedField ? `i18n.${normalizedField}_${suffix}` : '',
         `transforms.${name.toLowerCase()}.${label}_${suffix}`,
         field ? `transforms.${name.toLowerCase()}.${field}_${suffix}` : '',
         `transforms.${name.toLowerCase()}.${normalizedLabel}_${suffix}`,
@@ -94,7 +98,15 @@ const DynamicFormItem = defineComponent({
           ? `transforms.${name.toLowerCase()}.${normalizedField}_${suffix}`
           : '',
         `transforms.common.${normalizedLabel}_${suffix}`,
-        normalizedField ? `transforms.common.${normalizedField}_${suffix}` : ''
+        normalizedField ? `transforms.common.${normalizedField}_${suffix}` : '',
+        `project.synchronization_definition.${normalizedLabel}`,
+        normalizedField
+          ? `project.synchronization_definition.${normalizedField}`
+          : '',
+        `project.synchronization_definition.${normalizedLabel}_${suffix}`,
+        normalizedField
+          ? `project.synchronization_definition.${normalizedField}_${suffix}`
+          : ''
       ].filter(Boolean)
 
       const matched = keys.find((key) => te(key))
@@ -104,10 +116,14 @@ const DynamicFormItem = defineComponent({
     const translateOptionLabel = (name: string, label: string) => {
       const normalizedLabel = normalizeKey(label)
       const keys = [
+        `i18n.option_${label}`,
+        `i18n.option_${normalizedLabel}`,
         `transforms.${name.toLowerCase()}.option_${label}`,
         `transforms.${name.toLowerCase()}.option_${normalizedLabel}`,
         `transforms.common.option_${label}`,
         `transforms.common.option_${normalizedLabel}`,
+        `project.synchronization_definition.option_${label}`,
+        `project.synchronization_definition.option_${normalizedLabel}`,
         label
       ]
 

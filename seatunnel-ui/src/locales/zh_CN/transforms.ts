@@ -70,7 +70,13 @@ export default {
     option_true: '是',
     option_false: '否',
     option_CREATE_SCHEMA_WHEN_NOT_EXIST: '不存在时创建 Schema',
+    option_RECREATE_SCHEMA: '重建 Schema',
+    option_ERROR_WHEN_SCHEMA_NOT_EXIST: 'Schema 不存在时报错',
+    option_IGNORE: '忽略',
     option_APPEND_DATA: '追加数据',
+    option_DROP_DATA: '清空后写入',
+    option_CUSTOM_PROCESSING: '自定义处理',
+    option_ERROR_WHEN_DATA_EXISTS: '数据已存在时报错',
     option_FAIL: '失败',
     option_SKIP: '跳过'
   },

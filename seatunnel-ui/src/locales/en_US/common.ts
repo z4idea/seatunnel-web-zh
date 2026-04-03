@@ -43,5 +43,7 @@ export default {
   save_failed: 'Save failed',
   delete_failed: 'Delete failed',
   create_failed: 'Create failed',
-  update_failed: 'Update failed'
+  update_failed: 'Update failed',
+  job_env_cannot_be_empty: 'Job env cannot be empty. Please complete the configuration first',
+  config_invalid_please_change: 'The current configuration is invalid. Please update it and try again'
 }

@@ -75,7 +75,13 @@ export default {
     option_true: 'True',
     option_false: 'False',
     option_CREATE_SCHEMA_WHEN_NOT_EXIST: 'Create Schema When Not Exist',
+    option_RECREATE_SCHEMA: 'Recreate Schema',
+    option_ERROR_WHEN_SCHEMA_NOT_EXIST: 'Error When Schema Not Exist',
+    option_IGNORE: 'Ignore',
     option_APPEND_DATA: 'Append Data',
+    option_DROP_DATA: 'Drop Data',
+    option_CUSTOM_PROCESSING: 'Custom Processing',
+    option_ERROR_WHEN_DATA_EXISTS: 'Error When Data Exists',
     option_FAIL: 'Fail',
     option_SKIP: 'Skip'
   },
