@@ -25,10 +25,21 @@ export function useDagGraph(
 ) {
   return new Graph({
     container: dagContainer,
-    scroller: true,
+    scroller: {
+      enabled: true,
+      pannable: true,
+      autoResize: false
+    },
     grid: {
       size: 10,
       visible: true
+    },
+    mousewheel: {
+      enabled: true,
+      modifiers: ['ctrl', 'meta'],
+      minScale: 0.4,
+      maxScale: 2.5,
+      factor: 1.1
     },
     connecting: {
       router: 'manhattan',
@@ -66,6 +77,7 @@ export function useDagGraph(
       enabled: true,
       width: 200,
       height: 120,
+      padding: 8,
       container: minimapContainer
     },
     selecting: {

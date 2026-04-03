@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { defineComponent, ref, onMounted, reactive, provide } from 'vue'
+import { defineComponent, ref, onMounted, reactive, provide, nextTick } from 'vue'
 import { Cell, Graph } from '@antv/x6'
 import { useI18n } from 'vue-i18n'
 import { DagEdgeName, DagNodeName, EdgeDefaultConfig } from './dag-setting'
@@ -111,10 +111,12 @@ const DagCanvas = defineComponent({
 
     const onCancelModal = () => {
       state.show = false
+      graph.value?.unlockScroller()
     }
 
     const onConfirmModal = (values: InputPlugin) => {
       state.show = false
+      graph.value?.unlockScroller()
       const node = graph.value?.getCellById(currentNodeId)
       node?.replaceData({
         ...values,
@@ -135,6 +137,9 @@ const DagCanvas = defineComponent({
       getGraph: () => graph.value,
       addNodesAndEdges: (cells: Cell.Metadata[], edges: InputEdge[]) => {
         initNodesAndEdges(graph.value as Graph, cells, edges)
+        nextTick(() => {
+          graph.value?.centerContent()
+        })
       },
       getSelectedCells: () => graph.value?.getSelectedCells(),
       removeCell: (id: string) => graph.value?.removeCell(id),
@@ -148,6 +153,9 @@ const DagCanvas = defineComponent({
       registerNode()
       registerEdge()
       onDoubleClick()
+      nextTick(() => {
+        graph.value?.centerContent()
+      })
     })
     return () => (
       <div
