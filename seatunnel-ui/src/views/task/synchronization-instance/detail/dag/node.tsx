@@ -16,7 +16,7 @@
  */
 
 import { defineComponent, inject, computed } from 'vue'
-import { NTooltip, NProgress } from 'naive-ui'
+import { NProgress } from 'naive-ui'
 import styles from './index.module.scss'
 import { ModernNodeData, determineNodeType } from './use-dag-node'
 import { CanvasDesignTokens, getNodeStateColor, NodeType } from './design-tokens'
@@ -178,8 +178,8 @@ const Node = defineComponent({
       boxShadow: getShadowStyle(),
       borderRadius: style.borderRadius || CanvasDesignTokens.borderRadius.node,
       opacity: isDisabled ? 0.6 : (style.opacity || 1),
-      width: style.width ? `${style.width}px` : 'auto',
-      height: style.height ? `${style.height}px` : 'auto',
+      width: style.width ? `${style.width}px` : '100%',
+      height: style.height ? `${style.height}px` : '100%',
       zIndex: style.zIndex || CanvasDesignTokens.zIndex.nodes
     }))
     
@@ -187,52 +187,56 @@ const Node = defineComponent({
     const getTextColor = () => {
       return theme?.textColor || '#374151'
     }
+
+    const tooltipText = computed(() => {
+      const typeLabel =
+        actualNodeType.value === 'source'
+          ? '数据源'
+          : actualNodeType.value === 'sink'
+            ? '数据目标'
+            : '数据转换'
+      const statusLabel =
+        status === 'running'
+          ? '运行中'
+          : status === 'success'
+            ? '成功'
+            : status === 'error'
+              ? '错误'
+              : status === 'warning'
+                ? '警告'
+                : status === 'idle'
+                  ? '空闲'
+                  : status
+
+      return [
+        name,
+        `类型: ${typeLabel}`,
+        `状态: ${statusLabel}`,
+        statusMessage ? `信息: ${statusMessage}` : '',
+        metadata.description ? `描述: ${metadata.description}` : '',
+        metadata.tags && metadata.tags.length > 0
+          ? `标签: ${metadata.tags.join(', ')}`
+          : ''
+      ]
+        .filter(Boolean)
+        .join('\n')
+    })
     
     return () => (
       <div
         class={nodeClass.value}
         style={nodeStyle.value}
+        title={tooltipText.value}
       >
-        {/* 节点图标 */}
+        {getNodeIcon(actualNodeType.value) && (
+          <div class={styles['dag-node-icon']}>
+            <span>{getNodeIcon(actualNodeType.value)}</span>
+          </div>
+        )}
         
-        {/* 节点标签 */}
-        <NTooltip trigger='hover' placement='top'>
-          {{
-            trigger: () => (
-              <div class={styles['dag-node-label']} style={{ color: getTextColor() }}>
-                <span>{name}</span>
-              </div>
-            ),
-            default: () => (
-              <div>
-                <div><strong>{name}</strong></div>
-                <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                  类型: {actualNodeType.value === 'source' ? '数据源' : actualNodeType.value === 'sink' ? '数据目标' : '数据转换'}
-                </div>
-                {status !== 'idle' && (
-                  <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                    状态: {status === 'running' ? '运行中' : status === 'success' ? '成功' : status === 'error' ? '错误' : status === 'warning' ? '警告' : status}
-                  </div>
-                )}
-                {statusMessage && (
-                  <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                    信息: {statusMessage}
-                  </div>
-                )}
-                {metadata.description && (
-                  <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                    描述: {metadata.description}
-                  </div>
-                )}
-                {metadata.tags && metadata.tags.length > 0 && (
-                  <div style={{ fontSize: '12px', opacity: 0.8 }}>
-                    标签: {metadata.tags.join(', ')}
-                  </div>
-                )}
-              </div>
-            )
-          }}
-        </NTooltip>
+        <div class={styles['dag-node-label']} style={{ color: getTextColor() }}>
+          <span>{name}</span>
+        </div>
         
         {/* 状态指示器 */}
         

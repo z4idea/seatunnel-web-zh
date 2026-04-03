@@ -16,6 +16,7 @@
  */
 
 import { DagEdgeName, DagNodeName } from './dag-setting'
+import { getSyncTaskStatusMeta } from '../../status-display'
 
 const stateColor = {
   failed: {
@@ -36,6 +37,29 @@ const stateColor = {
   }
 }
 
+const defaultStateColor = {
+  fill: '#eef2f7',
+  stroke: '#d7dee8'
+}
+
+const childNodeTheme = {
+  source: {
+    fill: '#ecfdf5',
+    stroke: '#34d399',
+    text: '#065f46'
+  },
+  sink: {
+    fill: '#eff6ff',
+    stroke: '#60a5fa',
+    text: '#1e3a8a'
+  },
+  transform: {
+    fill: '#f5f3ff',
+    stroke: '#a78bfa',
+    text: '#5b21b6'
+  }
+}
+
 export function useDagAddShape(
   graph: any,
   nodes: any,
@@ -43,6 +67,10 @@ export function useDagAddShape(
   t: any
 ) {
   for (const i in nodes) {
+    const normalizedStatus = String(nodes[i].status || '')
+      .toLowerCase() as keyof typeof stateColor
+    const currentStateColor = stateColor[normalizedStatus] || defaultStateColor
+
     const group = graph.addNode({
       x: 40,
       y: 40,
@@ -50,17 +78,7 @@ export function useDagAddShape(
       height: 160,
       zIndex: 1,
       attrs: {
-        body:
-          String(nodes[i].status.toLowerCase()) === 'failed' &&
-          'finished' &&
-          'canceled'
-            ? stateColor.running
-            : stateColor[
-                nodes[i].status.toLowerCase() as
-                  | 'failed'
-                  | 'finished'
-                  | 'canceled'
-              ]
+        body: currentStateColor
       }
     })
 
@@ -81,7 +99,7 @@ export function useDagAddShape(
           {
             tagName: 'text',
             textContent: `${t('project.synchronization_instance.state')}: ${
-              nodes[i].status
+              getSyncTaskStatusMeta(nodes[i].status, t).label
             }`,
             attrs: {
               fill: '#868686',
@@ -121,6 +139,9 @@ export function useDagAddShape(
       
 
       const portItems = [];
+      const nodeTheme =
+        childNodeTheme[nodeType as keyof typeof childNodeTheme] ||
+        childNodeTheme.transform
 
       
       group.addChild(
@@ -130,8 +151,28 @@ export function useDagAddShape(
           y: 50,
           width: 180,
           height: 44,
-          shape: DagNodeName,
+          shape: 'rect',
           zIndex: 10,
+          attrs: {
+            body: {
+              fill: nodeTheme.fill,
+              stroke: nodeTheme.stroke,
+              strokeWidth: 1.5,
+              rx: 8,
+              ry: 8
+            },
+            label: {
+              text: n.label,
+              fill: nodeTheme.text,
+              fontSize: 13,
+              fontWeight: 600,
+              textWrap: {
+                width: -24,
+                height: -12,
+                ellipsis: true
+              }
+            }
+          },
           ports: {
             items: portItems
           },

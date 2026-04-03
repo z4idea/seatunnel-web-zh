@@ -18,7 +18,13 @@
 import { defineComponent, ref, onMounted, reactive, provide, nextTick } from 'vue'
 import { Cell, Graph } from '@antv/x6'
 import { useI18n } from 'vue-i18n'
-import { DagEdgeName, DagNodeName, EdgeDefaultConfig } from './dag-setting'
+import {
+  DagEdgeName,
+  DagNodeName,
+  EdgeDefaultConfig,
+  NodeWidth,
+  NodeHeight
+} from './dag-setting'
 import { useDagNode } from './use-dag-node'
 import { useDagResize } from './use-dag-resize'
 import { useDagGraph } from './use-dag-graph'
@@ -132,7 +138,19 @@ const DagCanvas = defineComponent({
 
     ctx.expose({
       addNode: (cell: Cell.Metadata) => {
-        addNode(graph.value as Graph, cell)
+        const nextCell = { ...cell }
+
+        if (
+          typeof cell.clientX === 'number' &&
+          typeof cell.clientY === 'number' &&
+          graph.value
+        ) {
+          const localPoint = graph.value.clientToLocal(cell.clientX, cell.clientY)
+          nextCell.x = localPoint.x - NodeWidth / 2
+          nextCell.y = localPoint.y - NodeHeight / 2
+        }
+
+        addNode(graph.value as Graph, nextCell)
       },
       getGraph: () => graph.value,
       addNodesAndEdges: (cells: Cell.Metadata[], edges: InputEdge[]) => {
@@ -153,9 +171,6 @@ const DagCanvas = defineComponent({
       registerNode()
       registerEdge()
       onDoubleClick()
-      nextTick(() => {
-        graph.value?.centerContent()
-      })
     })
     return () => (
       <div

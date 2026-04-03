@@ -90,7 +90,7 @@ const useDagLayout = (graph: any) => {
 
   const json = graph.toJSON()
   const groups = json.cells
-    .filter((cell: any) => cell.shape === 'rect')
+    .filter((cell: any) => cell.shape === 'rect' && !cell.data?.vertexId)
     .map((item: any) => {
       return {
         ...item,
@@ -99,7 +99,11 @@ const useDagLayout = (graph: any) => {
       }
     })
   const nodes = json.cells
-    .filter((cell: any) => cell.shape === DagNodeName)
+    .filter(
+      (cell: any) =>
+        cell.shape === DagNodeName ||
+        (cell.shape === 'rect' && !!cell.data?.vertexId)
+    )
     .map((item: any) => {
       return {
         ...item,

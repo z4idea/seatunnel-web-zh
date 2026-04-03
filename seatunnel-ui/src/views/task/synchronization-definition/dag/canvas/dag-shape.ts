@@ -19,7 +19,13 @@ import { Graph, Cell } from '@antv/x6'
 import { DagreLayout, GridLayout } from '@antv/layout'
 import _ from 'lodash'
 import { uuid } from '@/common/common'
-import { DagNodeName, DagEdgeName, PortGroupsConfig } from './dag-setting'
+import {
+  DagNodeName,
+  DagEdgeName,
+  PortGroupsConfig,
+  NodeWidth,
+  NodeHeight
+} from './dag-setting'
 import type { InputEdge, NodeType } from '../types'
 
 export function addNode(graph: Graph, cell: Cell.Metadata) {
@@ -29,6 +35,8 @@ export function addNode(graph: Graph, cell: Cell.Metadata) {
     ...cell,
     zIndex: 1,
     shape: DagNodeName,
+    width: NodeWidth,
+    height: NodeHeight,
     ports: {
       groups: PortGroupsConfig,
       items: getPorts(id, cell.node)
@@ -56,6 +64,8 @@ export function initNodesAndEdges(
       node: cell.type.toLowerCase(),
       id: cell.pluginId,
       label: cell.name,
+      width: cell.width || NodeWidth,
+      height: cell.height || NodeHeight,
       ports: {
         groups: PortGroupsConfig,
         items: getPorts(cell.pluginId, cell.type.toLowerCase())
@@ -155,6 +165,8 @@ export function formatLayout(
     .map((item: any) => {
       return {
         ...item,
+        width: item.width || NodeWidth,
+        height: item.height || NodeHeight,
         // sort by code aesc
         _index: -(item.id as string)
       }

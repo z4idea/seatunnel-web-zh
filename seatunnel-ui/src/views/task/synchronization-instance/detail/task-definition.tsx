@@ -28,6 +28,7 @@ import { useTaskDefinition } from './use-task-definition'
 import styles from './task-definition.module.scss'
 import { useDagNode } from './dag/use-dag-node'
 import { useCanvasTheme } from './dag/theme-manager'
+import { getSyncTaskStatusMeta } from '../status-display'
 
 interface IJobConfig {
   name: string
@@ -74,9 +75,64 @@ const TaskDefinition = defineComponent({
       const obj = jobConfig.value.env
       const arr : any = []
       for (const i in obj) {
-        arr.push({ label: String(i), value: obj[i] })
+        const rawLabel = String(i)
+        arr.push({
+          label: formatEnvLabel(rawLabel),
+          value: formatEnvValue(rawLabel, obj[i])
+        })
       }
       return arr
+    }
+
+    const envLabelMap: Record<string, string> = {
+      'job.mode': 'project.synchronization_definition.job_mode',
+      'job.name': 'project.synchronization_definition.job_name',
+      'job.retry.times': 'project.synchronization_definition.job_retry_times',
+      'job.retry.interval.seconds':
+        'project.synchronization_definition.job_retry_interval_seconds',
+      jars: 'project.synchronization_definition.jars',
+      'checkpoint.interval':
+        'project.synchronization_definition.checkpoint_interval',
+      'checkpoint.timeout':
+        'project.synchronization_definition.checkpoint_timeout',
+      'read_limit.rows_per_second':
+        'project.synchronization_definition.read_limit_rows_per_second',
+      'read_limit.bytes_per_second':
+        'project.synchronization_definition.read_limit_bytes_per_second',
+      'savemode.execute.location':
+        'project.synchronization_definition.savemode_execute_location',
+      custom_parameters: 'project.synchronization_definition.custom_parameters',
+      tag_filter: 'project.synchronization_definition.tag_filter'
+    }
+
+    const envValueMap: Record<string, Record<string, string>> = {
+      'job.mode': {
+        BATCH: 'project.synchronization_definition.option_BATCH',
+        STREAM: 'project.synchronization_definition.option_STREAM',
+        STREAMING: 'project.synchronization_definition.option_STREAMING'
+      },
+      'savemode.execute.location': {
+        CLUSTER: 'project.synchronization_definition.option_CLUSTER',
+        CLIENT: 'project.synchronization_definition.option_CLIENT'
+      }
+    }
+
+    const formatEnvLabel = (label: string) => {
+      const localeKey = envLabelMap[label]
+      return localeKey ? t(localeKey) : label
+    }
+
+    const formatEnvValue = (label: string, value: any) => {
+      const normalizedValue = String(value || '').trim()
+      const localeKey = envValueMap[label]?.[normalizedValue]
+      if (localeKey) {
+        return t(localeKey)
+      }
+      return normalizedValue || '-'
+    }
+
+    const getPipelineStatusText = (status: string) => {
+      return getSyncTaskStatusMeta(status, t).label
     }
 
     onMounted(async () => {
@@ -95,7 +151,8 @@ const TaskDefinition = defineComponent({
       'dag-container': dagContainer,
       'minimap-container': minimapContainer,
       formatData,
-      jobConfig
+      jobConfig,
+      getPipelineStatusText
     }
   },
   render() {

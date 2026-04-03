@@ -178,10 +178,10 @@ export const CanvasDesignTokens = {
 
   sizes: {
     node: {
-      width: 150,
-      height: 36,
-      minWidth: 120,
-      maxWidth: 200
+      width: 180,
+      height: 44,
+      minWidth: 180,
+      maxWidth: 260
     },
     minimap: {
       width: 200,

@@ -42,8 +42,8 @@ const SynchronizationDefinitionDag = defineComponent({
     const handelDrop = (e: DragEvent) => {
       if (!tempNode.type) return
       dagRef.value.addNode({
-        x: e.offsetX,
-        y: e.offsetY,
+        clientX: e.clientX,
+        clientY: e.clientY,
         label: tempNode.name || tempNode.type,
         node: tempNode.type
       })

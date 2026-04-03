@@ -18,12 +18,13 @@
 import '@antv/x6-vue-shape'
 import Node from './node'
 import { createVNode } from 'vue'
+import { NodeWidth, NodeHeight } from './dag-setting'
 
 export function useDagNode() {
   return {
     inherit: 'vue-shape',
-    width: 150,
-    height: 36,
+    width: NodeWidth,
+    height: NodeHeight,
     component: {
       render: () => {
         return createVNode(Node)
