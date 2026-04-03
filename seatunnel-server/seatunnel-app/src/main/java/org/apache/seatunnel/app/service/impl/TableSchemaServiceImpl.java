@@ -90,14 +90,7 @@ public class TableSchemaServiceImpl extends SeatunnelBaseServiceImpl
     @Override
     public TableSchemaRes getSeaTunnelSchema(String pluginName, TableSchemaReq tableSchemaReq) {
         funcPermissionCheck(SeatunnelFuncPermissionKeyConstant.JOB_TABLE_SCHEMA, 0);
-        pluginName = pluginName.toUpperCase();
-        if (pluginName.endsWith("-CDC")) {
-            pluginName = pluginName.replace("-CDC", "");
-        } else if (pluginName.startsWith("JDBC_")) {
-            pluginName = pluginName.replace("JDBC_", "");
-        } else if (pluginName.startsWith("JDBC-")) {
-            pluginName = pluginName.replace("JDBC-", "");
-        }
+        pluginName = normalizePluginNameForConvertor(pluginName);
         // if the convertor is not exist in the plugin, will use the input type as the output type
         DataTypeConvertor<?> convertor;
         try {
@@ -121,14 +114,7 @@ public class TableSchemaServiceImpl extends SeatunnelBaseServiceImpl
 
     @Override
     public void getAddSeaTunnelSchema(List<TableField> tableFields, String pluginName) {
-        pluginName = pluginName.toUpperCase();
-        if (pluginName.endsWith("-CDC")) {
-            pluginName = pluginName.replace("-CDC", "");
-        } else if (pluginName.startsWith("JDBC_")) {
-            pluginName = pluginName.replace("JDBC_", "");
-        } else if (pluginName.startsWith("JDBC-")) {
-            pluginName = pluginName.replace("JDBC-", "");
-        }
+        pluginName = normalizePluginNameForConvertor(pluginName);
         // if the convertor is not exist in the plugin, will use the input type as the output type
         DataTypeConvertor<?> convertor;
         try {
@@ -154,6 +140,21 @@ public class TableSchemaServiceImpl extends SeatunnelBaseServiceImpl
                         exception);
             }
         }
+    }
+
+    private String normalizePluginNameForConvertor(String pluginName) {
+        pluginName = pluginName.toUpperCase();
+        if (pluginName.endsWith("-CDC")) {
+            pluginName = pluginName.replace("-CDC", "");
+        } else if (pluginName.startsWith("JDBC_")) {
+            pluginName = pluginName.replace("JDBC_", "");
+        } else if (pluginName.startsWith("JDBC-")) {
+            pluginName = pluginName.replace("JDBC-", "");
+        }
+        if ("DM".equals(pluginName)) {
+            return "Dameng";
+        }
+        return pluginName;
     }
 
     @Override

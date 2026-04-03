@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -71,8 +72,22 @@ public class EngineDataType {
         T_FLOAT_ARRAY("array<float>", ArrayType.FLOAT_ARRAY_TYPE),
         T_DOUBLE_ARRAY("array<double>", ArrayType.DOUBLE_ARRAY_TYPE),
         T_VARCHAR("varchar", BasicType.STRING_TYPE),
+        T_VARCHAR2("varchar2", BasicType.STRING_TYPE),
+        T_NVARCHAR2("nvarchar2", BasicType.STRING_TYPE),
         T_CHAR("char", BasicType.STRING_TYPE),
+        T_NCHAR("nchar", BasicType.STRING_TYPE),
+        T_TEXT("text", BasicType.STRING_TYPE),
+        T_CLOB("clob", BasicType.STRING_TYPE),
         T_INTEGER("integer", BasicType.INT_TYPE),
+        T_NUMBER("number", BasicType.DOUBLE_TYPE),
+        T_BINARY_FLOAT("binary_float", BasicType.FLOAT_TYPE),
+        T_BINARY_DOUBLE("binary_double", BasicType.DOUBLE_TYPE),
+        T_TIMESTAMP_WITH_TIME_ZONE("timestamp with time zone", LocalTimeType.LOCAL_DATE_TIME_TYPE),
+        T_TIMESTAMP_WITH_LOCAL_TIME_ZONE(
+                "timestamp with local time zone", LocalTimeType.LOCAL_DATE_TIME_TYPE),
+        T_BLOB("blob", PrimitiveByteArrayType.INSTANCE),
+        T_RAW("raw", PrimitiveByteArrayType.INSTANCE),
+        T_LONGVARBINARY("longvarbinary", PrimitiveByteArrayType.INSTANCE),
         T_DECIMAL_DEFAULT("decimal", BasicType.DOUBLE_TYPE);
 
         @Getter private final String name;
@@ -90,7 +105,15 @@ public class EngineDataType {
 
         @Override
         public SeaTunnelDataType<?> toSeaTunnelType(String field, String connectorDataType) {
-            return DATA_TYPE_MAP.get(connectorDataType.toLowerCase(Locale.ROOT)).getRawType();
+            DataType dataType =
+                    DATA_TYPE_MAP.get(
+                            Objects.requireNonNull(connectorDataType, "connectorDataType")
+                                    .toLowerCase(Locale.ROOT));
+            if (dataType == null) {
+                throw new IllegalArgumentException(
+                        "Unsupported connector data type: " + connectorDataType);
+            }
+            return dataType.getRawType();
         }
 
         @Override

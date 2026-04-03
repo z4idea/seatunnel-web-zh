@@ -35,10 +35,13 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -61,46 +64,57 @@ public class DMDataSourceChannel implements DataSourceChannel {
             Map<String, String> requestParams,
             String database,
             Map<String, String> options) {
-        StringBuilder sqlWhere = new StringBuilder();
+        String normalizedDatabase = normalizeIdentifier(database);
+        String filterName = StringUtils.trimToEmpty(options.get("filterName"));
+        Integer size = parsePositiveInteger(options.get("size"));
 
-        sqlWhere.append(
-                "SELECT OWNER, TABLE_NAME FROM SYS.DBA_TABLES WHERE 1=1 "
-                        + "AND OWNER NOT IN ('SYS', 'SYSTEM', 'SYSAUDITOR', 'SYSSSO', 'SYSDBA')");
+        StringBuilder sql = new StringBuilder();
+        List<String> parameters = new ArrayList<>();
 
-        String filterName = options.get("filterName");
+        sql.append("SELECT OWNER, TABLE_NAME FROM SYS.DBA_TABLES WHERE 1=1 ")
+                .append("AND OWNER NOT IN ('SYS', 'SYSTEM', 'SYSAUDITOR', 'SYSSSO', 'SYSDBA')");
 
-        if (StringUtils.isNotEmpty(filterName)) {
-            String[] split = filterName.split("\\.");
+        if (StringUtils.isNotBlank(normalizedDatabase)) {
+            sql.append(" AND OWNER = ?");
+            parameters.add(normalizedDatabase);
+        }
+
+        if (StringUtils.isNotBlank(filterName)) {
+            String[] split = filterName.split("\\.", 2);
             if (split.length == 2) {
-                sqlWhere.append(" AND TABLE_NAME LIKE '")
-                        .append("%" + split[1].toUpperCase() + "%'")
-                        .append(" AND OWNER LIKE '")
-                        .append("%" + split[0].toUpperCase() + "%'");
+                sql.append(" AND OWNER LIKE ? AND TABLE_NAME LIKE ?");
+                parameters.add(buildLikePattern(split[0]));
+                parameters.add(buildLikePattern(split[1]));
             } else {
-                String f = "%" + filterName.toUpperCase() + "%";
-                sqlWhere.append(" AND (TABLE_NAME LIKE '")
-                        .append(f)
-                        .append("' OR OWNER LIKE '")
-                        .append(f)
-                        .append("')");
+                String pattern = buildLikePattern(filterName);
+                sql.append(" AND (OWNER LIKE ? OR TABLE_NAME LIKE ?)");
+                parameters.add(pattern);
+                parameters.add(pattern);
             }
         }
 
-        sqlWhere.append(" ORDER BY OWNER, TABLE_NAME");
+        sql.append(" ORDER BY OWNER, TABLE_NAME");
 
-        String size = options.get("size");
-        if (StringUtils.isNotEmpty(size)) {
-            sqlWhere.insert(0, "SELECT * FROM (").append(") WHERE ROWNUM <= ").append(size);
+        if (size != null) {
+            sql.insert(0, "SELECT * FROM (").append(") WHERE ROWNUM <= ?");
+            parameters.add(String.valueOf(size));
         }
-        log.info("execute sql :{}", sqlWhere.toString());
+        log.info(
+                "execute dm getTables, database={}, filterName={}, size={}",
+                database,
+                filterName,
+                size);
         List<String> tableNames = new ArrayList<>();
         long start = System.currentTimeMillis();
-        try (Connection connection = getConnection(requestParams); ) {
+        try (Connection connection = getConnection(requestParams);
+                PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < parameters.size(); i++) {
+                statement.setString(i + 1, parameters.get(i));
+            }
             long end = System.currentTimeMillis();
             log.info("connection, cost {}ms for dm", end - start);
             start = System.currentTimeMillis();
-            try (Statement statement = connection.createStatement();
-                    ResultSet resultSet = statement.executeQuery(sqlWhere.toString())) {
+            try (ResultSet resultSet = statement.executeQuery()) {
                 end = System.currentTimeMillis();
                 log.info("statement execute sql, cost {}ms for dm", end - start);
                 start = System.currentTimeMillis();
@@ -124,11 +138,12 @@ public class DMDataSourceChannel implements DataSourceChannel {
         List<String> dbNames = new ArrayList<>();
         try (Connection connection = getConnection(requestParams);
                 PreparedStatement statement =
-                        connection.prepareStatement("SELECT USERNAME FROM SYS.DBA_USERS;");
+                        connection.prepareStatement(
+                                "SELECT USERNAME FROM SYS.DBA_USERS " + "ORDER BY USERNAME");
                 ResultSet re = statement.executeQuery()) {
             while (re.next()) {
                 String dbName = re.getString("USERNAME");
-                if (StringUtils.isNotBlank(dbName)) {
+                if (StringUtils.isNotBlank(dbName) && isNotSystemSchema(dbName)) {
                     dbNames.add(dbName);
                 }
             }
@@ -154,34 +169,42 @@ public class DMDataSourceChannel implements DataSourceChannel {
             @NonNull Map<String, String> requestParams,
             @NonNull String database,
             @NonNull String table) {
-        List<TableField> tableFields = new ArrayList<>();
-        try (Connection connection = getConnection(requestParams)) {
-            DatabaseMetaData metaData = connection.getMetaData();
-            String primaryKey = getPrimaryKey(metaData, database, table);
-            String[] split = table.split("\\.");
-            if (split.length != 2) {
-                throw new SeaTunnelException(
-                        "The tableName for dm must be schemaName.tableName, but tableName is "
-                                + table);
-            }
+        String[] split = splitTableName(table);
+        String schemaName = normalizeIdentifier(split[0]);
+        String tableName = normalizeIdentifier(split[1]);
 
-            String schemaName = split[0];
-            String tableName = split[1];
-            try (ResultSet resultSet = metaData.getColumns(null, schemaName, tableName, null)) {
+        List<TableField> tableFields = new ArrayList<>();
+        String columnSql =
+                "SELECT c.COLUMN_NAME, c.DATA_TYPE, c.DATA_DEFAULT, c.NULLABLE, cc.COMMENTS "
+                        + "FROM ALL_TAB_COLUMNS c "
+                        + "LEFT JOIN ALL_COL_COMMENTS cc "
+                        + "ON c.OWNER = cc.OWNER "
+                        + "AND c.TABLE_NAME = cc.TABLE_NAME "
+                        + "AND c.COLUMN_NAME = cc.COLUMN_NAME "
+                        + "WHERE c.OWNER = ? AND c.TABLE_NAME = ? "
+                        + "ORDER BY c.COLUMN_ID";
+        try (Connection connection = getConnection(requestParams);
+                PreparedStatement statement = connection.prepareStatement(columnSql)) {
+            Set<String> primaryKeys =
+                    getPrimaryKeys(connection.getMetaData(), schemaName, tableName);
+            statement.setString(1, schemaName);
+            statement.setString(2, tableName);
+            try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     TableField tableField = new TableField();
                     String columnName = resultSet.getString("COLUMN_NAME");
-                    tableField.setPrimaryKey(false);
-                    if (StringUtils.isNotBlank(primaryKey) && primaryKey.equals(columnName)) {
-                        tableField.setPrimaryKey(true);
-                    }
+                    tableField.setPrimaryKey(primaryKeys.contains(columnName));
                     tableField.setName(columnName);
-                    tableField.setType(resultSet.getString("TYPE_NAME"));
-                    tableField.setComment(resultSet.getString("REMARKS"));
-                    Object nullable = resultSet.getObject("IS_NULLABLE");
-                    tableField.setNullable(Boolean.TRUE.toString().equals(nullable.toString()));
+                    tableField.setType(resultSet.getString("DATA_TYPE"));
+                    tableField.setComment(resultSet.getString("COMMENTS"));
+                    tableField.setDefaultValue(resultSet.getString("DATA_DEFAULT"));
+                    tableField.setNullable("Y".equalsIgnoreCase(resultSet.getString("NULLABLE")));
                     tableFields.add(tableField);
                 }
+            }
+            if (tableFields.isEmpty()) {
+                throw new DataSourcePluginException(
+                        "No columns found for dm table " + schemaName + "." + tableName);
             }
         } catch (ClassNotFoundException | SQLException e) {
             throw new DataSourcePluginException("get table fields failed", e);
@@ -195,16 +218,64 @@ public class DMDataSourceChannel implements DataSourceChannel {
             @NonNull Map<String, String> requestParams,
             @NonNull String database,
             @NonNull List<String> tables) {
-        return null;
+        return tables.parallelStream()
+                .collect(
+                        Collectors.toMap(
+                                Function.identity(),
+                                tableName ->
+                                        getTableFields(
+                                                pluginName, requestParams, database, tableName)));
     }
 
-    private String getPrimaryKey(DatabaseMetaData metaData, String dbName, String tableName)
-            throws SQLException {
-        ResultSet primaryKeysInfo = metaData.getPrimaryKeys(null, dbName, tableName);
+    private Set<String> getPrimaryKeys(
+            DatabaseMetaData metaData, String schemaName, String tableName) throws SQLException {
+        Set<String> primaryKeys = new HashSet<>();
+        ResultSet primaryKeysInfo = metaData.getPrimaryKeys(null, schemaName, tableName);
         while (primaryKeysInfo.next()) {
-            return primaryKeysInfo.getString("COLUMN_NAME");
+            String columnName = primaryKeysInfo.getString("COLUMN_NAME");
+            if (StringUtils.isNotBlank(columnName)) {
+                primaryKeys.add(columnName);
+            }
         }
-        return null;
+        return primaryKeys;
+    }
+
+    private String[] splitTableName(String table) {
+        String[] split = table.split("\\.");
+        if (split.length != 2) {
+            throw new SeaTunnelException(
+                    "The tableName for dm must be schemaName.tableName, but tableName is " + table);
+        }
+        return split;
+    }
+
+    private String normalizeIdentifier(String identifier) {
+        return identifier == null ? null : identifier.trim().toUpperCase();
+    }
+
+    private boolean isNotSystemSchema(String schemaName) {
+        return !DMDataSourceConfig.DM_SYSTEM_DATABASES.contains(normalizeIdentifier(schemaName));
+    }
+
+    private String buildLikePattern(String value) {
+        String normalizedValue = normalizeIdentifier(value);
+        if (StringUtils.isBlank(normalizedValue)) {
+            return "%";
+        }
+        return normalizedValue.contains("%") ? normalizedValue : "%" + normalizedValue + "%";
+    }
+
+    private Integer parsePositiveInteger(String value) {
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            return parsed > 0 ? parsed : null;
+        } catch (NumberFormatException e) {
+            log.warn("Invalid dm table query size: {}", value);
+            return null;
+        }
     }
 
     private Connection getConnection(Map<String, String> requestParams)
