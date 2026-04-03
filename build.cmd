@@ -38,6 +38,9 @@ IF "%1"=="code" (
 )
 
 :code
+ECHO Apache Repair
+CALL "%WORKDIR%mvnw.cmd" spotless:apply
+
 ECHO Building code...
 IF NOT EXIST "%WORKDIR%mvnw.cmd" (
     ECHO Error: mvnw.cmd not found in %WORKDIR%
