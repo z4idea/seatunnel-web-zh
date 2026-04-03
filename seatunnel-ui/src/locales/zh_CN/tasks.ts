@@ -40,5 +40,6 @@ export default {
   kill: '终止',
   operation: '操作',
   view_log: '查看日志',
-  log: '日志'
+  log: '日志',
+  view: '查看'
 }

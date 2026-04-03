@@ -29,6 +29,7 @@ import { useSynchronizationDefinitionStore } from '@/store/synchronization-defin
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import _ from 'lodash'
+import { formatMessagePayload } from '@/utils/message'
 import type { InputPlugin, InputEdge } from './types'
 
 export const useDagDetail = () => {
@@ -140,7 +141,7 @@ export const useDagDetail = () => {
         node.getData().schemaError = result.schemaError
         graph.resetCells(graph.getCells())
 
-        window.$message.error(JSON.stringify(result.schemaError || ''), {
+        window.$message.error(formatMessagePayload(result.schemaError || ''), {
           closable: true,
           duration: 0
         })

@@ -32,6 +32,10 @@ import {
   findSink
 } from '@/service/sync-task-definition'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
+import {
+  getDefaultNodeName,
+  isComponentDefaultName
+} from './component-display'
 import type { NodeType, TableOption, State } from './types'
 import type { SelectOption } from 'naive-ui'
 
@@ -321,7 +325,11 @@ export const useConfigurationForm = (
     state.loading = true
     try {
       state.model.datasourceInstanceId = values.dataSourceId
-      state.model.name = values.name
+      const localizedDefaultName = getDefaultNodeName(nodeType, transformType, t)
+      state.model.name =
+        isComponentDefaultName(values.name) && localizedDefaultName
+          ? localizedDefaultName
+          : values.name
       state.model.sceneMode = values.sceneMode
       if (values.sceneMode === 'SPLIT_TABLE') {
         state.model.database = values.tableOption?.databases || []

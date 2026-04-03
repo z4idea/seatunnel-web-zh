@@ -20,15 +20,17 @@ import { NTooltip, NProgress } from 'naive-ui'
 import styles from './index.module.scss'
 import { ModernNodeData, determineNodeType } from './use-dag-node'
 import { CanvasDesignTokens, getNodeStateColor, NodeType } from './design-tokens'
+import { useI18n } from 'vue-i18n'
 
 const Node = defineComponent({
   name: 'Node',
   setup() {
+    const { t } = useI18n()
     const getNode = inject('getNode') as any
     
     if (!getNode) {
       console.error('getNode function not found in inject')
-      return () => <div class={styles['dag-node']}>Error: Node data not available</div>
+      return () => <div class={styles['dag-node']}>{t('project.synchronization_instance.error_message')}：节点数据不可用</div>
     }
     
     const node = getNode()
@@ -36,7 +38,7 @@ const Node = defineComponent({
     
 
     const {
-      name = 'Unknown',
+      name = t('common.unknown'),
       nodeType,
       connectorType,
       status = 'idle',

@@ -55,7 +55,7 @@ const TaskSettingModal = defineComponent({
 
     return () => (
       <Modal
-        title={t('project.synchronization_definition.setting')}
+        title={t('project.synchronization_definition.task_setting')}
         show={props.show}
         onCancel={onCancelModel}
         onConfirm={onConfirmModel}
@@ -101,6 +101,7 @@ const TaskSettingModal = defineComponent({
                 model={state.model}
                 formStructure={state.formStructure}
                 name={state.formName}
+                locales={state.formLocales}
               />
             )}
           </NForm>

@@ -70,15 +70,56 @@ const DynamicFormItem = defineComponent({
       return value.map((v) => field === v).indexOf(false) < 0
     }
 
-    const getTranslation = (name: string, label: string, suffix: string) => {
-      const key = `transforms.${name.toLowerCase()}.${label}_${suffix}`
-      return te(key) ? t(key) : ''
+    const normalizeKey = (value: string) =>
+      String(value || '')
+        .trim()
+        .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .toLowerCase()
+
+    const getTranslation = (
+      name: string,
+      label: string,
+      suffix: string,
+      field?: string
+    ) => {
+      const normalizedLabel = normalizeKey(label)
+      const normalizedField = field ? normalizeKey(field) : ''
+      const keys = [
+        `transforms.${name.toLowerCase()}.${label}_${suffix}`,
+        field ? `transforms.${name.toLowerCase()}.${field}_${suffix}` : '',
+        `transforms.${name.toLowerCase()}.${normalizedLabel}_${suffix}`,
+        normalizedField
+          ? `transforms.${name.toLowerCase()}.${normalizedField}_${suffix}`
+          : '',
+        `transforms.common.${normalizedLabel}_${suffix}`,
+        normalizedField ? `transforms.common.${normalizedField}_${suffix}` : ''
+      ].filter(Boolean)
+
+      const matched = keys.find((key) => te(key))
+      return matched ? t(matched) : ''
+    }
+
+    const translateOptionLabel = (name: string, label: string) => {
+      const normalizedLabel = normalizeKey(label)
+      const keys = [
+        `transforms.${name.toLowerCase()}.option_${label}`,
+        `transforms.${name.toLowerCase()}.option_${normalizedLabel}`,
+        `transforms.common.option_${label}`,
+        `transforms.common.option_${normalizedLabel}`,
+        label
+      ]
+
+      const matched = keys.find((key) => te(key))
+      return matched ? t(matched) : label
     }
 
     return {
       t,
       te,
       getTranslation,
+      translateOptionLabel,
       formatClass,
       formItemDisabled
     }
@@ -95,7 +136,10 @@ const DynamicFormItem = defineComponent({
                 )
               : true) && (
               <NFormItemGi
-                label={this.t(this.getTranslation(this.name, f.label, 'value') || this.t(f.label))}
+                label={this.t(
+                  this.getTranslation(this.name, f.label, 'value', f.field) ||
+                    this.t(f.label)
+                )}
                 path={f.field}
                 span={f.span || 24}
               >
@@ -107,7 +151,14 @@ const DynamicFormItem = defineComponent({
                     )}`}
                     placeholder={
                       f.placeholder 
-                        ? (this.getTranslation(this.name, f.label, 'placeholder') || this.t(f.placeholder))
+                        ? (
+                            this.getTranslation(
+                              this.name,
+                              f.label,
+                              'placeholder',
+                              f.field
+                            ) || this.t(f.placeholder)
+                          )
                         : ''
                     }
                     v-model={[(this.model as any)[f.field], 'value']}
@@ -128,12 +179,24 @@ const DynamicFormItem = defineComponent({
                         this.name,
                         f.field
                       )}`}
-                      placeholder={f.placeholder ? this.t(f.placeholder) : ''}
+                      placeholder={
+                        f.placeholder
+                          ? this.getTranslation(
+                              this.name,
+                              f.label,
+                              'placeholder',
+                              f.field
+                            ) || this.t(f.placeholder)
+                          : ''
+                      }
                       v-model={[(this.model as any)[f.field], 'value']}
                       options={
                         f.options.map((o: SelectOption) => {
                           return {
-                            label: this.t(o.label as string),
+                            label: this.translateOptionLabel(
+                              this.name,
+                              o.label as string
+                            ),
                             value: o.value
                           }
                         })
@@ -157,7 +220,10 @@ const DynamicFormItem = defineComponent({
                       <NSpace vertical={f.vertical}>
                         {f.options.map((o: any) => (
                           <NCheckbox
-                            label={this.t(o.label as string)}
+                            label={this.translateOptionLabel(
+                              this.name,
+                              o.label as string
+                            )}
                             value={o.value}
                           />
                         ))}

@@ -30,6 +30,7 @@ import SplitImg from '../images/spilt.png'
 import CopyImg from '../images/copy.png'
 import SqlImg from '../images/sql.png'
 import { InfoCircleOutlined } from '@vicons/antd'
+import { getComponentDisplayName } from '../component-display'
 
 const DagSidebar = defineComponent({
   name: 'DagSidebar',
@@ -42,6 +43,30 @@ const DagSidebar = defineComponent({
       ctx.emit('dragstart', type, name)
     }
 
+    const getComponentDescription = (name: string) => {
+      const descriptionKeyMap: Record<string, string> = {
+        Source: 'source_description',
+        Sink: 'sink_description',
+        Copy: 'copy_description',
+        FieldMapper: 'field_mapper_description',
+        FilterRowKind: 'filter_row_kind_description',
+        JsonPath: 'json_path_description',
+        Replace: 'replace_description',
+        MultiFieldSplit: 'multi_field_split_description',
+        Sql: 'sql_description'
+      }
+
+      const key = descriptionKeyMap[name]
+
+      if (!key) {
+        return t('project.synchronization_definition.transform_description', {
+          name: getComponentDisplayName(name, t)
+        })
+      }
+
+      return t(`project.synchronization_definition.${key}`)
+    }
+
     onMounted(() => {
       getConnectorTransformsTypeList()
     })
@@ -50,7 +75,8 @@ const DagSidebar = defineComponent({
       ...toRefs(variables),
       businessModel,
       t,
-      handleDragstart
+      handleDragstart,
+      getComponentDescription
     }
   },
   render() {
@@ -63,15 +89,15 @@ const DagSidebar = defineComponent({
           <div
             class={styles['task-item']}
             draggable='true'
-            onDragstart={() => this.handleDragstart('source', 'Source')}
+            onDragstart={() => this.handleDragstart('source', this.t('project.synchronization_definition.source'))}
           >
             <NSpace align='center'>
               <img class={styles['task-image']} src={SourceImg} />
-              <span>Source</span>
+              <span>{this.t('project.synchronization_definition.source')}</span>
             </NSpace>
             <span 
               class="task-item-info ml-auto inline-block"
-              title={'Drag Source into Canvas and Double Click to Setup Configurations'}
+              title={this.getComponentDescription('Source')}
             >
              <InfoCircleOutlined style={{width:'17px', height:'17px'}} />
             </span>
@@ -79,15 +105,15 @@ const DagSidebar = defineComponent({
           <div
             class={styles['task-item']}
             draggable='true'
-            onDragstart={() => this.handleDragstart('sink', 'Sink')}
+            onDragstart={() => this.handleDragstart('sink', this.t('project.synchronization_definition.sink'))}
           >
             <NSpace align='center'>
               <img class={styles['task-image']} src={SinkImg} />
-              <span>Sink</span>
+              <span>{this.t('project.synchronization_definition.sink')}</span>
             </NSpace>
             <span 
               class="task-item-info ml-auto inline-block"
-              title={'Drag Sink into Canvas and Double Click to Setup Configurations'}
+              title={this.getComponentDescription('Sink')}
             >
               <InfoCircleOutlined style={{width:'17px', height:'17px'}} />
             </span>
@@ -117,6 +143,10 @@ const DagSidebar = defineComponent({
                 item.icon = JsonPathImg
               }
 
+              item.displayName = this.t
+                ? getComponentDisplayName(item.name, this.t)
+                : item.name
+
               return (
                 <div
                   class={styles['task-item']}
@@ -130,11 +160,11 @@ const DagSidebar = defineComponent({
                 >
                   <NSpace align='center'>
                     <img class={styles['task-image']} src={item.icon} />
-                    <span>{item.name}</span>
+                    <span>{item.displayName}</span>
                   </NSpace>
                   <span 
                     class="task-item-info ml-auto inline-block"
-                    title={'Drag '+ item.name +' into Canvas and Double Click to Setup Configurations'}
+                    title={this.getComponentDescription(item.name)}
                   >
                     <InfoCircleOutlined style={{width:'17px', height:'17px'}} />
                   </span>

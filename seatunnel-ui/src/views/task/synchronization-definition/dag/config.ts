@@ -17,19 +17,19 @@
 
 export const KINDS = [
   {
-    label: 'INSERT',
+    labelKey: 'kind_insert',
     value: 'INSERT'
   },
   {
-    label: 'UPDATE_BEFORE',
+    labelKey: 'kind_update_before',
     value: 'UPDATE_BEFORE'
   },
   {
-    label: 'UPDATE_AFTER',
+    labelKey: 'kind_update_after',
     value: 'UPDATE_AFTER'
   },
   {
-    label: 'DELETE',
+    labelKey: 'kind_delete',
     value: 'DELETE'
   }
 ]

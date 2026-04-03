@@ -26,6 +26,7 @@ import router from '@/router'
 import { useUserStore } from '@/store/user'
 import { useSettingStore } from '@/store/setting'
 import type { UserDetail } from '@/service/user/types'
+import { translateMessage } from '@/utils/message'
 
 const userStore = useUserStore()
 const settingStore = useSettingStore()
@@ -35,7 +36,7 @@ const handleError = (res: AxiosResponse<any, any>) => {
     utils.log.capsule('SeaTunnel', 'UI')
     utils.log.error(res)
   }
-  window.$message.error(res.data.msg)
+  window.$message.error(translateMessage(res.data.msg))
 }
 
 const baseRequestConfig: AxiosRequestConfig = {
@@ -84,7 +85,7 @@ service.interceptors.response.use((res: AxiosResponse) => {
     res.data?.data !== null
   ) {
     if (res.data.msg) {
-      window.$message.warning(res.data.msg)
+      window.$message.warning(translateMessage(res.data.msg))
     }
     return res.data.data
   }

@@ -22,6 +22,7 @@ import {
   queryJobExecutionStatus
 } from '@/service/sync-task-instance'
 import { useRoute } from 'vue-router'
+import { renderSyncTaskStatusTag } from '../status-display'
 
 export function useRunningInstance() {
   const { t } = useI18n()
@@ -71,7 +72,9 @@ export function useRunningInstance() {
       },
       {
         title: t('project.synchronization_instance.state'),
-        key: 'status'
+        key: 'status',
+        width: 120,
+        render: (row: any) => renderSyncTaskStatusTag(row.status, t)
       }
     ]
   }

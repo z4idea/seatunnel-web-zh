@@ -27,6 +27,7 @@ import JsonPathImg from '../images/json-path.png'
 import SplitImg from '../images/spilt.png'
 import CopyImg from '../images/copy.png'
 import SqlImg from '../images/sql.png'
+import { getComponentDisplayName } from '../component-display'
 
 const Node = defineComponent({
   name: 'Node',
@@ -56,6 +57,24 @@ const Node = defineComponent({
     } else if (type === 'transform' && connectorType === 'JsonPath') {
       icon.value = JsonPathImg
     }
+
+    const getDisplayName = () => {
+      if (type === 'source') {
+        return getComponentDisplayName('Source')
+      }
+
+      if (type === 'sink') {
+        return getComponentDisplayName('Sink')
+      }
+
+      if (type === 'transform' && connectorType) {
+        return getComponentDisplayName(String(connectorType))
+      }
+
+      return name
+    }
+
+    const displayName = getDisplayName()
 
 
     const getBorderStyle = () => {
@@ -101,8 +120,10 @@ const Node = defineComponent({
         <img src={icon.value} class={styles['dag-node-icon']} />
         <NTooltip trigger='hover'>
           {{
-            trigger: () => <div class={styles['dag-node-label']}>{name}</div>,
-            default: () => name
+            trigger: () => (
+              <div class={styles['dag-node-label']}>{displayName}</div>
+            ),
+            default: () => displayName
           }}
         </NTooltip>
         

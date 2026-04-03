@@ -71,6 +71,10 @@ const ConfigurationForm = defineComponent({
     const { t } = useI18n()
     const formRef = ref()
     const transfer = ref()
+    const localizedKinds = KINDS.map((kind) => ({
+      ...kind,
+      label: t(`project.synchronization_definition.${kind.labelKey}`)
+    }))
 
     const onTableChange = (tableName: any) => {
       state.model.tableName = tableName
@@ -307,7 +311,7 @@ const ConfigurationForm = defineComponent({
               <NFormItem showLabel={false} path='kinds'>
                 <NCheckboxGroup v-model={[state.model.kinds, 'value']}>
                   <NSpace>
-                    {KINDS.map((kind) => (
+                    {localizedKinds.map((kind) => (
                       <NCheckbox value={kind.value} label={kind.label} />
                     ))}
                   </NSpace>

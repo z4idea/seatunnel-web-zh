@@ -54,6 +54,7 @@ import {
 } from '@/service/sync-task-instance'
 import { getRemainTime } from '@/utils/time'
 import ErrorMessageHighlight from './error-message-highlight'
+import { renderSyncTaskStatusTag } from './status-display'
 
 export function useSyncTask(syncTaskType = 'BATCH') {
   const { t } = useI18n()
@@ -150,7 +151,8 @@ export function useSyncTask(syncTaskType = 'BATCH') {
       {
         title: t('project.synchronization_instance.state'),
         key: 'jobStatus',
-        ...COLUMN_WIDTH_CONFIG['state']
+        width: 120,
+        render: (row: any) => renderSyncTaskStatusTag(row.jobStatus, t)
       },
       {
         title: t('project.synchronization_instance.error_message'),

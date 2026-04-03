@@ -55,6 +55,7 @@ export function useTaskSettingModal(ctx: SetupContext<'cancelModal'[]>) {
     },
     saving: false,
     formStructure: ref([]),
+    formLocales: ref({}),
     formName: ref(''),
     loading: false
   })
@@ -92,6 +93,7 @@ export function useTaskSettingModal(ctx: SetupContext<'cancelModal'[]>) {
       state.model.description = config.description
       const resJson = await taskDefinitionForm()
       const res = JSON.parse(resJson)
+      state.formLocales = res.locales || {}
       const forms = config.env
         ? res.forms.map((f: any) => {
             f.defaultValue = config.env[f.field]
