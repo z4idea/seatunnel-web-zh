@@ -15,28 +15,19 @@
  * limitations under the License.
  */
 
-import type { Component } from 'vue'
+package org.apache.seatunnel.app.domain.request.job;
 
-const mapping = (modules: any) => {
-  const components: { [key: string]: Component } = {}
-  Object.keys(modules).forEach((key: string) => {
-    const nameMatch: string[] | null = key.match(
-      /^(?:\/src\/views|\.\.\/views)\/(.+)\.tsx/
-    )
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
 
-    if (!nameMatch) {
-      return
-    }
+@Data
+@ApiModel(value = "JobScheduleEnable Request", description = "job schedule enable request")
+public class JobScheduleEnableReq {
 
-    const indexMatch: string[] | null = nameMatch[1].match(/(.*)\/Index$/i)
+    @ApiModelProperty(value = "job define id", required = true, dataType = "Long")
+    private Long jobDefineId;
 
-    let name: string = indexMatch ? indexMatch[1] : nameMatch[1]
-
-    name = name.replaceAll('/', '-')
-
-    components[name] = modules[key]
-  })
-  return components
+    @ApiModelProperty(value = "whether enabled", required = true, dataType = "Boolean")
+    private Boolean enabled;
 }
-
-export default mapping

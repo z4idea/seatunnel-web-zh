@@ -226,7 +226,7 @@ export function getTableByDatabase(
   datasourceName: string,
   databaseName: string,
   filterName?: string,
-  size?: number,
+  size?: number
 ): any {
   size = size || 100
   filterName = filterName || ''
@@ -320,6 +320,52 @@ export function executeJob(jobDefineId: number): any {
     method: 'post',
     headers: {
       'Content-Type': 'application/json;charset=UTF-8'
+    }
+  })
+}
+
+export function getJobSchedule(jobDefineId: number): any {
+  return axios({
+    url: '/job/schedule',
+    method: 'get',
+    params: {
+      jobDefineId
+    }
+  })
+}
+
+export function saveJobSchedule(data: any): any {
+  return axios({
+    url: '/job/schedule',
+    method: 'put',
+    data,
+    headers: {
+      'Content-Type': 'application/json;charset=UTF-8'
     },
+    transformRequest: (params) => JSON.stringify(params)
+  })
+}
+
+export function updateJobScheduleEnabled(data: any): any {
+  return axios({
+    url: '/job/schedule/enable',
+    method: 'patch',
+    data,
+    headers: {
+      'Content-Type': 'application/json;charset=UTF-8'
+    },
+    transformRequest: (params) => JSON.stringify(params)
+  })
+}
+
+export function getJobScheduleHistory(params: {
+  jobDefineId: number
+  pageNo: number
+  pageSize: number
+}): any {
+  return axios({
+    url: '/job/schedule/history',
+    method: 'get',
+    params
   })
 }

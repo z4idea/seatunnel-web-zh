@@ -29,6 +29,7 @@ import { useI18n } from 'vue-i18n'
 import { SearchOutlined, ReloadOutlined } from '@vicons/antd'
 import { useTable } from './use-table'
 import { TaskModal } from './task-modal'
+import { ScheduleModal } from './schedule-modal'
 import { useRoute, useRouter } from 'vue-router'
 import _ from 'lodash'
 
@@ -66,6 +67,20 @@ const SynchronizationDefinition = defineComponent({
       variables.showModalRef = true
     }
 
+    const handleScheduleModalChange = (row: any) => {
+      variables.scheduleRow = row
+      variables.showScheduleModalRef = true
+    }
+
+    const onCancelScheduleModal = () => {
+      variables.showScheduleModalRef = false
+      variables.scheduleRow = null
+    }
+
+    const onSavedScheduleModal = () => {
+      requestData()
+    }
+
     const onSearch = () => {
       variables.page = 1
 
@@ -78,10 +93,10 @@ const SynchronizationDefinition = defineComponent({
         query: !_.isEmpty(query)
           ? {
               ...query,
-              ...route.query,
+              ...route.query
             }
           : {
-              ...route.query,
+              ...route.query
             }
       })
       requestData()
@@ -102,12 +117,12 @@ const SynchronizationDefinition = defineComponent({
 
     onMounted(() => {
       initSearch()
-      createColumns(variables)
+      createColumns(variables, handleScheduleModalChange)
       requestData()
     })
 
     watch(useI18n().locale, () => {
-      createColumns(variables)
+      createColumns(variables, handleScheduleModalChange)
     })
 
     return {
@@ -118,8 +133,11 @@ const SynchronizationDefinition = defineComponent({
       onCancelModal,
       onConfirmModal,
       handleModalChange,
+      handleScheduleModalChange,
+      onCancelScheduleModal,
+      onSavedScheduleModal,
       onSearch,
-      handleKeyup,
+      handleKeyup
     }
   },
   render() {
@@ -127,10 +145,7 @@ const SynchronizationDefinition = defineComponent({
       <NSpace vertical>
         <NCard>
           <NSpace justify='space-between' itemStyle={{ flexGrow: 1 }}>
-            <NButton
-              type='info'
-              onClick={this.handleModalChange}
-            >
+            <NButton type='info' onClick={this.handleModalChange}>
               {this.t(
                 'project.synchronization_definition.create_synchronization_task'
               )}
@@ -178,6 +193,12 @@ const SynchronizationDefinition = defineComponent({
           showModalRef={this.showModalRef}
           onCancelModal={this.onCancelModal}
           onConfirmModal={this.onConfirmModal}
+        />
+        <ScheduleModal
+          show={this.showScheduleModalRef}
+          row={this.scheduleRow}
+          onCancel={this.onCancelScheduleModal}
+          onSaved={this.onSavedScheduleModal}
         />
       </NSpace>
     )

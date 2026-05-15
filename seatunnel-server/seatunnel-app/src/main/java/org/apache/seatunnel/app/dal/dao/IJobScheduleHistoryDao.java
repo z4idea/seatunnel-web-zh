@@ -15,28 +15,18 @@
  * limitations under the License.
  */
 
-import type { Component } from 'vue'
+package org.apache.seatunnel.app.dal.dao;
 
-const mapping = (modules: any) => {
-  const components: { [key: string]: Component } = {}
-  Object.keys(modules).forEach((key: string) => {
-    const nameMatch: string[] | null = key.match(
-      /^(?:\/src\/views|\.\.\/views)\/(.+)\.tsx/
-    )
+import org.apache.seatunnel.app.dal.entity.JobScheduleHistory;
+import org.apache.seatunnel.app.domain.response.PageInfo;
+import org.apache.seatunnel.app.domain.response.job.JobScheduleHistoryRes;
 
-    if (!nameMatch) {
-      return
-    }
+public interface IJobScheduleHistoryDao {
 
-    const indexMatch: string[] | null = nameMatch[1].match(/(.*)\/Index$/i)
+    void insert(JobScheduleHistory history);
 
-    let name: string = indexMatch ? indexMatch[1] : nameMatch[1]
+    PageInfo<JobScheduleHistoryRes> getByJobDefineId(
+            Long jobDefineId, Integer pageNo, Integer pageSize);
 
-    name = name.replaceAll('/', '-')
-
-    components[name] = modules[key]
-  })
-  return components
+    void deleteByJobDefineId(Long jobDefineId);
 }
-
-export default mapping

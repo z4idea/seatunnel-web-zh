@@ -18,7 +18,12 @@
 import { useI18n } from 'vue-i18n'
 import { h, reactive, ref } from 'vue'
 import { useTableOperation } from '@/hooks'
-import { EditOutlined, PlayCircleOutlined } from '@vicons/antd'
+import {
+  ClockCircleOutlined,
+  EditOutlined,
+  PlayCircleOutlined
+} from '@vicons/antd'
+import { NTag } from 'naive-ui'
 import {
   querySyncTaskDefinitionPaging,
   deleteSyncTaskDefinition,
@@ -30,6 +35,7 @@ import type { JobType } from './dag/types'
 import { COLUMN_WIDTH_CONFIG } from '@/common/column-width-config'
 import { useTableLink } from '@/hooks'
 import { useMessage } from 'naive-ui'
+import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
 
 export function useTable() {
   const { t } = useI18n()
@@ -43,9 +49,11 @@ export function useTable() {
     searchName: ref(''),
     totalPage: ref(1),
     showModalRef: ref(false),
+    showScheduleModalRef: ref(false),
     statusRef: ref(0),
     row: {},
-    loadingRef: ref(false),
+    scheduleRow: null,
+    loadingRef: ref(false)
   })
 
   const JOB_TYPE = {
@@ -57,7 +65,10 @@ export function useTable() {
 
   const loadingStates = ref(new Map<number | string, boolean>())
 
-  const createColumns = (variables: any) => {
+  const createColumns = (
+    variables: any,
+    onOpenScheduleModal?: (row: any) => void
+  ) => {
     variables.columns = [
       {
         title: t(
@@ -91,39 +102,89 @@ export function useTable() {
         title: t('project.synchronization_definition.update_time'),
         key: 'updateTime'
       },
-      useTableOperation(
-        {
-          title: t('project.synchronization_definition.operation'),
-          key: 'operation',
-          buttons: [
-            {
-              text: t('project.synchronization_definition.edit'),
-              onClick: (row: any) => {
-                router.push({
-                  path: `/task/synchronization-definition/${row.id}`,
-                })
+      {
+        title: t('project.synchronization_definition.schedule_status'),
+        key: 'scheduleLastStatus',
+        render: (row: any) => {
+          if (row.scheduleEnabled === null || row.scheduleEnabled === undefined) {
+            return '-'
+          }
+
+          if (!row.scheduleEnabled) {
+            return h(
+              NTag,
+              {
+                bordered: false,
+                size: 'small'
               },
-              icon: h(EditOutlined)
-            },
-            {
-              text: t('project.synchronization_definition.start'),
-              onClick: (row: any) => {
-                if (loadingStates.value.get(row.id)) return
-                handleRun(row)
+              {
+                default: () =>
+                  t('project.synchronization_definition.schedule_disabled')
+              }
+            )
+          }
+
+          if (!row.scheduleLastStatus) {
+            return h(
+              NTag,
+              {
+                type: 'info',
+                bordered: false,
+                size: 'small'
               },
-              icon: h(PlayCircleOutlined),
-              loading: (row: any) => !!loadingStates.value.get(row.id),
-              disabled: (row: any) => !!loadingStates.value.get(row.id),
-            },
-            {
-              isDelete: true,
-              text: t('project.synchronization_definition.delete'),
-              onPositiveClick: (row: any) => void handleDelete(row),
-              popTips: t('security.token.delete_confirm')
-            }
-          ]
+              {
+                default: () =>
+                  t('project.synchronization_definition.schedule_enabled')
+              }
+            )
+          }
+
+          return renderSyncTaskStatusTag(row.scheduleLastStatus, t)
         }
-      )
+      },
+      {
+        title: t('project.synchronization_definition.schedule_next_trigger'),
+        key: 'scheduleNextTriggerTime',
+        render: (row: any) => row.scheduleNextTriggerTime || '-'
+      },
+      useTableOperation({
+        title: t('project.synchronization_definition.operation'),
+        key: 'operation',
+        buttons: [
+          {
+            text: t('project.synchronization_definition.edit'),
+            onClick: (row: any) => {
+              router.push({
+                path: `/task/synchronization-definition/${row.id}`
+              })
+            },
+            icon: h(EditOutlined)
+          },
+          {
+            text: t('project.synchronization_definition.schedule'),
+            onClick: (row: any) => {
+              onOpenScheduleModal && onOpenScheduleModal(row)
+            },
+            icon: h(ClockCircleOutlined)
+          },
+          {
+            text: t('project.synchronization_definition.start'),
+            onClick: (row: any) => {
+              if (loadingStates.value.get(row.id)) return
+              handleRun(row)
+            },
+            icon: h(PlayCircleOutlined),
+            loading: (row: any) => !!loadingStates.value.get(row.id),
+            disabled: (row: any) => !!loadingStates.value.get(row.id)
+          },
+          {
+            isDelete: true,
+            text: t('project.synchronization_definition.delete'),
+            onPositiveClick: (row: any) => void handleDelete(row),
+            popTips: t('security.token.delete_confirm')
+          }
+        ]
+      })
     ]
   }
 
@@ -185,6 +246,6 @@ export function useTable() {
   return {
     variables,
     createColumns,
-    getTableData,
+    getTableData
   }
 }

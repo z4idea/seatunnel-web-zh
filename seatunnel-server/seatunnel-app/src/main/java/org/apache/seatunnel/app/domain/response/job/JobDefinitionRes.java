@@ -17,6 +17,7 @@
 
 package org.apache.seatunnel.app.domain.response.job;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -61,4 +62,14 @@ public class JobDefinitionRes {
 
     @ApiModelProperty(value = "project name", dataType = "String")
     private String projectName;
+
+    @ApiModelProperty(value = "schedule enabled", dataType = "Boolean")
+    private Boolean scheduleEnabled;
+
+    @ApiModelProperty(value = "schedule next trigger time", dataType = "String")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date scheduleNextTriggerTime;
+
+    @ApiModelProperty(value = "schedule last status", dataType = "String")
+    private String scheduleLastStatus;
 }

@@ -23,6 +23,7 @@ import org.apache.seatunnel.app.domain.request.job.JobReq;
 import org.apache.seatunnel.app.domain.response.PageInfo;
 import org.apache.seatunnel.app.domain.response.job.JobDefinitionRes;
 import org.apache.seatunnel.app.service.IJobDefinitionService;
+import org.apache.seatunnel.app.service.IJobScheduleService;
 import org.apache.seatunnel.app.service.IJobTaskService;
 import org.apache.seatunnel.server.common.CodeGenerateUtils;
 import org.apache.seatunnel.server.common.SeatunnelErrorEnum;
@@ -48,6 +49,8 @@ public class JobDefinitionController {
     @Resource private IJobDefinitionService jobService;
 
     @Resource private IJobTaskService jobTask;
+
+    @Resource private IJobScheduleService jobScheduleService;
 
     /**
      * create job definition
@@ -86,6 +89,7 @@ public class JobDefinitionController {
     Result<Void> deleteJobDefinition(
             @ApiParam(value = "id", required = true) @RequestParam long id) {
         jobService.deleteJob(id);
+        jobScheduleService.deleteByJobDefineId(id);
         jobTask.deleteTaskByVersionId(id);
         return Result.success();
     }

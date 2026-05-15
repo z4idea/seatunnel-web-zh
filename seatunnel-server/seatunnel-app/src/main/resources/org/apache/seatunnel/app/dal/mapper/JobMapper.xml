@@ -42,11 +42,16 @@
     select
       <include refid="Query_Job_Column_List"/> ,
       cu.username as create_username,
-      uu.username as update_username
+      uu.username as update_username,
+      sc.enabled as schedule_enabled,
+      sc.next_trigger_time as schedule_next_trigger_time,
+      sc.last_schedule_status as schedule_last_status
     from
       t_st_job_definition t
       left join `user` cu on t.create_user_id = cu.id
       left join `user` uu on t.update_user_id = uu.id
+      left join t_st_job_schedule_config sc
+        on t.id = sc.job_define_id and t.workspace_id = sc.workspace_id
     <where>
       t.workspace_id = #{workspaceId}
       <if test="searchName!=null and searchName!= ''">
@@ -61,12 +66,17 @@
     select
       <include refid="Query_Job_Column_List"/> ,
       cu.username as create_username,
-      uu.username as update_username
+      uu.username as update_username,
+      sc.enabled as schedule_enabled,
+      sc.next_trigger_time as schedule_next_trigger_time,
+      sc.last_schedule_status as schedule_last_status
     from
       t_st_job_definition t
       join (select * from t_st_job_version where job_mode = #{jobMode}) v on t.id = v.job_id
       left join `user` cu on t.create_user_id = cu.id
       left join `user` uu on t.update_user_id = uu.id
+      left join t_st_job_schedule_config sc
+        on t.id = sc.job_define_id and t.workspace_id = sc.workspace_id
     <where>
       t.workspace_id = #{workspaceId}
       <if test="searchName!=null and searchName != ''">

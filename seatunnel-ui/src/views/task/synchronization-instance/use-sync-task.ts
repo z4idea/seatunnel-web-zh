@@ -112,13 +112,26 @@ export function useSyncTask(syncTaskType = 'BATCH') {
       }
     ]
   }
+
+  const formatInstanceName = (row: any) => {
+    if (!row?.jobDefineName) {
+      return '--'
+    }
+    if (!row?.createTime) {
+      return row.jobDefineName
+    }
+    return `${row.jobDefineName}_${String(row.createTime)
+      .replace(/[-:\s]/g, '')
+      .slice(0, 14)}`
+  }
+
   //
   const createColumns = (variables: any) => {
     variables.columns = [
       useTableLink(
         {
           title: t('project.synchronization_definition.task_name'),
-          key: 'jobDefineName',
+          key: 'instanceDisplayName',
           ...COLUMN_WIDTH_CONFIG['link_name'],
           button: {
             onClick: (row: any) => {
@@ -126,7 +139,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
                 path: `/task/synchronization-instance/${row.jobDefineId}`,
                 query: {
                   jobInstanceId: row.id,
-                  taskName: row.jobDefineName,
+                  taskName: row.instanceDisplayName || formatInstanceName(row)
                 }
               })
             }
@@ -238,7 +251,10 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     variables.loadingRef = true
     querySyncTaskInstancePaging(params)
       .then((res: any) => {
-        variables.tableData = res.totalList as any
+        variables.tableData = (res.totalList || []).map((item: any) => ({
+          ...item,
+          instanceDisplayName: formatInstanceName(item)
+        })) as any
         variables.totalPage = res.totalPage
       })
       .catch(() => {

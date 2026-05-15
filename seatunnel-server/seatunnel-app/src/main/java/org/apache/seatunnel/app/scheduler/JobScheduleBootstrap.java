@@ -15,28 +15,21 @@
  * limitations under the License.
  */
 
-import type { Component } from 'vue'
+package org.apache.seatunnel.app.scheduler;
 
-const mapping = (modules: any) => {
-  const components: { [key: string]: Component } = {}
-  Object.keys(modules).forEach((key: string) => {
-    const nameMatch: string[] | null = key.match(
-      /^(?:\/src\/views|\.\.\/views)\/(.+)\.tsx/
-    )
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
 
-    if (!nameMatch) {
-      return
+import javax.annotation.Resource;
+
+@Component
+public class JobScheduleBootstrap implements ApplicationRunner {
+
+    @Resource private LocalJobScheduleRegistry localJobScheduleRegistry;
+
+    @Override
+    public void run(ApplicationArguments args) {
+        localJobScheduleRegistry.loadAndRegisterAllEnabled();
     }
-
-    const indexMatch: string[] | null = nameMatch[1].match(/(.*)\/Index$/i)
-
-    let name: string = indexMatch ? indexMatch[1] : nameMatch[1]
-
-    name = name.replaceAll('/', '-')
-
-    components[name] = modules[key]
-  })
-  return components
 }
-
-export default mapping

@@ -15,28 +15,25 @@
  * limitations under the License.
  */
 
-import type { Component } from 'vue'
+package org.apache.seatunnel.app.dal.dao;
 
-const mapping = (modules: any) => {
-  const components: { [key: string]: Component } = {}
-  Object.keys(modules).forEach((key: string) => {
-    const nameMatch: string[] | null = key.match(
-      /^(?:\/src\/views|\.\.\/views)\/(.+)\.tsx/
-    )
+import org.apache.seatunnel.app.dal.entity.JobScheduleConfig;
 
-    if (!nameMatch) {
-      return
-    }
+import java.util.List;
 
-    const indexMatch: string[] | null = nameMatch[1].match(/(.*)\/Index$/i)
+public interface IJobScheduleConfigDao {
 
-    let name: string = indexMatch ? indexMatch[1] : nameMatch[1]
+    JobScheduleConfig getById(Long id);
 
-    name = name.replaceAll('/', '-')
+    JobScheduleConfig getByJobDefineId(Long jobDefineId);
 
-    components[name] = modules[key]
-  })
-  return components
+    JobScheduleConfig getByJobDefineId(Long jobDefineId, Long workspaceId);
+
+    List<JobScheduleConfig> listEnabledSchedules();
+
+    void insert(JobScheduleConfig config);
+
+    void update(JobScheduleConfig config);
+
+    void deleteByJobDefineId(Long jobDefineId);
 }
-
-export default mapping

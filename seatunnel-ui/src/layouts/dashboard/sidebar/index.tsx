@@ -15,80 +15,50 @@
  * limitations under the License.
  */
 
-import { defineComponent, ref, PropType, onMounted, watch, h } from 'vue'
-import { NLayoutSider, NMenu, NIcon, NDropdown, NEllipsis } from 'naive-ui'
+import { defineComponent, ref } from 'vue'
+import { NLayoutSider, NMenu } from 'naive-ui'
 import { useThemeStore } from '@/store/theme'
-import styles from './index.module.scss'
-import { PartitionOutlined, ProjectOutlined, RightOutlined } from '@vicons/antd'
-import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { MenuOption } from 'naive-ui'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 const Sidebar = defineComponent({
   name: 'Sidebar',
-  props: {
-    sideMenuOptions: {
-      type: Array as PropType<any>,
-      default: []
-    },
-    sideKey: {
-      type: String as PropType<string>,
-      default: ''
-    }
-  },
+  props: ['sideKey'],
   setup() {
     const router = useRouter()
     const collapsedRef = ref(false)
     const defaultExpandedKeys = ['']
-    const route = useRoute()
     const { t } = useI18n()
-    // Determine if it is a project overview
-
-    const showDrop = ref(false)
     const themeStore = useThemeStore()
     const menuStyle = ref(themeStore.getTheme as 'dark' | 'dark-blue' | 'light')
 
     const sideMenuOptions = ref([
       {
-        label: () =>
-          h(
-            RouterLink,
-            {
-              to: {
-                path: '/task/synchronization-definition'
-              },
-              exact: false
-            },
-            { default: () => t('menu.sync_task_definition') }
-          ),
+        label: t('menu.sync_task_definition'),
         key: 'synchronization-definition'
       },
       {
-        label: () =>
-          h(
-            RouterLink,
-            {
-              to: {
-                path: '/task/synchronization-instance'
-              },
-              exact: false
-            },
-            { default: () => t('menu.sync_task_instance') }
-          ),
+        label: t('menu.sync_task_instance'),
         key: 'synchronization-instance'
       }
     ])
 
-    onMounted(() => {})
+    const handleUpdateValue = (key: string) => {
+      router.push({
+        path:
+          key === 'synchronization-instance'
+            ? '/task/synchronization-instance'
+            : '/task/synchronization-definition'
+      })
+    }
 
     return {
       collapsedRef,
       defaultExpandedKeys,
       menuStyle,
       themeStore,
-      showDrop,
       sideMenuOptions,
-      route
+      handleUpdateValue
     }
   },
   render() {
@@ -108,6 +78,7 @@ const Sidebar = defineComponent({
           value={this.$props.sideKey}
           options={this.sideMenuOptions}
           defaultExpandedKeys={this.defaultExpandedKeys}
+          onUpdateValue={this.handleUpdateValue}
         />
       </NLayoutSider>
     )

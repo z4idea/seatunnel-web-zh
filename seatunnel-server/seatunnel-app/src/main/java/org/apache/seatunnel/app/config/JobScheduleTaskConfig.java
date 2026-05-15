@@ -15,28 +15,22 @@
  * limitations under the License.
  */
 
-import type { Component } from 'vue'
+package org.apache.seatunnel.app.config;
 
-const mapping = (modules: any) => {
-  const components: { [key: string]: Component } = {}
-  Object.keys(modules).forEach((key: string) => {
-    const nameMatch: string[] | null = key.match(
-      /^(?:\/src\/views|\.\.\/views)\/(.+)\.tsx/
-    )
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
-    if (!nameMatch) {
-      return
+@Configuration
+public class JobScheduleTaskConfig {
+
+    @Bean
+    public ThreadPoolTaskScheduler jobScheduleTaskScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(4);
+        scheduler.setThreadNamePrefix("job-schedule-");
+        scheduler.setRemoveOnCancelPolicy(true);
+        scheduler.initialize();
+        return scheduler;
     }
-
-    const indexMatch: string[] | null = nameMatch[1].match(/(.*)\/Index$/i)
-
-    let name: string = indexMatch ? indexMatch[1] : nameMatch[1]
-
-    name = name.replaceAll('/', '-')
-
-    components[name] = modules[key]
-  })
-  return components
 }
-
-export default mapping

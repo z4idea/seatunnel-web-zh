@@ -15,28 +15,10 @@
  * limitations under the License.
  */
 
-import type { Component } from 'vue'
+package org.apache.seatunnel.app.common;
 
-const mapping = (modules: any) => {
-  const components: { [key: string]: Component } = {}
-  Object.keys(modules).forEach((key: string) => {
-    const nameMatch: string[] | null = key.match(
-      /^(?:\/src\/views|\.\.\/views)\/(.+)\.tsx/
-    )
-
-    if (!nameMatch) {
-      return
-    }
-
-    const indexMatch: string[] | null = nameMatch[1].match(/(.*)\/Index$/i)
-
-    let name: string = indexMatch ? indexMatch[1] : nameMatch[1]
-
-    name = name.replaceAll('/', '-')
-
-    components[name] = modules[key]
-  })
-  return components
+public enum JobScheduleStatus {
+    SUCCESS,
+    FAILED,
+    SKIPPED
 }
-
-export default mapping
