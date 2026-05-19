@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -92,8 +93,10 @@ export function useDagAddShape(
             attrs: {
               fill: '#333333',
               'font-size': 14,
-              'text-anchor': 'center',
-              stroke: 'black'
+              'font-weight': 600,
+              'text-anchor': 'start',
+              x: '0.5em',
+              y: '0.2em'
             }
           },
           {
@@ -105,7 +108,8 @@ export function useDagAddShape(
               fill: '#868686',
               'font-size': 12,
               'text-anchor': 'start',
-              x: '7em'
+              x: '8.5em',
+              y: '0.2em'
             }
           },
           {
@@ -121,13 +125,14 @@ export function useDagAddShape(
               fill: '#868686',
               'font-size': 12,
               'text-anchor': 'start',
-              x: '20em'
+              x: '0.5em',
+              y: '1.6em'
             }
           }
         ],
         x: 0,
         y: 0,
-        offset: { x: 0, y: -18 }
+        offset: { x: 0, y: -28 }
       }
     })
 

@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -49,6 +50,30 @@ const statusTagTypeMap: Record<string, SyncTaskStatusMeta['tagType']> = {
   UNKNOWABLE: 'default'
 }
 
+const statusLocaleKeyMap: Record<string, string> = {
+  CREATED: 'project.synchronization_instance.status_created',
+  SUBMITTED: 'project.synchronization_instance.status_submitted',
+  PENDING: 'project.synchronization_instance.status_pending',
+  SCHEDULED: 'project.synchronization_instance.status_scheduled',
+  INITIALIZING: 'project.synchronization_instance.status_initializing',
+  RUNNING: 'project.synchronization_instance.status_running',
+  EXECUTING: 'project.synchronization_instance.status_executing',
+  FAILING: 'project.synchronization_instance.status_failing',
+  DOING_SAVEPOINT: 'project.synchronization_instance.status_doing_savepoint',
+  SAVEPOINT_DONE: 'project.synchronization_instance.status_savepoint_done',
+  FINISHED: 'project.synchronization_instance.status_finished',
+  COMPLETED: 'project.synchronization_instance.status_completed',
+  SUCCESS: 'project.synchronization_instance.status_success',
+  FAILED: 'project.synchronization_instance.status_failed',
+  ERROR: 'project.synchronization_instance.status_error',
+  CANCELED: 'project.synchronization_instance.status_canceled',
+  PAUSED: 'project.synchronization_instance.status_paused',
+  SUSPENDED: 'project.synchronization_instance.status_suspended',
+  STOPPED: 'project.synchronization_instance.status_stopped',
+  KILLED: 'project.synchronization_instance.status_killed',
+  UNKNOWABLE: 'project.synchronization_instance.status_unknowable'
+}
+
 const normalizeStatus = (status?: string) => {
   return String(status || 'UNKNOWABLE').trim().toUpperCase()
 }
@@ -58,10 +83,16 @@ export const getSyncTaskStatusMeta = (
   t?: Translate
 ): SyncTaskStatusMeta => {
   const normalizedStatus = normalizeStatus(status)
-  const localeKey = `project.synchronization_definition.status_${normalizedStatus.toLowerCase()}`
+  const localeKey = statusLocaleKeyMap[normalizedStatus]
+  const translatedLabel =
+    t && localeKey ? t(localeKey) : normalizedStatus
+  const label =
+    translatedLabel && translatedLabel !== localeKey
+      ? translatedLabel
+      : normalizedStatus
 
   return {
-    label: t ? t(localeKey) : normalizedStatus,
+    label,
     tagType: statusTagTypeMap[normalizedStatus] || 'default'
   }
 }

@@ -1057,11 +1057,23 @@ export default {
     schedule_history: '执行历史',
     schedule_enabled: '启用调度',
     schedule_disabled: '已停用',
+    schedule_quick_template: '快捷模板',
     schedule_cron: 'Cron 表达式',
     schedule_cron_placeholder: '例如 0 0/30 * * * ?',
     schedule_cron_required: 'Cron 表达式不能为空',
     schedule_cron_tip:
       '使用标准 Cron 表达式，任务会在服务启动后自动恢复本地注册。',
+    schedule_generated_cron: '生成的 Cron',
+    schedule_generated_description: '执行预览',
+    schedule_template_tip:
+      '优先使用快捷模板生成常用规则；遇到复杂场景时，再展开高级模式手动编辑 Cron。',
+    schedule_advanced_mode: '高级模式',
+    schedule_advanced_tip:
+      '手动修改 Cron 后，如果表达式符合常见模板，会自动回填到上方模板；否则保持为手动输入。',
+    schedule_interval: '间隔',
+    schedule_hour: '时',
+    schedule_minute: '分',
+    schedule_second: '秒',
     schedule_active_start: '生效开始时间',
     schedule_active_start_placeholder: '请选择开始时间',
     schedule_active_end: '生效结束时间',

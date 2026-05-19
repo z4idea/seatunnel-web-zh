@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,7 +22,8 @@ import { useTableOperation } from '@/hooks'
 import {
   ClockCircleOutlined,
   EditOutlined,
-  PlayCircleOutlined
+  PlayCircleOutlined,
+  ReloadOutlined
 } from '@vicons/antd'
 import { NTag } from 'naive-ui'
 import {
@@ -36,6 +38,7 @@ import { COLUMN_WIDTH_CONFIG } from '@/common/column-width-config'
 import { useTableLink } from '@/hooks'
 import { useMessage } from 'naive-ui'
 import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
+import './use-table.css'
 
 export function useTable() {
   const { t } = useI18n()
@@ -150,6 +153,7 @@ export function useTable() {
       useTableOperation({
         title: t('project.synchronization_definition.operation'),
         key: 'operation',
+        width: 220,
         buttons: [
           {
             text: t('project.synchronization_definition.edit'),
@@ -168,13 +172,24 @@ export function useTable() {
             icon: h(ClockCircleOutlined)
           },
           {
-            text: t('project.synchronization_definition.start'),
+            text: (row: any) =>
+              loadingStates.value.get(row.id)
+                ? `${t('project.synchronization_definition.start')}...`
+                : t('project.synchronization_definition.start'),
             onClick: (row: any) => {
               if (loadingStates.value.get(row.id)) return
               handleRun(row)
             },
-            icon: h(PlayCircleOutlined),
-            loading: (row: any) => !!loadingStates.value.get(row.id),
+            icon: (row: any) =>
+              h(
+                loadingStates.value.get(row.id)
+                  ? ReloadOutlined
+                  : PlayCircleOutlined
+              ),
+            class: (row: any) =>
+              loadingStates.value.get(row.id)
+                ? 'sync-task-run-action is-loading'
+                : 'sync-task-run-action',
             disabled: (row: any) => !!loadingStates.value.get(row.id)
           },
           {

@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -52,7 +53,7 @@ export const useTableOperation = (
       // accessType?: accessTypeKey
       loading?: boolean | ((rowData: any) => boolean)
       disabled?: boolean | ((rowData: any) => boolean)
-      class?: string
+      class?: string | ((rowData: any) => string)
       value?: string | number | boolean | undefined
       checkedValue?: string | boolean | number
       uncheckedValue?: string | boolean | number
@@ -84,6 +85,10 @@ export const useTableOperation = (
 
         const buttonText =
           typeof button.text === 'function' ? button.text(rowData) : button.text
+        const buttonClass =
+          typeof button.class === 'function'
+            ? button.class(rowData)
+            : button.class
 
         const commonProps = {
           disabled: mergedDisabled || mergedLoading,
@@ -91,7 +96,7 @@ export const useTableOperation = (
           tag: 'div',
           circle: true,
           size: 'small',
-          class: button.class
+          class: buttonClass
         } as ButtonProps
         if (button.isDelete) {
           return h(NTooltip, null, {
@@ -179,12 +184,23 @@ export const useTableOperation = (
     title: params.title,
     key: params.key,
     ...COLUMN_WIDTH_CONFIG['operation'](params.itemNum as any),
+    ...(params.width ? { width: params.width } : {}),
     render: (rowData: any, index: number) => {
       const buttonVnodes = getButtonVnodes(rowData, index)
       const result =
         params.preRender && params.preRender(rowData, buttonVnodes, index)
       return result === void 0
-        ? h(NSpace, null, {
+        ? h('div', {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'nowrap',
+              justifyContent: 'flex-start',
+              gap: '12px',
+              minWidth: '180px',
+              whiteSpace: 'nowrap'
+            }
+          }, {
             default: () => buttonVnodes
           })
         : result
