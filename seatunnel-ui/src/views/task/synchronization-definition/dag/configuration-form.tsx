@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-import { defineComponent, nextTick, PropType, ref, watchEffect } from 'vue'
+import { defineComponent, nextTick, PropType, ref } from 'vue'
 import {
   NForm,
   NFormItem,
@@ -39,7 +39,7 @@ import {
   getSceneModeOptions
 } from './use-configuration-form'
 import { useI18n } from 'vue-i18n'
-import type { NodeType, TableOption, State } from './types'
+import type { NodeType, TableOption } from './types'
 import { debounce } from 'lodash'
 
 const ConfigurationForm = defineComponent({
@@ -66,6 +66,8 @@ const ConfigurationForm = defineComponent({
       getDatasourceOptions,
       getDatabaseOptions,
       getTableOptions,
+      clearIncrementalValues,
+      refreshIncrementalColumnOptions,
       updateFormValues
     } = useConfigurationForm(
       props.nodeType as NodeType,
@@ -79,10 +81,13 @@ const ConfigurationForm = defineComponent({
       label: t(`project.synchronization_definition.${kind.labelKey}`)
     }))
 
-    const onTableChange = (tableName: any) => {
+    const onTableChange = async (tableName: any) => {
       state.model.tableName = tableName
       if (props.nodeType === 'sink' && state.model.database) {
-        getTableOptions(state.model.database, '')
+        await getTableOptions(state.model.database, '')
+      }
+      if (props.nodeType === 'source') {
+        await refreshIncrementalColumnOptions()
       }
       emit('tableNameChange', state.model)
     }
@@ -99,7 +104,7 @@ const ConfigurationForm = defineComponent({
 
             // If there are no results after searching, add user input as a custom value to the options
             const existingOption = state.tableOptions.find(
-                (option: TableOption) => option.value === tableName
+              (option: TableOption) => option.value === tableName
             )
 
             if (!existingOption) {
@@ -113,7 +118,7 @@ const ConfigurationForm = defineComponent({
         } catch (err) {
           // If the interface call fails, also use user input as a custom value
           const existingOption = state.tableOptions.find(
-              (option: TableOption) => option.value === tableName
+            (option: TableOption) => option.value === tableName
           )
 
           if (!existingOption) {
@@ -133,19 +138,21 @@ const ConfigurationForm = defineComponent({
       }
     }, 1000)
 
-    const onDatabaseChange = (v: any) => {
+    const onDatabaseChange = () => {
+      clearIncrementalValues()
       nextTick(() => {
-      if(state.model.database) {
-        let size = state.model.sceneMode === 'MULTIPLE_TABLE' ? 9999999 : 100
+        if (state.model.database) {
+          const size =
+            state.model.sceneMode === 'MULTIPLE_TABLE' ? 9999999 : 100
           getTableOptions(state.model.database as any, '', size)
         }
       })
     }
-    
+
     // watchEffect(() => {
     //   // Track the src input of the transfer and refresh the table name list when the input value change
     //   let query = transfer?.value?.srcPattern
-    //   onTableSearch(query)      
+    //   onTableSearch(query)
     // })
 
     expose({
@@ -165,7 +172,8 @@ const ConfigurationForm = defineComponent({
           state.formLoading ||
           state.datasourceLoading ||
           state.databaseLoading ||
-          state.tableLoading,
+          state.tableLoading ||
+          state.incrementalColumnLoading,
         values: state.model,
         fieldNames: state.formFieldNames
       })
@@ -202,6 +210,7 @@ const ConfigurationForm = defineComponent({
                     state.model.datasourceInstanceId = null
                     state.model.database = null
                     state.model.tableName = null
+                    clearIncrementalValues()
                     state.formStructure = []
                     state.formFieldNames = []
                     state.databaseOptions = []
@@ -227,6 +236,7 @@ const ConfigurationForm = defineComponent({
                     getDatabaseOptions(v, option)
                     state.model.database = null
                     state.model.tableName = null
+                    clearIncrementalValues()
                     state.formFieldNames = []
                     state.tableOptions = []
                   }
@@ -248,8 +258,9 @@ const ConfigurationForm = defineComponent({
                 v-model={[state.model.database, 'value']}
                 onUpdateValue={(v) => {
                   if (v !== state.model.database) {
-                    onDatabaseChange(v)
+                    onDatabaseChange()
                     state.model.tableName = null
+                    clearIncrementalValues()
                   }
                 }}
               />
@@ -275,7 +286,9 @@ const ConfigurationForm = defineComponent({
                   tag={props.nodeType === 'sink'}
                   showArrow={true}
                   allowInput={props.nodeType === 'sink'}
-                  placeholder={t('project.synchronization_definition.target_name_tips')}
+                  placeholder={t(
+                    'project.synchronization_definition.target_name_tips'
+                  )}
                 />
               </NFormItem>
             )}
@@ -342,7 +355,7 @@ const ConfigurationForm = defineComponent({
             >
               <NInput
                 v-model={[state.model.query, 'value']}
-                type="textarea"
+                type='textarea'
                 clearable
                 placeholder={t(
                   'project.synchronization_definition.sql_content_label_placeholder'

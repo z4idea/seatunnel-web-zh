@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 import _, { cloneDeep, find, omit } from 'lodash'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
@@ -32,15 +32,22 @@ import {
   getTableByDatabase,
   getFormStructureByDatasourceInstance,
   getColumnProjection,
-  findSink
+  findSink,
+  getInputTableSchema
 } from '@/service/sync-task-definition'
+import type { JdbcIncrementalColumnType } from '@/service/sync-task-definition'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
-import {
-  getDefaultNodeName,
-  isComponentDefaultName
-} from './component-display'
-import type { NodeType, TableOption, State } from './types'
-import type { SelectOption } from 'naive-ui'
+import { getDefaultNodeName, isComponentDefaultName } from './component-display'
+import type { NodeType, TableOption } from './types'
+
+const EXTRACT_MODE_FIELD = 'extract_mode'
+const INCREMENTAL_COLUMN_FIELD = 'incremental_column'
+const INCREMENTAL_COLUMN_TYPE_FIELD = 'incremental_column_type'
+type TableSchemaField = {
+  name: string
+  type?: string
+  outputDataType?: string
+}
 
 export const useConfigurationForm = (
   nodeType: NodeType,
@@ -65,23 +72,25 @@ export const useConfigurationForm = (
   }
 
   const state = reactive<{
-    model: typeof initialModel;
-    loading: boolean;
-    datasourceOptions: any[];
-    datasourceLoading: boolean;
-    databaseOptions: any[];
-    databaseLoading: boolean;
-    tableOptions: TableOption[];
-    tableLoading: boolean;
-    formStructure: any[];
-    formFieldNames: string[];
-    formLocales: any;
-    formName: string;
-    formLoading: boolean;
-    inputTableData: any[];
-    outputTableData: any[];
-    tableColumnsLoading: boolean;
-    rules: any;
+    model: typeof initialModel
+    loading: boolean
+    datasourceOptions: any[]
+    datasourceLoading: boolean
+    databaseOptions: any[]
+    databaseLoading: boolean
+    tableOptions: TableOption[]
+    tableLoading: boolean
+    formStructure: any[]
+    formFieldNames: string[]
+    formLocales: any
+    formName: string
+    formLoading: boolean
+    inputTableData: any[]
+    outputTableData: any[]
+    tableColumnsLoading: boolean
+    incrementalColumnLoading: boolean
+    incrementalColumnTypeMap: Record<string, JdbcIncrementalColumnType>
+    rules: any
   }>({
     model: cloneDeep(initialModel),
     loading: false,
@@ -99,6 +108,8 @@ export const useConfigurationForm = (
     inputTableData: [],
     outputTableData: [],
     tableColumnsLoading: false,
+    incrementalColumnLoading: false,
+    incrementalColumnTypeMap: {},
     rules: {
       name: {
         required: true,
@@ -178,9 +189,187 @@ export const useConfigurationForm = (
             )
           }
         }
-      },
+      }
     }
   })
+
+  let incrementalSchemaRequestId = 0
+
+  const hasIncrementalFields = () =>
+    state.formFieldNames.includes(EXTRACT_MODE_FIELD) &&
+    state.formFieldNames.includes(INCREMENTAL_COLUMN_FIELD)
+
+  const getIncrementalFormField = (field: string) =>
+    state.formStructure.find((form) => form.field === field)
+
+  const getSingleValue = (value: null | string | string[]) =>
+    Array.isArray(value) ? value[0] || null : value
+
+  const decorateIncrementalFormFields = (forms: Array<any>) => {
+    if (nodeType !== 'source') return forms
+
+    forms.forEach((form) => {
+      if (form.field === INCREMENTAL_COLUMN_FIELD) {
+        form.type = 'select'
+        form.options = []
+        form.filterable = true
+        form.clearable = true
+        form.placeholder =
+          'project.synchronization_definition.incremental_column_placeholder'
+      }
+      if (form.field === INCREMENTAL_COLUMN_TYPE_FIELD) {
+        delete form.validate
+        form.hidden = true
+      }
+    })
+
+    return forms
+  }
+
+  const setIncrementalColumnOptions = (options: TableOption[]) => {
+    const incrementalColumnForm = getIncrementalFormField(
+      INCREMENTAL_COLUMN_FIELD
+    )
+    if (!incrementalColumnForm) return
+    incrementalColumnForm.options = options
+    incrementalColumnForm.disabled = options.length === 0
+  }
+
+  const clearIncrementalValues = () => {
+    const model = state.model as Record<string, any>
+    model[INCREMENTAL_COLUMN_FIELD] = null
+    model[INCREMENTAL_COLUMN_TYPE_FIELD] = null
+  }
+
+  const resetIncrementalColumnOptions = () => {
+    state.incrementalColumnTypeMap = {}
+    setIncrementalColumnOptions([])
+    clearIncrementalValues()
+  }
+
+  const normalizeDataType = (field: TableSchemaField) =>
+    String(field.outputDataType || field.type || '')
+      .trim()
+      .toUpperCase()
+
+  const resolveIncrementalColumnType = (
+    field: TableSchemaField
+  ): JdbcIncrementalColumnType | null => {
+    const normalizedType = normalizeDataType(field)
+    if (!normalizedType) return null
+
+    if (
+      /(TIMESTAMP|TIMESTAMP_NTZ|TIMESTAMP_LTZ|TIMESTAMP_TZ|TIMESTAMP_WITH|TIMESTAMP WITHOUT)/.test(
+        normalizedType
+      )
+    ) {
+      return 'TIMESTAMP'
+    }
+    if (
+      /(DATETIME|SMALLDATETIME|DATE_TIME|LOCAL_DATE_TIME)/.test(normalizedType)
+    ) {
+      return 'DATETIME'
+    }
+    if (/(^DATE$|LOCAL_DATE)/.test(normalizedType)) {
+      return 'DATE'
+    }
+    if (
+      /(NUMBER|NUMERIC|DECIMAL|BIGINT|INT|INTEGER|SMALLINT|TINYINT|FLOAT|DOUBLE|REAL|SERIAL|MONEY|BINARY_FLOAT|BINARY_DOUBLE)/.test(
+        normalizedType
+      )
+    ) {
+      return 'NUMBER'
+    }
+
+    return null
+  }
+
+  const syncIncrementalColumnType = () => {
+    if (!hasIncrementalFields()) return
+
+    const model = state.model as Record<string, any>
+    const selectedColumn = model[INCREMENTAL_COLUMN_FIELD]
+    if (!selectedColumn) {
+      model[INCREMENTAL_COLUMN_TYPE_FIELD] = null
+      return
+    }
+
+    model[INCREMENTAL_COLUMN_TYPE_FIELD] =
+      state.incrementalColumnTypeMap[String(selectedColumn)] || null
+  }
+
+  const refreshIncrementalColumnOptions = async () => {
+    if (nodeType !== 'source' || !hasIncrementalFields()) return
+
+    const datasourceInstanceId = state.model.datasourceInstanceId
+    const database = getSingleValue(state.model.database)
+    const tableName = getSingleValue(state.model.tableName)
+
+    if (!datasourceInstanceId || !database || !tableName) {
+      resetIncrementalColumnOptions()
+      return
+    }
+
+    const requestId = ++incrementalSchemaRequestId
+    state.incrementalColumnLoading = true
+    try {
+      const schemaFields = await getInputTableSchema(
+        datasourceInstanceId,
+        database,
+        tableName
+      )
+
+      if (requestId !== incrementalSchemaRequestId) return
+
+      const nextTypeMap = schemaFields.reduce(
+        (
+          accumulator: Record<string, JdbcIncrementalColumnType>,
+          field: TableSchemaField
+        ) => {
+          const incrementalType = resolveIncrementalColumnType(field)
+          if (incrementalType) {
+            accumulator[field.name] = incrementalType
+          }
+          return accumulator
+        },
+        {}
+      )
+
+      const options = schemaFields
+        .filter((field: TableSchemaField) => nextTypeMap[field.name])
+        .map((field: TableSchemaField) => ({
+          label: `${field.name} (${field.outputDataType || field.type || '-'})`,
+          value: field.name
+        }))
+
+      state.incrementalColumnTypeMap = nextTypeMap
+      setIncrementalColumnOptions(options)
+
+      const model = state.model as Record<string, any>
+      if (
+        model[INCREMENTAL_COLUMN_FIELD] &&
+        !nextTypeMap[String(model[INCREMENTAL_COLUMN_FIELD])]
+      ) {
+        clearIncrementalValues()
+      } else {
+        syncIncrementalColumnType()
+      }
+    } catch (error) {
+      if (requestId !== incrementalSchemaRequestId) return
+      resetIncrementalColumnOptions()
+    } finally {
+      if (requestId === incrementalSchemaRequestId) {
+        state.incrementalColumnLoading = false
+      }
+    }
+  }
+
+  watch(
+    () => (state.model as Record<string, any>)[INCREMENTAL_COLUMN_FIELD],
+    () => {
+      syncIncrementalColumnType()
+    }
+  )
 
   const getDatasourceOptions = async (sceneMode: string) => {
     if (state.datasourceLoading) return
@@ -228,7 +417,11 @@ export const useConfigurationForm = (
     }
   }
 
-  const getTableOptions = async (databases: Array<string> | string, filterName?: string, size?: number) => {
+  const getTableOptions = async (
+    databases: Array<string> | string,
+    filterName?: string,
+    size?: number
+  ) => {
     filterName = filterName || ''
     if (
       nodeType === 'source' ||
@@ -301,13 +494,18 @@ export const useConfigurationForm = (
         (form: { field: string }) =>
           !['exclude_kinds', 'include_kinds'].includes(form.field)
       )
-      state.formFieldNames = res.forms.map((form: { field: string }) => form.field)
+      res.forms = decorateIncrementalFormFields(res.forms)
+      state.formFieldNames = res.forms.map(
+        (form: { field: string }) => form.field
+      )
       state.formLocales = res.locales
       Object.assign(state.model, useFormField(res.forms))
       Object.assign(state.rules, useFormValidate(res.forms, state.model, t))
-      state.formStructure = useFormStructure(
-        res.apis ? useFormRequest(res.apis, res.forms) : res.forms
-      ) as any
+      state.formStructure = (
+        useFormStructure(
+          res.apis ? useFormRequest(res.apis, res.forms) : res.forms
+        ) as any
+      ).filter((form: { hidden?: boolean }) => !form.hidden)
     } finally {
       state.formLoading = false
     }
@@ -332,7 +530,11 @@ export const useConfigurationForm = (
     state.loading = true
     try {
       state.model.datasourceInstanceId = values.dataSourceId
-      const localizedDefaultName = getDefaultNodeName(nodeType, transformType, t)
+      const localizedDefaultName = getDefaultNodeName(
+        nodeType,
+        transformType,
+        t
+      )
       state.model.name =
         isComponentDefaultName(values.name) && localizedDefaultName
           ? localizedDefaultName
@@ -365,7 +567,11 @@ export const useConfigurationForm = (
       }
 
       if (values.tableOption?.databases?.length) {
-        await getTableOptions(values.tableOption.databases[0], '', state.model.sceneMode === 'MULTIPLE_TABLE' ? 9999999 : 100)
+        await getTableOptions(
+          values.tableOption.databases[0],
+          '',
+          state.model.sceneMode === 'MULTIPLE_TABLE' ? 9999999 : 100
+        )
       }
 
       if (values.sceneMode === 'MULTIPLE_TABLE') {
@@ -389,6 +595,7 @@ export const useConfigurationForm = (
           )
         }
       }
+      await refreshIncrementalColumnOptions()
     } finally {
       state.loading = false
     }
@@ -401,6 +608,8 @@ export const useConfigurationForm = (
     getDatabaseOptions,
     getTableOptions,
     getFormStructure,
+    clearIncrementalValues,
+    refreshIncrementalColumnOptions,
     updateFormValues,
     getSinks
   }

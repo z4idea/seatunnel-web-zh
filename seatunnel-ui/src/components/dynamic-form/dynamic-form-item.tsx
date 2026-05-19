@@ -166,15 +166,13 @@ const DynamicFormItem = defineComponent({
                       f.field
                     )}`}
                     placeholder={
-                      f.placeholder 
-                        ? (
-                            this.getTranslation(
-                              this.name,
-                              f.label,
-                              'placeholder',
-                              f.field
-                            ) || this.t(f.placeholder)
-                          )
+                      f.placeholder
+                        ? this.getTranslation(
+                            this.name,
+                            f.label,
+                            'placeholder',
+                            f.field
+                          ) || this.t(f.placeholder)
                         : ''
                     }
                     v-model={[(this.model as any)[f.field], 'value']}
@@ -195,6 +193,9 @@ const DynamicFormItem = defineComponent({
                         this.name,
                         f.field
                       )}`}
+                      filterable={f.filterable}
+                      clearable={f.clearable}
+                      disabled={f.disabled}
                       placeholder={
                         f.placeholder
                           ? this.getTranslation(
@@ -206,17 +207,15 @@ const DynamicFormItem = defineComponent({
                           : ''
                       }
                       v-model={[(this.model as any)[f.field], 'value']}
-                      options={
-                        f.options.map((o: SelectOption) => {
-                          return {
-                            label: this.translateOptionLabel(
-                              this.name,
-                              o.label as string
-                            ),
-                            value: o.value
-                          }
-                        })
-                      }
+                      options={(f.options || []).map((o: SelectOption) => {
+                        return {
+                          label: this.translateOptionLabel(
+                            this.name,
+                            o.label as string
+                          ),
+                          value: o.value
+                        }
+                      })}
                     />
                   )}
                 {f.type === 'checkbox' &&

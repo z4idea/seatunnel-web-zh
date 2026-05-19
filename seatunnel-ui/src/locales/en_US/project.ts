@@ -1100,10 +1100,12 @@ export default {
     incremental_state_disabled: 'Incremental extraction is not enabled',
     incremental_state_empty: 'No successful checkpoint yet',
     extract_mode: 'Extract Mode',
-    extract_mode_description: 'Choose full extraction or incremental extraction by column',
+    extract_mode_description:
+      'Choose full extraction or incremental extraction by column',
     incremental_column: 'Incremental Column',
     incremental_column_description:
-      'Enter the column name used to advance incremental state',
+      'Choose the source table field used to advance incremental state',
+    incremental_column_placeholder: 'Please select the incremental column',
     incremental_column_type: 'Incremental Column Type',
     incremental_column_type_description:
       'Choose the data type of the incremental column',
