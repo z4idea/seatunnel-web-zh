@@ -24,6 +24,7 @@ import org.apache.seatunnel.app.domain.request.job.JobExecParam;
 import org.apache.seatunnel.app.domain.response.engine.Engine;
 import org.apache.seatunnel.app.domain.response.executor.JobExecutorRes;
 import org.apache.seatunnel.app.service.IJobExecutorService;
+import org.apache.seatunnel.app.service.IJobIncrementalService;
 import org.apache.seatunnel.app.service.IJobInstanceService;
 import org.apache.seatunnel.app.thirdparty.engine.SeaTunnelEngineProxy;
 import org.apache.seatunnel.app.thirdparty.metrics.EngineMetricsExtractorFactory;
@@ -67,23 +68,39 @@ import java.util.concurrent.Executors;
 public class JobExecutorServiceImpl implements IJobExecutorService {
     @Resource private IJobInstanceService jobInstanceService;
     @Resource private IJobInstanceDao jobInstanceDao;
+    @Resource private IJobIncrementalService jobIncrementalService;
     @Autowired private AsyncTaskExecutor taskExecutor;
 
     @Override
     public Result<Long> jobExecute(Long jobDefineId, JobExecParam executeParam) {
-
-        JobExecutorRes executeResource =
-                jobInstanceService.createExecuteResource(jobDefineId, executeParam);
+        JobExecutorRes executeResource;
+        try {
+            executeResource = jobInstanceService.prepareExecution(jobDefineId, executeParam);
+        } catch (org.apache.seatunnel.server.common.SeatunnelException e) {
+            return Result.failure(e);
+        }
         String jobConfig = executeResource.getJobConfig();
 
-        String configFile = writeJobConfigIntoConfFile(jobConfig, jobDefineId);
-
         try {
+            String configFile = writeJobConfigIntoConfFile(jobConfig, jobDefineId);
             executeJobBySeaTunnel(configFile, executeResource.getJobInstanceId());
             return Result.success(executeResource.getJobInstanceId());
         } catch (RuntimeException e) {
             Result<Long> failure =
                     Result.failure(SeatunnelErrorEnum.JOB_EXEC_SUBMISSION_ERROR, e.getMessage());
+            JobInstance jobInstance =
+                    jobInstanceDao.getJobInstance(executeResource.getJobInstanceId());
+            if (jobInstance != null) {
+                if (jobInstance.getJobStatus() == JobStatus.RUNNING) {
+                    jobInstance.setJobStatus(JobStatus.FAILED);
+                    jobInstance.setEndTime(new Date());
+                    jobInstance.setErrorMessage(
+                            JobUtils.getJobInstanceErrorMessage(e.getMessage()));
+                    jobInstanceDao.update(jobInstance);
+                }
+                jobIncrementalService.cleanupExecutionPreparation(
+                        executeResource.getJobInstanceId(), jobInstance.getWorkspaceId());
+            }
             // Even though job execution submission failed, we still need to return the
             // jobInstanceId to the user
             // as the job instance has been created in the database.

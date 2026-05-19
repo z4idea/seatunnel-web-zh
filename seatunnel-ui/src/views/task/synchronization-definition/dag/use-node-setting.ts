@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -334,8 +337,13 @@ export function useNodeSettingModal(
     modelRef.value.setSelectFields(selectedKeys)
   }
 
-  const handleTab = (tab: 'configuration' | 'model') => {
+  const handleTab = (
+    tab: 'configuration' | 'model' | 'incremental-state'
+  ) => {
     state.width = tab === 'configuration' ? '60%' : '80%'
+    if (tab === 'incremental-state') {
+      state.width = '60%'
+    }
     state.tab = tab
     if (tab === 'model' && modelRef.value) {
       initModelData(configurationFormRef.value.getValues())

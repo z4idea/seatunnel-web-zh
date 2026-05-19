@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -1050,6 +1053,41 @@ export default {
     cancel: '取消',
     configuration: '配置',
     model: '模型',
+    incremental_state: '增量状态',
+    incremental_state_hint:
+      'JDBC 增量状态会在任务成功执行后自动推进，这里仅提供查看与重置入口。',
+    incremental_state_refresh: '刷新',
+    incremental_state_reset: '重置状态',
+    incremental_state_reset_title: '重置增量状态',
+    incremental_state_reset_content:
+      '确认重置当前节点的增量状态吗？重置后会清空最近成功检查点和挂起运行区间。',
+    incremental_state_reset_success: '增量状态重置成功',
+    incremental_state_not_supported: '当前 connector 不支持 JDBC 增量状态',
+    incremental_state_disabled: '当前未启用增量抽取',
+    incremental_state_empty: '暂无成功检查点',
+    extract_mode: '抽取模式',
+    extract_mode_description: '选择全量抽取或按增量列抽取',
+    incremental_column: '增量列',
+    incremental_column_description: '请输入用于推进增量状态的列名',
+    incremental_column_type: '增量列类型',
+    incremental_column_type_description: '请选择增量列的数据类型',
+    option_full: '全量',
+    option_incremental: '增量',
+    option_number: '数值',
+    option_date: '日期',
+    option_datetime: '日期时间',
+    option_timestamp: '时间戳',
+    incremental_state_extract_mode: '抽取模式',
+    incremental_state_column: '增量列',
+    incremental_state_column_type: '列类型',
+    incremental_state_last_success_value: '最近成功值',
+    incremental_state_update_time: '更新时间',
+    incremental_state_extract_mode_full: '全量',
+    incremental_state_extract_mode_incremental: '增量',
+    incremental_state_column_type_number: '数值',
+    incremental_state_column_type_date: '日期',
+    incremental_state_column_type_datetime: '日期时间',
+    incremental_state_column_type_timestamp: '时间戳',
     business_model: '业务模型',
     schedule: '定时',
     schedule_title: '定时配置',

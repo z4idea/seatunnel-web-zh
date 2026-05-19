@@ -23,22 +23,29 @@ import org.apache.seatunnel.shade.com.typesafe.config.ConfigValueFactory;
 
 import org.apache.seatunnel.api.configuration.Option;
 import org.apache.seatunnel.api.configuration.Options;
+import org.apache.seatunnel.api.configuration.util.Expression;
 import org.apache.seatunnel.api.configuration.util.OptionRule;
 import org.apache.seatunnel.api.configuration.util.RequiredOption;
+import org.apache.seatunnel.app.common.JdbcIncrementalColumnType;
+import org.apache.seatunnel.app.common.JdbcIncrementalExtractMode;
 import org.apache.seatunnel.app.domain.request.connector.BusinessMode;
 import org.apache.seatunnel.app.domain.request.job.DataSourceOption;
 import org.apache.seatunnel.app.domain.request.job.SelectTableFields;
 import org.apache.seatunnel.app.domain.response.datasource.VirtualTableDetailRes;
+import org.apache.seatunnel.app.dynamicforms.AbstractFormOption;
+import org.apache.seatunnel.app.dynamicforms.Constants;
 import org.apache.seatunnel.app.dynamicforms.FormStructure;
 import org.apache.seatunnel.app.thirdparty.datasource.AbstractDataSourceConfigSwitcher;
 import org.apache.seatunnel.common.constants.PluginType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.apache.seatunnel.app.domain.request.connector.BusinessMode.DATA_INTEGRATION;
 import static org.apache.seatunnel.app.domain.request.connector.BusinessMode.DATA_REPLICA;
@@ -62,12 +69,33 @@ public abstract class BaseJdbcDataSourceConfigSwitcher extends AbstractDataSourc
     private static final String CATALOG_SCHEMA = "schema";
 
     private static final String WHERE_CONDITION = "where_condition";
+    private static final String EXTRACT_MODE = "extract_mode";
+    private static final String INCREMENTAL_COLUMN = "incremental_column";
+    private static final String INCREMENTAL_COLUMN_TYPE = "incremental_column_type";
 
     private static final Option<String> DATABASE_SCHEMA =
             Options.key("database_schema")
                     .stringType()
                     .noDefaultValue()
                     .withDescription("the default database used during automated table creation.");
+
+    private static final Option<JdbcIncrementalExtractMode> JDBC_EXTRACT_MODE =
+            Options.key(EXTRACT_MODE)
+                    .enumType(JdbcIncrementalExtractMode.class)
+                    .defaultValue(JdbcIncrementalExtractMode.FULL)
+                    .withDescription("jdbc incremental extract mode");
+
+    private static final Option<String> JDBC_INCREMENTAL_COLUMN =
+            Options.key(INCREMENTAL_COLUMN)
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("jdbc incremental column");
+
+    private static final Option<JdbcIncrementalColumnType> JDBC_INCREMENTAL_COLUMN_TYPE =
+            Options.key(INCREMENTAL_COLUMN_TYPE)
+                    .enumType(JdbcIncrementalColumnType.class)
+                    .noDefaultValue()
+                    .withDescription("jdbc incremental column type");
 
     @Override
     public FormStructure filterOptionRule(
@@ -91,16 +119,29 @@ public abstract class BaseJdbcDataSourceConfigSwitcher extends AbstractDataSourc
                 && pluginType.equals(PluginType.SINK)) {
             addOptionalOptions.add(DATABASE_SCHEMA);
         }
-        return super.filterOptionRule(
-                connectorName,
-                dataSourceOptionRule,
-                virtualTableOptionRule,
-                businessMode,
-                pluginType,
-                connectorOptionRule,
-                addRequiredOptions,
-                addOptionalOptions,
-                filterFieldMap.get(pluginType));
+        if (businessMode.equals(DATA_INTEGRATION) && pluginType.equals(PluginType.SOURCE)) {
+            addOptionalOptions.add(JDBC_EXTRACT_MODE);
+            addRequiredOptions.add(
+                    RequiredOption.ConditionalRequiredOptions.of(
+                            Expression.of(
+                                    JDBC_EXTRACT_MODE, JdbcIncrementalExtractMode.INCREMENTAL),
+                            Arrays.asList(JDBC_INCREMENTAL_COLUMN, JDBC_INCREMENTAL_COLUMN_TYPE)));
+        }
+        FormStructure formStructure =
+                super.filterOptionRule(
+                        connectorName,
+                        dataSourceOptionRule,
+                        virtualTableOptionRule,
+                        businessMode,
+                        pluginType,
+                        connectorOptionRule,
+                        addRequiredOptions,
+                        addOptionalOptions,
+                        filterFieldMap.get(pluginType));
+        if (businessMode.equals(DATA_INTEGRATION) && pluginType.equals(PluginType.SOURCE)) {
+            moveIncrementalFormGroupToFront(formStructure);
+        }
+        return formStructure;
     }
 
     @Override
@@ -121,6 +162,9 @@ public abstract class BaseJdbcDataSourceConfigSwitcher extends AbstractDataSourc
             dataSourceInstanceConfig =
                     dataSourceInstanceConfig.withValue(
                             URL_KEY, ConfigValueFactory.fromAnyRef(newUrl));
+        }
+        if (pluginType.equals(PluginType.SOURCE)) {
+            connectorConfig = removeIncrementalUiFields(connectorConfig);
         }
         if (pluginType.equals(PluginType.SINK)) {
             connectorConfig =
@@ -260,5 +304,49 @@ public abstract class BaseJdbcDataSourceConfigSwitcher extends AbstractDataSourc
 
     protected String replaceDatabaseNameInUrl(String url, String databaseName) {
         return url;
+    }
+
+    private Config removeIncrementalUiFields(Config connectorConfig) {
+        Config cleanedConfig = connectorConfig;
+        for (String field :
+                Arrays.asList(EXTRACT_MODE, INCREMENTAL_COLUMN, INCREMENTAL_COLUMN_TYPE)) {
+            if (cleanedConfig.hasPath(field)) {
+                cleanedConfig = cleanedConfig.withoutPath(field);
+            }
+        }
+        return cleanedConfig;
+    }
+
+    private void moveIncrementalFormGroupToFront(FormStructure formStructure) {
+        List<AbstractFormOption> formOptions = formStructure.getForms();
+        if (formOptions == null
+                || formOptions.isEmpty()
+                || EXTRACT_MODE.equals(formOptions.get(0).getField())) {
+            return;
+        }
+
+        List<AbstractFormOption> incrementalFormOptions =
+                formOptions.stream()
+                        .filter(this::isIncrementalFormOption)
+                        .collect(Collectors.toList());
+        if (incrementalFormOptions.isEmpty()) {
+            return;
+        }
+
+        List<AbstractFormOption> reorderedFormOptions = new ArrayList<>(incrementalFormOptions);
+        formOptions.stream()
+                .filter(formOption -> !incrementalFormOptions.contains(formOption))
+                .forEach(reorderedFormOptions::add);
+        formStructure.setForms(reorderedFormOptions);
+    }
+
+    private boolean isIncrementalFormOption(AbstractFormOption formOption) {
+        if (EXTRACT_MODE.equals(formOption.getField())) {
+            return true;
+        }
+
+        return formOption.getShow() != null
+                && EXTRACT_MODE.equals(
+                        String.valueOf(formOption.getShow().get(Constants.SHOW_FIELD)));
     }
 }

@@ -28,7 +28,9 @@ import org.apache.seatunnel.app.dal.entity.JobScheduleHistory;
 import org.apache.seatunnel.app.security.UserContext;
 import org.apache.seatunnel.app.security.UserContextHolder;
 import org.apache.seatunnel.app.service.IJobExecutorService;
+import org.apache.seatunnel.app.service.impl.JobIncrementalServiceImpl;
 import org.apache.seatunnel.server.common.CodeGenerateUtils;
+import org.apache.seatunnel.server.common.SeatunnelErrorEnum;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -105,10 +107,18 @@ public class ScheduleTriggerExecutor {
                         buildSuccessMessage(executeResult.getData()),
                         executeResult.getData());
             } else {
+                JobScheduleStatus scheduleStatus =
+                        executeResult.getCode() == SeatunnelErrorEnum.INVALID_OPERATION.getCode()
+                                        && StringUtils.contains(
+                                                executeResult.getMsg(),
+                                                JobIncrementalServiceImpl
+                                                        .INCREMENTAL_RUNNING_MESSAGE_TOKEN)
+                                ? JobScheduleStatus.SKIPPED
+                                : JobScheduleStatus.FAILED;
                 updateScheduleResult(
                         config,
                         triggerTime,
-                        JobScheduleStatus.FAILED,
+                        scheduleStatus,
                         defaultMessage(
                                 executeResult.getMsg(), "Schedule execution submission failed."),
                         null);

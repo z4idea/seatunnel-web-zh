@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -155,7 +158,17 @@ const ConfigurationForm = defineComponent({
         }
       },
       getValues: () => state.model,
-      setValues: updateFormValues
+      setValues: updateFormValues,
+      getIncrementalStateContext: () => ({
+        loading:
+          state.loading ||
+          state.formLoading ||
+          state.datasourceLoading ||
+          state.databaseLoading ||
+          state.tableLoading,
+        values: state.model,
+        fieldNames: state.formFieldNames
+      })
     })
 
     return () => (
@@ -190,6 +203,7 @@ const ConfigurationForm = defineComponent({
                     state.model.database = null
                     state.model.tableName = null
                     state.formStructure = []
+                    state.formFieldNames = []
                     state.databaseOptions = []
                     state.tableOptions = []
                   }
@@ -213,6 +227,7 @@ const ConfigurationForm = defineComponent({
                     getDatabaseOptions(v, option)
                     state.model.database = null
                     state.model.tableName = null
+                    state.formFieldNames = []
                     state.tableOptions = []
                   }
                 }}

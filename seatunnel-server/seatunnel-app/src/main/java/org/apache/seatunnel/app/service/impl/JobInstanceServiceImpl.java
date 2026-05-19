@@ -57,6 +57,7 @@ import org.apache.seatunnel.app.domain.response.executor.JobExecutorRes;
 import org.apache.seatunnel.app.permission.constants.SeatunnelFuncPermissionKeyConstant;
 import org.apache.seatunnel.app.security.UserContextHolder;
 import org.apache.seatunnel.app.service.IDatasourceService;
+import org.apache.seatunnel.app.service.IJobIncrementalService;
 import org.apache.seatunnel.app.service.IJobInstanceService;
 import org.apache.seatunnel.app.service.IJobMetricsService;
 import org.apache.seatunnel.app.service.IVirtualTableService;
@@ -72,6 +73,7 @@ import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.common.utils.ExceptionUtils;
 import org.apache.seatunnel.common.utils.JsonUtils;
 import org.apache.seatunnel.engine.core.job.JobResult;
+import org.apache.seatunnel.engine.core.job.JobStatus;
 import org.apache.seatunnel.server.common.CodeGenerateUtils;
 import org.apache.seatunnel.server.common.SeatunnelErrorEnum;
 import org.apache.seatunnel.server.common.SeatunnelException;
@@ -97,6 +99,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -132,9 +136,13 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
 
     @Resource private IJobMetricsService jobMetricsService;
 
+    @Resource private IJobIncrementalService jobIncrementalService;
+
     @Autowired private ConfigShadeUtil configShadeUtil;
 
     @Autowired private EncryptionConfig encryptionConfig;
+
+    private final Map<Long, ReentrantLock> incrementalExecutionLocks = new ConcurrentHashMap<>();
 
     @Override
     public JobExecutorRes createExecuteResource(
@@ -179,12 +187,94 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
+    public JobExecutorRes prepareExecution(@NonNull Long jobDefineId, JobExecParam executeParam) {
+        int userId = ServletUtils.getCurrentUserId();
+        log.info(
+                "receive prepareExecution request, userId:{}, jobDefineId:{}", userId, jobDefineId);
+        JobDefinition job = jobDefinitionDao.getJob(jobDefineId);
+        permissionCheck(
+                job.getName(),
+                ResourceType.JOB,
+                AccessType.EXECUTE,
+                UserContextHolder.getAccessInfo());
+
+        JobVersion latestVersion = jobVersionDao.getLatestVersion(job.getId());
+        List<JobTask> tasks = jobTaskDao.getTasksByVersionId(latestVersion.getId());
+        List<JobLine> lines = jobLineDao.getLinesByVersionId(latestVersion.getId());
+        boolean hasIncrementalSource = jobIncrementalService.hasIncrementalSource(tasks);
+        ReentrantLock lock = null;
+        if (hasIncrementalSource) {
+            lock =
+                    incrementalExecutionLocks.computeIfAbsent(
+                            job.getId(), ignored -> new ReentrantLock());
+            lock.lock();
+        }
+
+        try {
+            if (hasIncrementalSource) {
+                jobIncrementalService.validateNoConcurrentExecution(job.getId());
+            }
+            JobInstance jobInstance = new JobInstance();
+            try {
+                jobInstance.setId(CodeGenerateUtils.getInstance().genCode());
+            } catch (CodeGenerateUtils.CodeGenerateException e) {
+                throw new SeatunnelException(SeatunnelErrorEnum.JOB_RUN_GENERATE_UUID_ERROR);
+            }
+            jobInstance.setJobDefineId(job.getId());
+            jobInstance.setEngineName(latestVersion.getEngineName());
+            jobInstance.setEngineVersion(latestVersion.getEngineVersion());
+            jobInstance.setJobConfig("");
+            jobInstance.setCreateUserId(userId);
+            jobInstance.setUpdateUserId(userId);
+            jobInstance.setJobStatus(JobStatus.RUNNING);
+            jobInstance.setJobType(latestVersion.getJobMode());
+            jobInstanceDao.insert(jobInstance);
+
+            Map<String, String> incrementalWhereOverrides =
+                    jobIncrementalService.prepareExecution(job.getId(), jobInstance.getId(), tasks);
+            String jobConfig =
+                    generateJobConfig(
+                            job.getId(),
+                            tasks,
+                            lines,
+                            latestVersion.getEnv(),
+                            executeParam,
+                            incrementalWhereOverrides);
+            jobInstance.setJobConfig(jobConfig);
+            jobInstanceDao.update(jobInstance);
+            return new JobExecutorRes(
+                    jobInstance.getId(),
+                    jobConfig,
+                    jobInstance.getEngineName(),
+                    null,
+                    null,
+                    jobInstance.getJobType());
+        } finally {
+            if (lock != null) {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Override
     public String generateJobConfig(
             Long jobId,
             List<JobTask> tasks,
             List<JobLine> lines,
             String envStr,
             JobExecParam executeParam) {
+        return generateJobConfig(
+                jobId, tasks, lines, envStr, executeParam, java.util.Collections.emptyMap());
+    }
+
+    private String generateJobConfig(
+            Long jobId,
+            List<JobTask> tasks,
+            List<JobLine> lines,
+            String envStr,
+            JobExecParam executeParam,
+            Map<String, String> incrementalWhereOverrides) {
         checkSceneMode(tasks);
         BusinessMode businessMode =
                 BusinessMode.valueOf(jobDefinitionDao.getJob(jobId).getJobType());
@@ -221,6 +311,13 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
                 switch (pluginType) {
                     case SOURCE:
                         if (inputLines.containsKey(pluginId)) {
+                            if (incrementalWhereOverrides.containsKey(pluginId)) {
+                                config =
+                                        config.withValue(
+                                                "where_condition",
+                                                ConfigValueFactory.fromAnyRef(
+                                                        incrementalWhereOverrides.get(pluginId)));
+                            }
                             config =
                                     addTableName(
                                             ConnectorCommonOptions.PLUGIN_OUTPUT.key(),
@@ -385,6 +482,7 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
         jobInstance.setUpdateUserId(userId);
         jobInstance.setErrorMessage(JobUtils.getJobInstanceErrorMessage(jobResult.getError()));
         jobInstanceDao.update(jobInstance);
+        jobIncrementalService.completeExecution(jobInstance, jobResult.getStatus());
     }
 
     private Config buildTransformConfig(

@@ -1,0 +1,76 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.seatunnel.app.dal.dao.impl;
+
+import org.apache.seatunnel.app.dal.dao.IJobIncrementalStateDao;
+import org.apache.seatunnel.app.dal.entity.JobIncrementalState;
+import org.apache.seatunnel.app.dal.mapper.JobIncrementalStateMapper;
+
+import org.springframework.stereotype.Repository;
+
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+
+import javax.annotation.Resource;
+
+import static org.apache.seatunnel.app.utils.ServletUtils.getCurrentWorkspaceId;
+
+@Repository
+public class JobIncrementalStateDaoImpl implements IJobIncrementalStateDao {
+
+    @Resource private JobIncrementalStateMapper jobIncrementalStateMapper;
+
+    @Override
+    public JobIncrementalState getByJobDefineIdAndPluginId(Long jobDefineId, String pluginId) {
+        return getByJobDefineIdAndPluginId(jobDefineId, pluginId, getCurrentWorkspaceId());
+    }
+
+    @Override
+    public JobIncrementalState getByJobDefineIdAndPluginId(
+            Long jobDefineId, String pluginId, Long workspaceId) {
+        return jobIncrementalStateMapper.selectOne(
+                Wrappers.<JobIncrementalState>lambdaQuery()
+                        .eq(JobIncrementalState::getJobDefineId, jobDefineId)
+                        .eq(JobIncrementalState::getPluginId, pluginId)
+                        .eq(JobIncrementalState::getWorkspaceId, workspaceId));
+    }
+
+    @Override
+    public void insert(JobIncrementalState state) {
+        jobIncrementalStateMapper.insert(state);
+    }
+
+    @Override
+    public void update(JobIncrementalState state) {
+        jobIncrementalStateMapper.updateById(state);
+    }
+
+    @Override
+    public void deleteByJobDefineIdAndPluginId(Long jobDefineId, String pluginId) {
+        deleteByJobDefineIdAndPluginId(jobDefineId, pluginId, getCurrentWorkspaceId());
+    }
+
+    @Override
+    public void deleteByJobDefineIdAndPluginId(
+            Long jobDefineId, String pluginId, Long workspaceId) {
+        jobIncrementalStateMapper.delete(
+                Wrappers.<JobIncrementalState>lambdaQuery()
+                        .eq(JobIncrementalState::getJobDefineId, jobDefineId)
+                        .eq(JobIncrementalState::getPluginId, pluginId)
+                        .eq(JobIncrementalState::getWorkspaceId, workspaceId));
+    }
+}

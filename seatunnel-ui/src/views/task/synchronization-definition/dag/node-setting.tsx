@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -28,6 +31,7 @@ import {
 import { useNodeSettingModal } from './use-node-setting'
 import NodeModeModal from './node-model'
 import ConfigurationForm from './configuration-form'
+import IncrementalState from './incremental-state'
 import type { PropType } from 'vue'
 import type { NodeInfo } from './types'
 
@@ -38,7 +42,7 @@ const props = {
   },
   nodeInfo: {
     type: Object as PropType<NodeInfo>,
-    default: {}
+    default: () => ({}) as NodeInfo
   }
 }
 
@@ -113,6 +117,28 @@ const NodeSetting = defineComponent({
                     refForm={configurationFormRef}
                   />
                 </NTabPane>
+                {props.nodeInfo.type === 'source' && (
+                  <NTabPane
+                    name='incremental-state'
+                    tab={t(
+                      'project.synchronization_definition.incremental_state'
+                    )}
+                    displayDirective='show'
+                  >
+                    <IncrementalState
+                      active={state.tab === 'incremental-state'}
+                      nodeType={props.nodeInfo.type}
+                      pluginId={props.nodeInfo.pluginId}
+                      contextProvider={() =>
+                        configurationFormRef.value?.getIncrementalStateContext?.() || {
+                          loading: false,
+                          values: {},
+                          fieldNames: []
+                        }
+                      }
+                    />
+                  </NTabPane>
+                )}
               </NTabs>
             ),
             footer: () => (

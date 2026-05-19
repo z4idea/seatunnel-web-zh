@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,6 +19,10 @@
  */
 
 import { axios } from '@/service/service'
+import type {
+  JobIncrementalStateRes,
+  JobIncrementalStateResetReq
+} from './types'
 
 export function querySyncTaskDefinitionPaging(params: any): any {
   return axios({
@@ -324,6 +331,34 @@ export function executeJob(jobDefineId: number): any {
   })
 }
 
+export function getJobIncrementalState(
+  jobDefineId: number,
+  pluginId: string
+): Promise<JobIncrementalStateRes> {
+  return axios({
+    url: '/job/incremental-state',
+    method: 'get',
+    params: {
+      jobDefineId,
+      pluginId
+    }
+  })
+}
+
+export function resetJobIncrementalState(
+  data: JobIncrementalStateResetReq
+): Promise<void> {
+  return axios({
+    url: '/job/incremental-state/reset',
+    method: 'post',
+    data,
+    headers: {
+      'Content-Type': 'application/json;charset=UTF-8'
+    },
+    transformRequest: (params) => JSON.stringify(params)
+  })
+}
+
 export function getJobSchedule(jobDefineId: number): any {
   return axios({
     url: '/job/schedule',
@@ -357,6 +392,13 @@ export function updateJobScheduleEnabled(data: any): any {
     transformRequest: (params) => JSON.stringify(params)
   })
 }
+
+export type {
+  JdbcIncrementalExtractMode,
+  JdbcIncrementalColumnType,
+  JobIncrementalStateRes,
+  JobIncrementalStateResetReq
+} from './types'
 
 export function getJobScheduleHistory(params: {
   jobDefineId: number

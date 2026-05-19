@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -71,6 +74,7 @@ export const useConfigurationForm = (
     tableOptions: TableOption[];
     tableLoading: boolean;
     formStructure: any[];
+    formFieldNames: string[];
     formLocales: any;
     formName: string;
     formLoading: boolean;
@@ -88,6 +92,7 @@ export const useConfigurationForm = (
     tableOptions: [],
     tableLoading: false,
     formStructure: [],
+    formFieldNames: [],
     formLocales: {},
     formName: '',
     formLoading: false,
@@ -274,6 +279,7 @@ export const useConfigurationForm = (
   const getFormStructure = async (datasourceInstanceId = '') => {
     if (state.formLoading) return
     state.formLoading = true
+    state.formFieldNames = []
     try {
       const params = {
         jobCode: Number(route.params.jobDefinitionCode) as number,
@@ -295,6 +301,7 @@ export const useConfigurationForm = (
         (form: { field: string }) =>
           !['exclude_kinds', 'include_kinds'].includes(form.field)
       )
+      state.formFieldNames = res.forms.map((form: { field: string }) => form.field)
       state.formLocales = res.locales
       Object.assign(state.model, useFormField(res.forms))
       Object.assign(state.rules, useFormValidate(res.forms, state.model, t))

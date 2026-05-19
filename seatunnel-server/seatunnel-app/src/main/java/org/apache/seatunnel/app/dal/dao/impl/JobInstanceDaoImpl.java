@@ -94,6 +94,18 @@ public class JobInstanceDaoImpl implements IJobInstanceDao {
     }
 
     @Override
+    public boolean existsRunningJobInstance(@NonNull Long jobDefineId) {
+        return jobInstanceMapper.selectCount(
+                        new LambdaQueryWrapper<JobInstance>()
+                                .eq(JobInstance::getJobDefineId, jobDefineId)
+                                .eq(JobInstance::getWorkspaceId, getWorkspaceId())
+                                .eq(
+                                        JobInstance::getJobStatus,
+                                        org.apache.seatunnel.engine.core.job.JobStatus.RUNNING))
+                > 0;
+    }
+
+    @Override
     public List<JobInstance> getAllJobInstance(@NonNull List<Long> jobInstanceIdList) {
         if (jobInstanceIdList.isEmpty()) {
             return Collections.emptyList();

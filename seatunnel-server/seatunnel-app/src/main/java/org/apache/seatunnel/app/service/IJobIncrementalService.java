@@ -17,29 +17,31 @@
 
 package org.apache.seatunnel.app.service;
 
-import org.apache.seatunnel.app.dal.entity.JobLine;
+import org.apache.seatunnel.app.dal.entity.JobInstance;
 import org.apache.seatunnel.app.dal.entity.JobTask;
-import org.apache.seatunnel.app.domain.request.job.JobExecParam;
-import org.apache.seatunnel.app.domain.response.executor.JobExecutorRes;
-import org.apache.seatunnel.engine.core.job.JobResult;
-
-import lombok.NonNull;
+import org.apache.seatunnel.app.domain.response.job.JobIncrementalStateRes;
+import org.apache.seatunnel.engine.core.job.JobStatus;
 
 import java.util.List;
+import java.util.Map;
 
-public interface IJobInstanceService {
-    JobExecutorRes createExecuteResource(@NonNull Long jobDefineId, JobExecParam executeParam);
+public interface IJobIncrementalService {
 
-    JobExecutorRes prepareExecution(@NonNull Long jobDefineId, JobExecParam executeParam);
+    boolean hasIncrementalSource(List<JobTask> tasks);
 
-    String generateJobConfig(
-            Long jobId,
-            List<JobTask> tasks,
-            List<JobLine> lines,
-            String envStr,
-            JobExecParam executeParam);
+    void validateNoConcurrentExecution(Long jobDefineId);
 
-    JobExecutorRes getExecuteResource(@NonNull Long jobEngineId);
+    Map<String, String> prepareExecution(Long jobDefineId, Long jobInstanceId, List<JobTask> tasks);
 
-    void complete(@NonNull Long jobInstanceId, @NonNull String jobEngineId, JobResult jobResult);
+    void cleanupExecutionPreparation(Long jobInstanceId, Long workspaceId);
+
+    void completeExecution(JobInstance jobInstance, JobStatus jobStatus);
+
+    JobIncrementalStateRes getIncrementalState(Long jobDefineId, String pluginId);
+
+    void resetIncrementalState(Long jobDefineId, String pluginId);
+
+    void resetStateOnTaskChange(Long jobDefineId, JobTask oldTask, JobTask newTask);
+
+    void deleteStateForTask(Long jobDefineId, JobTask task);
 }

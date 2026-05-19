@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -1083,6 +1086,44 @@ export default {
     cancel: 'Cancel',
     configuration: 'Configuration',
     model: 'Model',
+    incremental_state: 'Incremental State',
+    incremental_state_hint:
+      'JDBC incremental state advances automatically after successful runs. This tab only supports view and reset.',
+    incremental_state_refresh: 'Refresh',
+    incremental_state_reset: 'Reset State',
+    incremental_state_reset_title: 'Reset Incremental State',
+    incremental_state_reset_content:
+      'Reset the incremental state for the current node? This clears the last successful checkpoint and pending run range.',
+    incremental_state_reset_success: 'Incremental state reset successfully',
+    incremental_state_not_supported:
+      'The current connector does not support JDBC incremental state',
+    incremental_state_disabled: 'Incremental extraction is not enabled',
+    incremental_state_empty: 'No successful checkpoint yet',
+    extract_mode: 'Extract Mode',
+    extract_mode_description: 'Choose full extraction or incremental extraction by column',
+    incremental_column: 'Incremental Column',
+    incremental_column_description:
+      'Enter the column name used to advance incremental state',
+    incremental_column_type: 'Incremental Column Type',
+    incremental_column_type_description:
+      'Choose the data type of the incremental column',
+    option_full: 'Full',
+    option_incremental: 'Incremental',
+    option_number: 'Number',
+    option_date: 'Date',
+    option_datetime: 'Datetime',
+    option_timestamp: 'Timestamp',
+    incremental_state_extract_mode: 'Extract Mode',
+    incremental_state_column: 'Incremental Column',
+    incremental_state_column_type: 'Column Type',
+    incremental_state_last_success_value: 'Last Success Value',
+    incremental_state_update_time: 'Updated Time',
+    incremental_state_extract_mode_full: 'Full',
+    incremental_state_extract_mode_incremental: 'Incremental',
+    incremental_state_column_type_number: 'Number',
+    incremental_state_column_type_date: 'Date',
+    incremental_state_column_type_datetime: 'Datetime',
+    incremental_state_column_type_timestamp: 'Timestamp',
     business_model: 'Business Model',
     schedule: 'Schedule',
     schedule_title: 'Schedule Configuration',

@@ -48,6 +48,7 @@ import org.apache.seatunnel.app.domain.response.job.SchemaError;
 import org.apache.seatunnel.app.domain.response.job.SchemaErrorType;
 import org.apache.seatunnel.app.permission.constants.SeatunnelFuncPermissionKeyConstant;
 import org.apache.seatunnel.app.service.IDatasourceService;
+import org.apache.seatunnel.app.service.IJobIncrementalService;
 import org.apache.seatunnel.app.service.IJobInstanceService;
 import org.apache.seatunnel.app.service.IJobTaskService;
 import org.apache.seatunnel.common.constants.PluginType;
@@ -99,6 +100,8 @@ public class JobTaskServiceImpl extends SeatunnelBaseServiceImpl implements IJob
     @Resource private IDatasourceService datasourceService;
 
     @Resource private IJobInstanceService jobInstanceService;
+
+    @Resource private IJobIncrementalService jobIncrementalService;
 
     @Resource private ConnectorDataSourceMapperConfig connectorDataSourceMapperConfig;
 
@@ -416,11 +419,13 @@ public class JobTaskServiceImpl extends SeatunnelBaseServiceImpl implements IJob
     }
 
     @Override
+    @Transactional
     public void saveSingleTask(long jobVersionId, PluginConfig pluginConfig) {
         funcPermissionCheck(SeatunnelFuncPermissionKeyConstant.SINGLE_TASK_CREATE, 0);
         JobTask jobTask;
         JobTask old = jobTaskDao.getTask(jobVersionId, pluginConfig.getPluginId());
         String pluginId = pluginConfig.getPluginId();
+        JobVersion jobVersion = jobVersionDao.getVersionById(jobVersionId);
         try {
             checkConfigFormat(pluginConfig.getConfig());
             long id;
@@ -480,6 +485,7 @@ public class JobTaskServiceImpl extends SeatunnelBaseServiceImpl implements IJob
         }
         if (old != null) {
             jobTaskDao.updateTask(jobTask);
+            jobIncrementalService.resetStateOnTaskChange(jobVersion.getJobId(), old, jobTask);
         } else {
             jobTaskDao.insertTask(jobTask);
         }
@@ -567,15 +573,26 @@ public class JobTaskServiceImpl extends SeatunnelBaseServiceImpl implements IJob
     }
 
     @Override
+    @Transactional
     public void deleteSingleTask(long jobVersionId, String pluginId) {
         funcPermissionCheck(SeatunnelFuncPermissionKeyConstant.SINGLE_TASK_DELETE, 0);
+        JobTask old = jobTaskDao.getTask(jobVersionId, pluginId);
+        JobVersion jobVersion = jobVersionDao.getVersionById(jobVersionId);
         jobTaskDao.deleteTask(jobVersionId, pluginId);
+        if (old != null) {
+            jobIncrementalService.deleteStateForTask(jobVersion.getJobId(), old);
+        }
     }
 
     @Override
+    @Transactional
     public void deleteTaskByVersionId(long id) {
         funcPermissionCheck(SeatunnelFuncPermissionKeyConstant.SINGLE_TASK_DELETE, 0);
+        List<JobTask> tasks = jobTaskDao.getTasksByVersionId(id);
+        JobVersion jobVersion = jobVersionDao.getVersionById(id);
         jobTaskDao.deleteTaskByVersionId(id);
+        tasks.forEach(
+                task -> jobIncrementalService.deleteStateForTask(jobVersion.getJobId(), task));
     }
 
     private String getConnectorTypeFromDataSource(long datasourceId) {
