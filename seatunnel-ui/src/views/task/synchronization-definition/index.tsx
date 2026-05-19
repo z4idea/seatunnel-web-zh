@@ -26,7 +26,7 @@ import {
   NPagination
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import { SearchOutlined, ReloadOutlined } from '@vicons/antd'
+import { SearchOutlined } from '@vicons/antd'
 import { useTable } from './use-table'
 import { TaskModal } from './task-modal'
 import { ScheduleModal } from './schedule-modal'
@@ -40,7 +40,6 @@ const SynchronizationDefinition = defineComponent({
     const route = useRoute()
     const router = useRouter()
     const { variables, createColumns, getTableData } = useTable()
-    console.log('SynchronizationDefinition')
     const requestData = () => {
       getTableData({
         pageSize: variables.pageSize,
@@ -171,9 +170,11 @@ const SynchronizationDefinition = defineComponent({
         <NCard>
           <NSpace vertical>
             <NDataTable
+              class='sync-definition-table'
               loading={this.loadingRef}
               columns={this.columns}
               data={this.tableData}
+              scrollX={this.tableWidth}
             />
             <NSpace justify='center'>
               <NPagination

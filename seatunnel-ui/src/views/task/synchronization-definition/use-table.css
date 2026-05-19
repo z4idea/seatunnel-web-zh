@@ -11,6 +11,10 @@
   animation: sync-task-run-spin 0.9s linear infinite;
 }
 
+.sync-definition-table .n-data-table-th__title {
+  white-space: nowrap;
+}
+
 @keyframes sync-task-run-spin {
   from {
     transform: rotate(0deg);

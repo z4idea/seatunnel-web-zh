@@ -31,11 +31,13 @@ import {
   deleteSyncTaskDefinition,
   executeJob
 } from '@/service/sync-task-definition'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import type { Router } from 'vue-router'
 import type { JobType } from './dag/types'
-import { COLUMN_WIDTH_CONFIG } from '@/common/column-width-config'
-import { useTableLink } from '@/hooks'
+import {
+  COLUMN_WIDTH_CONFIG,
+  calculateTableWidth
+} from '@/common/column-width-config'
 import { useMessage } from 'naive-ui'
 import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
 import './use-table.css'
@@ -43,7 +45,6 @@ import './use-table.css'
 export function useTable() {
   const { t } = useI18n()
   const router: Router = useRouter()
-  const route = useRoute()
   const variables = reactive({
     columns: [],
     tableData: [],
@@ -51,6 +52,7 @@ export function useTable() {
     pageSize: ref(10),
     searchName: ref(''),
     totalPage: ref(1),
+    tableWidth: ref(0),
     showModalRef: ref(false),
     showScheduleModalRef: ref(false),
     statusRef: ref(0),
@@ -77,39 +79,50 @@ export function useTable() {
         title: t(
           'project.synchronization_definition.synchronization_task_name'
         ),
-        key: 'name'
+        key: 'name',
+        ...COLUMN_WIDTH_CONFIG['name']
       },
       {
         title: t('project.synchronization_definition.business_model'),
         key: 'jobKey',
+        ...COLUMN_WIDTH_CONFIG['type'],
         render: (row: { jobType: JobType }) =>
           t(`project.synchronization_definition.${JOB_TYPE[row.jobType]}`)
       },
       {
         title: t('project.synchronization_definition.task_describe'),
-        key: 'description'
+        key: 'description',
+        ...COLUMN_WIDTH_CONFIG['description']
       },
       {
         title: t('project.synchronization_definition.create_user'),
-        key: 'createUserName'
+        key: 'createUserName',
+        ...COLUMN_WIDTH_CONFIG['userName']
       },
       {
         title: t('project.synchronization_definition.create_time'),
-        key: 'createTime'
+        key: 'createTime',
+        ...COLUMN_WIDTH_CONFIG['time']
       },
       {
         title: t('project.synchronization_definition.update_user'),
-        key: 'updateUserName'
+        key: 'updateUserName',
+        ...COLUMN_WIDTH_CONFIG['userName']
       },
       {
         title: t('project.synchronization_definition.update_time'),
-        key: 'updateTime'
+        key: 'updateTime',
+        ...COLUMN_WIDTH_CONFIG['time']
       },
       {
         title: t('project.synchronization_definition.schedule_status'),
         key: 'scheduleLastStatus',
+        width: 120,
         render: (row: any) => {
-          if (row.scheduleEnabled === null || row.scheduleEnabled === undefined) {
+          if (
+            row.scheduleEnabled === null ||
+            row.scheduleEnabled === undefined
+          ) {
             return '-'
           }
 
@@ -148,6 +161,7 @@ export function useTable() {
       {
         title: t('project.synchronization_definition.schedule_next_trigger'),
         key: 'scheduleNextTriggerTime',
+        ...COLUMN_WIDTH_CONFIG['time'],
         render: (row: any) => row.scheduleNextTriggerTime || '-'
       },
       useTableOperation({
@@ -201,6 +215,8 @@ export function useTable() {
         ]
       })
     ]
+
+    variables.tableWidth = calculateTableWidth(variables.columns)
   }
 
   const getTableData = (params: any) => {
