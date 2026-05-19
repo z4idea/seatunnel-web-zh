@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -36,14 +37,13 @@ import {
   NDatePicker,
   NIcon,
   NButton,
-  NGrid,
-  NGi,
   NDropdown
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import { stateType } from '@/common/common'
+import Modal from '@/components/modal'
 import LogModal from '@/components/log-modal'
 import LogViewerModal from './log-viewer-modal'
+import ErrorMessageHighlight from './error-message-highlight'
 import { SearchOutlined, ReloadOutlined } from '@vicons/antd'
 import { SyncOutlined } from '@vicons/antd'
 import { useAsyncState } from '@vueuse/core'
@@ -53,7 +53,10 @@ import ColumnSelector from '@/components/column-selector'
 import { getRangeShortCuts } from '@/utils/timePickeroption'
 import { useRoute, useRouter } from 'vue-router'
 import _ from 'lodash'
-import { DownOutlined } from '@vicons/antd'
+import {
+  getSyncTaskStatusOptions,
+  normalizeSyncTaskStatusFilterValue
+} from './status-display'
 
 const props = {
   syncTaskType: {
@@ -71,6 +74,7 @@ const SyncTask = defineComponent({
     const {
       variables,
       getTableData,
+      getQueryParams,
       batchBtnListClick,
       creatInstanceButtons,
       createColumns,
@@ -80,20 +84,9 @@ const SyncTask = defineComponent({
     const router = useRouter()
 
     const tableColumn = ref([]) as any
-    const requestData = () => {
-      getTableData({
-        pageNo: variables.page,
-        pageSize: variables.pageSize,
-        taskName: variables.taskName,
-        executorName: variables.executeUser,
-        host: variables.host,
-        stateType: variables.stateType,
-        startDate: variables.datePickerRange
-          ? variables.datePickerRange[0]
-          : '',
-        endDate: variables.datePickerRange ? variables.datePickerRange[1] : '',
-        syncTaskType: variables.syncTaskType
-      })
+    const requestData = (pageNo = variables.page) => {
+      variables.page = pageNo
+      getTableData(getQueryParams(pageNo))
     }
     const rangeShortCuts = reactive({
       rangeOption: {}
@@ -143,16 +136,20 @@ const SyncTask = defineComponent({
       variables.page = 1
 
       const query = {} as any
-      if (variables.taskName) {
-        query.taskName = variables.taskName
+      const taskName = variables.taskName?.trim()
+      const executeUser = variables.executeUser?.trim()
+      const host = variables.host?.trim()
+
+      if (taskName) {
+        query.taskName = taskName
       }
 
-      if (variables.executeUser) {
-        query.executeUser = variables.executeUser
+      if (executeUser) {
+        query.executeUser = executeUser
       }
 
-      if (variables.host) {
-        query.host = variables.host
+      if (host) {
+        query.host = host
       }
 
       if (variables.stateType) {
@@ -167,16 +164,25 @@ const SyncTask = defineComponent({
       router.replace({
         query: !_.isEmpty(query)
           ? {
-            ...route.query,
-            ...query,
-            syncTaskType: props.syncTaskType,
+              syncTaskType: props.syncTaskType,
+              ...query
             }
           : {
-              ...route.query,
-              syncTaskType: props.syncTaskType,
+              syncTaskType: props.syncTaskType
             }
       })
-      requestData()
+      requestData(1)
+    }
+
+    const handleReset = () => {
+      onReset()
+      variables.page = 1
+      router.replace({
+        query: {
+          syncTaskType: props.syncTaskType
+        }
+      })
+      requestData(1)
     }
 
     const handleKeyup = (event: KeyboardEvent) => {
@@ -197,7 +203,9 @@ const SyncTask = defineComponent({
       variables.taskName = (route.query.taskName as string) || ''
       variables.executeUser = (route.query.executeUser as string) || ''
       variables.host = (route.query.host as string) || ''
-      variables.stateType = (route.query.stateType as string) || null
+      variables.stateType = normalizeSyncTaskStatusFilterValue(
+        (route.query.stateType as string) || null
+      )
     }
 
     onMounted(() => {
@@ -244,6 +252,7 @@ const SyncTask = defineComponent({
       onUpdatePageSize,
       refreshLogs,
       handleSearch,
+      handleReset,
       handleRefresh,
       onReset,
       handleKeyup,
@@ -258,39 +267,50 @@ const SyncTask = defineComponent({
     return (
       <NSpace vertical>
         <NCard>
-          <NGrid cols={26} yGap={10} xGap={5}>
-            
-            <NGi span={5}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+              alignItems: 'center'
+            }}
+          >
+            <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
               <NInput
+                style={{ width: '100%' }}
                 v-model={[this.taskName, 'value']}
                 placeholder={this.t(
                   'project.synchronization_instance.task_name'
                 )}
                 onKeyup={this.handleKeyup}
               />
-            </NGi>
-            <NGi span={4}>
+            </div>
+            <div style={{ flex: '1 1 180px', minWidth: '180px' }}>
               <NInput
+                style={{ width: '100%' }}
                 v-model={[this.executeUser, 'value']}
                 placeholder={this.t(
                   'project.synchronization_instance.execute_user'
                 )}
                 onKeyup={this.handleKeyup}
               />
-            </NGi>
-            <NGi span={6}>
+            </div>
+            <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
               <NSelect
                 style={{ width: '100%' }}
                 v-model={[this.stateType, 'value']}
-                options={stateType(this.t).slice(1)}
+                options={getSyncTaskStatusOptions(this.t)}
                 placeholder={this.t('project.synchronization_instance.state')}
                 clearable
               />
-            </NGi>
-            <NGi span={7}>
+            </div>
+            <div style={{ flex: '2 1 360px', minWidth: '360px' }}>
               <NDatePicker
+                style={{ width: '100%' }}
                 v-model={[this.datePickerRange, 'formattedValue']}
                 type='datetimerange'
+                format='yyyy-MM-dd HH:mm:ss'
+                value-format='yyyy-MM-dd HH:mm:ss'
                 start-placeholder={this.t(
                   'project.synchronization_instance.start_time'
                 )}
@@ -299,10 +319,17 @@ const SyncTask = defineComponent({
                 )}
                 shortcuts={this.rangeShortCuts.rangeOption}
               />
-            </NGi>
-            <NGi span={4}>
+            </div>
+            <div
+              style={{
+                marginLeft: 'auto',
+                display: 'flex',
+                gap: '8px',
+                flexShrink: 0
+              }}
+            >
               <NSpace justify='end'>
-                <NButton onClick={this.onReset}>
+                <NButton onClick={this.handleReset}>
                   <NIcon>
                     <ReloadOutlined />
                   </NIcon>
@@ -318,8 +345,8 @@ const SyncTask = defineComponent({
                   </NIcon>
                 </NButton>
               </NSpace>
-            </NGi>
-          </NGrid>
+            </div>
+          </div>
         </NCard>
         <NCard title={t('project.synchronizing_task_instance')}>
           {{
@@ -385,6 +412,16 @@ const SyncTask = defineComponent({
           jobName={this.currentJobName}
           onUpdateShow={(v: boolean) => this.showLogViewerModal = v}
         />
+        <Modal
+          title={t('project.synchronization_instance.error_message')}
+          show={this.showErrorMessageModal}
+          cancelShow={false}
+          confirmText={t('关闭')}
+          onConfirm={() => (this.showErrorMessageModal = false)}
+          style={{ width: 'min(960px, calc(100vw - 48px))' }}
+        >
+          <ErrorMessageHighlight params={this.errorMessage} />
+        </Modal>
       </NSpace>
     )
   }

@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,7 +18,7 @@
 
 import { h, reactive, ref } from 'vue'
 import { endOfToday, format, startOfToday, subDays } from 'date-fns'
-import { useTableLink, useTableOperation } from '@/hooks'
+import { useTableOperation } from '@/hooks'
 import {
   AlignLeftOutlined,
   CheckCircleOutlined,
@@ -38,7 +39,7 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { ITaskState } from '@/common/types'
 import { tasksState } from '@/common/common'
-import { NButton, NIcon, NPopover, NSpin, NTooltip } from 'naive-ui'
+import { NButton, NEllipsis, NIcon, NSpin, NTooltip } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import {
   querySyncTaskInstancePaging,
@@ -53,7 +54,6 @@ import {
   forcedSuccessByIds
 } from '@/service/sync-task-instance'
 import { getRemainTime } from '@/utils/time'
-import ErrorMessageHighlight from './error-message-highlight'
 import { renderSyncTaskStatusTag } from './status-display'
 
 export function useSyncTask(syncTaskType = 'BATCH') {
@@ -79,6 +79,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     taskName: ref(''),
     executeUser: ref(''),
     errorMessage: ref(''),
+    showErrorMessageModal: ref(false),
     host: ref(''),
     stateType: null as null | string,
     syncTaskType,
@@ -114,25 +115,47 @@ export function useSyncTask(syncTaskType = 'BATCH') {
   }
   //
   const createColumns = (variables: any) => {
+    const taskNameColumnWidth =
+      typeof COLUMN_WIDTH_CONFIG.link_name.width === 'number'
+        ? COLUMN_WIDTH_CONFIG.link_name.width
+        : 180
+
     variables.columns = [
-      useTableLink(
-        {
-          title: t('project.synchronization_definition.task_name'),
-          key: 'jobDefineName',
-          ...COLUMN_WIDTH_CONFIG['link_name'],
-          button: {
-            onClick: (row: any) => {
-              router.push({
-                path: `/task/synchronization-instance/${row.jobDefineId}`,
-                query: {
-                  jobInstanceId: row.id,
-                  taskName: row.jobDefineName,
-                }
-              })
+      {
+        title: t('project.synchronization_definition.task_name'),
+        key: 'jobDefineName',
+        ...COLUMN_WIDTH_CONFIG['link_name'],
+        render: (row: any) => {
+          const targetRoute = {
+            path: `/task/synchronization-instance/${row.jobDefineId}`,
+            query: {
+              jobInstanceId: row.id,
+              taskName: row.jobDefineName
             }
           }
+
+          return h(
+            'a',
+            {
+              href: router.resolve(targetRoute).href,
+              title: row.jobDefineName,
+              style:
+                'display: inline-block; max-width: 100%; color: var(--n-color-target); text-decoration: none; cursor: pointer;',
+              onClick: (event: MouseEvent) => {
+                event.preventDefault()
+                router.push(targetRoute)
+              }
+            },
+            h(
+              NEllipsis,
+              {
+                style: `max-width: ${taskNameColumnWidth - 24}px`
+              },
+              () => row.jobDefineName || '-'
+            )
+          )
         }
-      ),
+      },
       {
         title: t('project.synchronization_instance.amount_of_data_read'),
         key: 'readRowCount',
@@ -161,18 +184,13 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         render: (row: any) => {
           return row.errorMessage
             ? h(
-                NPopover,
-                { trigger: 'click' },
+                NButton,
                 {
-                  trigger: () =>
-                    h(NButton, { text: true }, {
-                      default: () => t('tasks.view')
-                    }),
-                    default: () =>
-                      h(ErrorMessageHighlight, {
-                        params:
-                          row.errorMessage
-                      })
+                  text: true,
+                  onClick: () => handleViewErrorMessage(row.errorMessage)
+                },
+                {
+                  default: () => t('tasks.view')
                 }
                 )
             : '--'
@@ -269,6 +287,11 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     variables.showModalRef = true
     variables.row = row
   }
+
+  const handleViewErrorMessage = (errorMessage: string) => {
+    variables.errorMessage = errorMessage
+    variables.showErrorMessageModal = true
+  }
   
   const handleViewLogs = (row: any) => {
     variables.showLogViewerModal = true
@@ -291,21 +314,26 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     )
   }
 
+  const getQueryParams = (pageNo = variables.page) => ({
+    pageSize: variables.pageSize,
+    pageNo,
+    taskName: variables.taskName?.trim() || undefined,
+    host: variables.host?.trim() || undefined,
+    stateType: variables.stateType || undefined,
+    startDate: variables.datePickerRange?.[0] || undefined,
+    endDate: variables.datePickerRange?.[1] || undefined,
+    executorName: variables.executeUser?.trim() || undefined,
+    syncTaskType: variables.syncTaskType
+  })
+
   const getList = () => {
-    getTableData({
-      pageSize: variables.pageSize,
-      pageNo:
+    getTableData(
+      getQueryParams(
         variables.tableData.length === 1 && variables.page > 1
           ? variables.page - 1
-          : variables.page,
-      taskName: variables.taskName,
-      host: variables.host,
-      stateType: variables.stateType,
-      startDate: variables.datePickerRange ? variables.datePickerRange[0] : '',
-      endDate: variables.datePickerRange ? variables.datePickerRange[1] : '',
-      executorName: variables.executeUser,
-      syncTaskType: variables.syncTaskType
-    })
+          : variables.page
+      )
+    )
   }
 
   const onReset = () => {
@@ -353,6 +381,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     variables,
     createColumns,
     getTableData,
+    getQueryParams,
     onReset,
     batchBtnListClick,
     creatInstanceButtons,

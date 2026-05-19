@@ -26,7 +26,61 @@ type SyncTaskStatusMeta = {
   tagType: 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error'
 }
 
+const syncTaskStatusOrder = [
+  'RUNNING',
+  'FINISHED',
+  'FAILED',
+  'CANCELED',
+  'PAUSED',
+  'STOPPED',
+  'KILLED',
+  'SUBMITTED',
+  'PENDING',
+  'SCHEDULED',
+  'INITIALIZING',
+  'EXECUTING',
+  'FAILING',
+  'DOING_SAVEPOINT',
+  'SAVEPOINT_DONE',
+  'SUSPENDED',
+  'CREATED',
+  'ERROR'
+] as const
+
+const syncTaskStatusAliases: Record<string, string> = {
+  SUCCESS: 'FINISHED',
+  COMPLETED: 'FINISHED',
+  FAILURE: 'FAILED',
+  RUNNING_EXECUTION: 'RUNNING',
+  PAUSE: 'PAUSED',
+  STOP: 'STOPPED',
+  KILL: 'KILLED',
+  CANCELLED: 'CANCELED'
+}
+
 const statusTagTypeMap: Record<string, SyncTaskStatusMeta['tagType']> = {
+  SUBMITTED_SUCCESS: 'info',
+  RUNNING_EXECUTION: 'primary',
+  READY_PAUSE: 'warning',
+  PAUSE: 'warning',
+  READY_STOP: 'warning',
+  STOP: 'default',
+  FAILURE: 'error',
+  SUCCESS: 'success',
+  NEED_FAULT_TOLERANCE: 'warning',
+  KILL: 'error',
+  WAITING_THREAD: 'info',
+  WAITING_DEPEND: 'info',
+  DELAY_EXECUTION: 'info',
+  FORCED_SUCCESS: 'success',
+  SERIAL_WAIT: 'primary',
+  READY_BLOCK: 'warning',
+  BLOCK: 'warning',
+  DISPATCH: 'info',
+  PAUSE_BY_ISOLATION: 'warning',
+  KILL_BY_ISOLATION: 'error',
+  PAUSE_BY_CORONATION: 'warning',
+  FORBIDDEN_BY_CORONATION: 'default',
   CREATED: 'default',
   SUBMITTED: 'info',
   PENDING: 'warning',
@@ -39,7 +93,6 @@ const statusTagTypeMap: Record<string, SyncTaskStatusMeta['tagType']> = {
   SAVEPOINT_DONE: 'success',
   FINISHED: 'success',
   COMPLETED: 'success',
-  SUCCESS: 'success',
   FAILED: 'error',
   ERROR: 'error',
   CANCELED: 'default',
@@ -51,6 +104,28 @@ const statusTagTypeMap: Record<string, SyncTaskStatusMeta['tagType']> = {
 }
 
 const statusLocaleKeyMap: Record<string, string> = {
+  SUBMITTED_SUCCESS: 'project.workflow.submit_success',
+  RUNNING_EXECUTION: 'project.workflow.executing',
+  READY_PAUSE: 'project.workflow.ready_to_pause',
+  PAUSE: 'project.workflow.pause',
+  READY_STOP: 'project.workflow.ready_to_stop',
+  STOP: 'project.workflow.stop',
+  FAILURE: 'project.workflow.failed',
+  SUCCESS: 'project.workflow.success',
+  NEED_FAULT_TOLERANCE: 'project.workflow.need_fault_tolerance',
+  KILL: 'project.workflow.kill',
+  WAITING_THREAD: 'project.workflow.waiting_for_thread',
+  WAITING_DEPEND: 'project.workflow.waiting_for_dependence',
+  DELAY_EXECUTION: 'project.workflow.delay_execution',
+  FORCED_SUCCESS: 'project.workflow.forced_success',
+  SERIAL_WAIT: 'project.workflow.serial_wait',
+  READY_BLOCK: 'project.overview.ready_block',
+  BLOCK: 'project.overview.block',
+  DISPATCH: 'project.workflow.dispatch',
+  PAUSE_BY_ISOLATION: 'project.overview.pause_by_isolation',
+  KILL_BY_ISOLATION: 'project.overview.kill_by_isolation',
+  PAUSE_BY_CORONATION: 'project.overview.pause_by_coronation',
+  FORBIDDEN_BY_CORONATION: 'project.overview.forbidden_by_coronation',
   CREATED: 'project.synchronization_instance.status_created',
   SUBMITTED: 'project.synchronization_instance.status_submitted',
   PENDING: 'project.synchronization_instance.status_pending',
@@ -63,7 +138,6 @@ const statusLocaleKeyMap: Record<string, string> = {
   SAVEPOINT_DONE: 'project.synchronization_instance.status_savepoint_done',
   FINISHED: 'project.synchronization_instance.status_finished',
   COMPLETED: 'project.synchronization_instance.status_completed',
-  SUCCESS: 'project.synchronization_instance.status_success',
   FAILED: 'project.synchronization_instance.status_failed',
   ERROR: 'project.synchronization_instance.status_error',
   CANCELED: 'project.synchronization_instance.status_canceled',
@@ -77,6 +151,21 @@ const statusLocaleKeyMap: Record<string, string> = {
 const normalizeStatus = (status?: string) => {
   return String(status || 'UNKNOWABLE').trim().toUpperCase()
 }
+
+export const normalizeSyncTaskStatusFilterValue = (status?: string | null) => {
+  if (status == null || String(status).trim() === '') {
+    return null
+  }
+
+  const normalizedStatus = normalizeStatus(status)
+  return syncTaskStatusAliases[normalizedStatus] || normalizedStatus
+}
+
+export const getSyncTaskStatusOptions = (t: Translate) =>
+  syncTaskStatusOrder.map((status) => ({
+    label: getSyncTaskStatusMeta(status, t).label,
+    value: status
+  }))
 
 export const getSyncTaskStatusMeta = (
   status: string,

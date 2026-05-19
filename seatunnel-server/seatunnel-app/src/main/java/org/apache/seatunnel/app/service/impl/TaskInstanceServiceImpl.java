@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -48,10 +49,13 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -59,6 +63,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TaskInstanceServiceImpl extends SeatunnelBaseServiceImpl
         implements ITaskInstanceService<SeaTunnelJobInstanceDto> {
+
+    private static final Map<String, List<String>> JOB_STATUS_FILTER_ALIASES =
+            buildJobStatusFilterAliases();
 
     @Autowired IJobInstanceDao jobInstanceDao;
 
@@ -87,10 +94,17 @@ public class TaskInstanceServiceImpl extends SeatunnelBaseServiceImpl
 
         Date startDate = dateConverter(startTime);
         Date endDate = dateConverter(endTime);
+        List<String> stateTypes = normalizeStateTypes(stateType);
 
         IPage<SeaTunnelJobInstanceDto> jobInstanceIPage =
                 jobInstanceDao.queryJobInstanceListPaging(
-                        new Page<>(pageNo, pageSize), startDate, endDate, jobDefineName, jobMode);
+                        new Page<>(pageNo, pageSize),
+                        startDate,
+                        endDate,
+                        jobDefineName,
+                        executorName,
+                        stateTypes,
+                        jobMode);
 
         List<SeaTunnelJobInstanceDto> records = jobInstanceIPage.getRecords();
         List<SeaTunnelJobInstanceDto> filteredRecords =
@@ -136,6 +150,9 @@ public class TaskInstanceServiceImpl extends SeatunnelBaseServiceImpl
     }
 
     public Date dateConverter(String time) {
+        if (time == null || time.trim().isEmpty()) {
+            return null;
+        }
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         try {
@@ -143,6 +160,36 @@ public class TaskInstanceServiceImpl extends SeatunnelBaseServiceImpl
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<String> normalizeStateTypes(String stateType) {
+        if (stateType == null || stateType.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        String normalizedStateType = stateType.trim().toUpperCase(Locale.ROOT);
+        return JOB_STATUS_FILTER_ALIASES.getOrDefault(
+                normalizedStateType, Collections.singletonList(normalizedStateType));
+    }
+
+    private static Map<String, List<String>> buildJobStatusFilterAliases() {
+        Map<String, List<String>> aliases = new LinkedHashMap<>();
+        registerJobStatusAliases(aliases, "FINISHED", "FINISHED", "COMPLETED", "SUCCESS");
+        registerJobStatusAliases(aliases, "FAILED", "FAILED", "FAILURE", "ERROR");
+        registerJobStatusAliases(aliases, "RUNNING", "RUNNING", "RUNNING_EXECUTION", "EXECUTING");
+        registerJobStatusAliases(aliases, "PAUSED", "PAUSED", "PAUSE");
+        registerJobStatusAliases(aliases, "STOPPED", "STOPPED", "STOP");
+        registerJobStatusAliases(aliases, "KILLED", "KILLED", "KILL");
+        registerJobStatusAliases(aliases, "CANCELED", "CANCELED", "CANCELLED");
+        return aliases;
+    }
+
+    private static void registerJobStatusAliases(
+            Map<String, List<String>> aliases, String canonicalStatus, String... values) {
+        List<String> aliasValues = Arrays.asList(values);
+        for (String value : aliasValues) {
+            aliases.put(value, aliasValues);
+        }
+        aliases.put(canonicalStatus, aliasValues);
     }
 
     private void jobPipelineSummaryMetrics(List<SeaTunnelJobInstanceDto> records, JobMode jobMode) {

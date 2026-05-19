@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -83,9 +84,18 @@ public class JobInstanceDaoImpl implements IJobInstanceDao {
             Date startTime,
             Date endTime,
             String jobDefineName,
+            String executorName,
+            List<String> stateTypes,
             JobMode jobMode) {
         return jobInstanceMapper.queryJobInstanceListPaging(
-                page, startTime, endTime, jobDefineName, jobMode, getWorkspaceId());
+                page,
+                startTime,
+                endTime,
+                jobDefineName,
+                executorName,
+                stateTypes,
+                jobMode,
+                getWorkspaceId());
     }
 
     @Override

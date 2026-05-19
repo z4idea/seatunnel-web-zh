@@ -42,14 +42,20 @@
             <if test="startTime != null">
                 AND ji.create_time <![CDATA[ >=]]> #{startTime}
             </if>
-            <if test="endTime == null">
-                AND (ji.end_time is null or ji.end_time <![CDATA[ <=]]> #{endTime})
-            </if>
             <if test="endTime != null">
                 AND (ji.end_time <![CDATA[ <=]]> #{endTime} or ji.end_time is null)
             </if>
-            <if test="jobDefineName != null">
+            <if test="jobDefineName != null and jobDefineName != ''">
                 AND jd.name LIKE concat('%', #{jobDefineName}, '%')
+            </if>
+            <if test="executorName != null and executorName != ''">
+                AND cu.username LIKE concat('%', #{executorName}, '%')
+            </if>
+            <if test="stateTypes != null and stateTypes.size() > 0">
+                AND ji.job_status IN
+                <foreach collection="stateTypes" item="stateType" open="(" separator="," close=")">
+                    #{stateType}
+                </foreach>
             </if>
             <if test="jobMode != null">
                 AND ji.job_type = #{jobMode}

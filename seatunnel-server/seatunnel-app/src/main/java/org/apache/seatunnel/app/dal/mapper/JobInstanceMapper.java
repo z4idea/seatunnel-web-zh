@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -38,6 +39,8 @@ public interface JobInstanceMapper extends BaseMapper<JobInstance> {
             @Param("startTime") Date startTime,
             @Param("endTime") Date endTime,
             @Param("jobDefineName") String jobDefineName,
+            @Param("executorName") String executorName,
+            @Param("stateTypes") List<String> stateTypes,
             @Param("jobMode") JobMode jobMode,
             @Param("workspaceId") Long workspaceId);
 
