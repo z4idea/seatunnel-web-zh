@@ -39,13 +39,14 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { ITaskState } from '@/common/types'
 import { tasksState } from '@/common/common'
-import { NButton, NEllipsis, NIcon, NSpin, NTooltip } from 'naive-ui'
+import { NEllipsis, NIcon, NSpin, NTooltip } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import {
   querySyncTaskInstancePaging,
   hanldlePauseJob,
   hanldleRecoverJob,
-  hanldleDelJob
+  hanldleDelJob,
+  queryJobExecutionDetail
 } from '@/service/sync-task-instance'
 import type { RowKey } from 'naive-ui/lib/data-table/src/interface'
 import type { Router } from 'vue-router'
@@ -119,6 +120,8 @@ export function useSyncTask(syncTaskType = 'BATCH') {
       typeof COLUMN_WIDTH_CONFIG.link_name.width === 'number'
         ? COLUMN_WIDTH_CONFIG.link_name.width
         : 180
+    const linkStyle =
+      'display: inline-block; max-width: 100%; color: var(--n-color-target); text-decoration: none; cursor: pointer;'
 
     variables.columns = [
       {
@@ -139,8 +142,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
             {
               href: router.resolve(targetRoute).href,
               title: row.jobDefineName,
-              style:
-                'display: inline-block; max-width: 100%; color: var(--n-color-target); text-decoration: none; cursor: pointer;',
+              style: linkStyle,
               onClick: (event: MouseEvent) => {
                 event.preventDefault()
                 router.push(targetRoute)
@@ -184,15 +186,18 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         render: (row: any) => {
           return row.errorMessage
             ? h(
-                NButton,
+                'a',
                 {
-                  text: true,
-                  onClick: () => handleViewErrorMessage(row.errorMessage)
+                  href: '#',
+                  title: t('tasks.view'),
+                  style: linkStyle,
+                  onClick: (event: MouseEvent) => {
+                    event.preventDefault()
+                    handleViewErrorMessage(row.errorMessage)
+                  }
                 },
-                {
-                  default: () => t('tasks.view')
-                }
-                )
+                t('tasks.view')
+              )
             : '--'
           }
       },
@@ -293,11 +298,25 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     variables.showErrorMessageModal = true
   }
   
-  const handleViewLogs = (row: any) => {
-    variables.showLogViewerModal = true
-    variables.currentJobId = row.jobEngineId || row.id
+  const handleViewLogs = async (row: any) => {
     variables.currentJobName = row.jobDefineName
-    console.log('handleViewLogs row:', row)
+    variables.currentJobId = row.jobEngineId || ''
+
+    if (!variables.currentJobId) {
+      try {
+        const detail = await queryJobExecutionDetail({ jobInstanceId: row.id })
+        variables.currentJobId = detail?.jobEngineId || ''
+      } catch (err) {
+        console.error('Failed to load job execution detail for logs:', err)
+      }
+    }
+
+    if (!variables.currentJobId) {
+      message.error(t('project.synchronization_instance.fetch_logs_error'))
+      return
+    }
+
+    variables.showLogViewerModal = true
   }
 
   const handleCleanState = (row: any) => {

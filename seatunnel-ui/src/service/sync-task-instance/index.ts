@@ -62,6 +62,15 @@ export function queryJobExecutionStatus(params: { jobInstanceId: string | number
   })
 }
 
+export function queryJobExecutionDetail(params: { jobInstanceId: string | number }): any {
+  return axios({
+    url: '/job/executor/detail',
+    method: 'get',
+    params,
+    timeout: 60000
+  })
+}
+
 export function cleanStateByIds(taskInstanceIds: Array<any>) {
   return axios({
     url: 'ws/seaTunnel/batch-clean-task-instance-state',

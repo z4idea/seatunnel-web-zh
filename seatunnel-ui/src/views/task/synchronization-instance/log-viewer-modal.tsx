@@ -28,6 +28,7 @@ import {
   NSwitch
 } from 'naive-ui'
 import { getLogNodes, getLogContent } from '@/service/log'
+import type { LogNode } from '@/service/log/types'
 import styles from './log-viewer-modal.module.scss'
 
 const LogViewerModal = defineComponent({
@@ -49,9 +50,8 @@ const LogViewerModal = defineComponent({
   emits: ['update:show'],
   setup(props) {
     const { t } = useI18n()
-    
-    // State
-    const logNodes = ref<any[]>([])
+
+    const logNodes = ref<LogNode[]>([])
     const selectedLogNode = ref('')
     const logContent = ref('')
     const loading = ref(false)
@@ -62,8 +62,7 @@ const LogViewerModal = defineComponent({
     const error = ref('')
     const refreshTimerId = ref<number | null>(null)
     const userScrolled = ref(false)
-    
-    // Refresh interval options
+
     const refreshIntervalOptions = [
       { label: t('project.synchronization_instance.refresh_off'), value: 0 },
       { label: t('project.synchronization_instance.refresh_1s'), value: 1 },
@@ -72,32 +71,55 @@ const LogViewerModal = defineComponent({
       { label: t('project.synchronization_instance.refresh_30s'), value: 30 },
       { label: t('project.synchronization_instance.refresh_60s'), value: 60 }
     ]
-    
-    // Fetch log node list
+
+    const resetLogState = () => {
+      logNodes.value = []
+      selectedLogNode.value = ''
+      logContent.value = ''
+      loading.value = false
+      loadingLogs.value = false
+      error.value = ''
+      userScrolled.value = false
+    }
+
+    const normalizeLogNodes = (payload: any): LogNode[] => {
+      if (Array.isArray(payload)) return payload
+      if (Array.isArray(payload?.data)) return payload.data
+      if (Array.isArray(payload?.logs)) return payload.logs
+      if (Array.isArray(payload?.items)) return payload.items
+      return []
+    }
+
+    const normalizeLogContent = (payload: any): string => {
+      const content = payload?.data ?? payload?.logContent ?? payload?.content ?? payload
+
+      if (content === undefined || content === null) {
+        return ''
+      }
+
+      if (typeof content === 'string') {
+        return content
+      }
+
+      if (typeof content === 'object') {
+        return JSON.stringify(content, null, 2)
+      }
+
+      return String(content)
+    }
+
     const fetchLogNodes = async () => {
       if (!props.jobId) return
-      
+
       loading.value = true
       error.value = ''
-      
+
       try {
         const response = await getLogNodes(props.jobId)
-        console.log('Log nodes response:', response)
-        
-        // Ensure response.data is an array
-        if (Array.isArray(response.data)) {
-          logNodes.value = response.data
-        } else {
-          console.error('Log nodes response is not an array:', response.data)
-          logNodes.value = []
-        }
-        
-        console.log('Log nodes:', logNodes.value)
-        
+        logNodes.value = normalizeLogNodes(response?.data)
+
         if (logNodes.value.length > 0) {
           selectedLogNode.value = logNodes.value[0].logLink
-          console.log('Selected log node:', selectedLogNode.value)
-          fetchLogContent()
         } else {
           loading.value = false
           logContent.value = ''
@@ -108,53 +130,26 @@ const LogViewerModal = defineComponent({
         loading.value = false
       }
     }
-    
-    // Fetch log content
+
     const fetchLogContent = async () => {
       if (!selectedLogNode.value) return
-      
-      // Only show loading status on first load to avoid flicker when refreshing
-      if (logContent.value === '') {
-        loadingLogs.value = true
-      }
+
+      loadingLogs.value = true
       error.value = ''
-      
+
       try {
-        console.log('Fetching log content for:', selectedLogNode.value)
         const response = await getLogContent(selectedLogNode.value)
-        console.log('Log content response:', response)
-        
-        // Check if response.data exists
-        if (response && response.data !== undefined) {
-          // Ensure log content is a string
-          let newContent = '';
-          if (typeof response.data === 'string') {
-            newContent = response.data
-          } else if (typeof response.data === 'object') {
-            // If it's an object, convert it to string
-            newContent = JSON.stringify(response.data, null, 2)
-          } else {
-            // For other cases, force convert to string
-            newContent = String(response.data)
-          }
-          
-          // Only update content, not replace entire content, to avoid flicker
-          if (newContent !== logContent.value) {
-            logContent.value = newContent
-            console.log('Log content updated:', newContent.substring(0, 100) + '...')
-            
-            // Only scroll to bottom when auto-scroll is enabled and user hasn't manually scrolled
-            if (autoScroll.value && !userScrolled.value) {
-              scrollToBottom()
-            }
-          }
-        } else {
-          console.error('Log content response is empty or invalid')
-          if (logContent.value === '') {
-            logContent.value = ''
+
+        const newContent = normalizeLogContent(response?.data)
+
+        if (newContent !== logContent.value) {
+          logContent.value = newContent
+
+          if (autoScroll.value && !userScrolled.value) {
+            scrollToBottom()
           }
         }
-        
+
         loading.value = false
         loadingLogs.value = false
       } catch (err: any) {
@@ -164,8 +159,7 @@ const LogViewerModal = defineComponent({
         loadingLogs.value = false
       }
     }
-    
-    // Scroll to bottom
+
     const scrollToBottom = () => {
       nextTick(() => {
         if (logContentRef.value) {
@@ -173,73 +167,77 @@ const LogViewerModal = defineComponent({
         }
       })
     }
-    
-    // Set refresh timer
+
     const setupRefreshInterval = () => {
       clearRefreshTimer()
-      
+
       if (refreshInterval.value > 0) {
         refreshTimerId.value = window.setInterval(() => {
           fetchLogContent()
         }, refreshInterval.value * 1000)
       }
     }
-    
-    // Clear refresh timer
+
     const clearRefreshTimer = () => {
       if (refreshTimerId.value !== null) {
         clearInterval(refreshTimerId.value)
         refreshTimerId.value = null
       }
     }
-    
-    // Manual refresh
+
     const handleRefresh = () => {
       fetchLogContent()
     }
-    
-    // Handle scroll event
+
     const handleScroll = (e: Event) => {
       const target = e.target as HTMLElement
       const isAtBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 10
-      
+
       userScrolled.value = !isAtBottom
     }
-    
-    // Handle node selection change
-    watch(() => selectedLogNode.value, () => {
+
+    watch(() => selectedLogNode.value, (newValue, oldValue) => {
+      if (!newValue || newValue === oldValue) {
+        return
+      }
+
       logContent.value = ''
-      fetchLogContent()
+      void fetchLogContent()
     })
-    
-    // Handle refresh interval change
+
     watch(() => refreshInterval.value, () => {
       setupRefreshInterval()
     })
-    
-    // Handle modal show status change
+
     watch(() => props.show, (newVal) => {
       if (newVal) {
-        fetchLogNodes()
+        resetLogState()
+        void fetchLogNodes()
         setupRefreshInterval()
       } else {
         clearRefreshTimer()
+        resetLogState()
       }
     })
-    
-    // Component mounted
+
+    watch(() => props.jobId, (newJobId, oldJobId) => {
+      if (props.show && newJobId && newJobId !== oldJobId) {
+        resetLogState()
+        void fetchLogNodes()
+      }
+    })
+
     onMounted(() => {
       if (props.show) {
-        fetchLogNodes()
+        void fetchLogNodes()
         setupRefreshInterval()
       }
     })
-    
-    // Component unmounted
+
     onUnmounted(() => {
       clearRefreshTimer()
     })
-    
+
     return {
       t,
       logNodes,
@@ -260,7 +258,7 @@ const LogViewerModal = defineComponent({
   },
   render() {
     const { t } = this
-    
+
     return (
       <NModal
         show={this.show}
@@ -318,23 +316,25 @@ const LogViewerModal = defineComponent({
             ) : this.logNodes.length === 0 ? (
               <NEmpty description={t('project.synchronization_instance.no_logs_available')} />
             ) : (
-              <div 
-                class={styles['log-content']} 
-                ref="logContentRef"
-                onScroll={this.handleScroll}
-              >
-                {this.loadingLogs ? (
-                  <NSpin size="small" />
-                ) : (
+              <div class={styles['log-content-wrapper']}>
+                <div
+                  class={styles['log-content']}
+                  ref="logContentRef"
+                  onScroll={this.handleScroll}
+                >
                   <pre>{this.logContent || t('project.synchronization_instance.no_log_content')}</pre>
-                )}
-                {/* Add a small hint that will be displayed when the user manually scrolls */}
-                {this.userScrolled && this.autoScroll && (
-                  <div 
-                    style="position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;"
-                    onClick={this.scrollToBottom}
-                  >
-                    {t('project.synchronization_instance.scroll_to_bottom')}
+                  {this.userScrolled && this.autoScroll && (
+                    <div
+                      style="position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;"
+                      onClick={this.scrollToBottom}
+                    >
+                      {t('project.synchronization_instance.scroll_to_bottom')}
+                    </div>
+                  )}
+                </div>
+                {this.loadingLogs && (
+                  <div class={styles['log-loading-overlay']}>
+                    <NSpin size="large" />
                   </div>
                 )}
               </div>
