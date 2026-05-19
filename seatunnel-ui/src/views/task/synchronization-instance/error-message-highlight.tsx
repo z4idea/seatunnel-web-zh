@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-import { defineComponent, PropType, h } from 'vue'
-import { NText } from 'naive-ui'
-import { isBoolean, isNumber, isPlainObject } from 'lodash'
+/* @author: zhjj */
+import { defineComponent, PropType } from 'vue'
 import styles from './error-message-highlight.module.scss'
 
 const props = {
@@ -31,19 +30,8 @@ const ErrorMessageHighlight = defineComponent({
   name: 'ErrorMessageHighlight',
   props,
   render(props: { params: string }) {
-    return (
-      <pre class={styles['json-highlight']}>
-        {syntaxHighlight(props.params)}
-      </pre>
-    )
+    return <pre class={styles.errorMessageContainer}>{props.params}</pre>
   }
 })
-
-const syntaxHighlight = (message: string) => {
-   return h('div', {
-       class: styles.errorMessageContainer,
-       innerHTML: message
-   });
-}
 
 export default ErrorMessageHighlight

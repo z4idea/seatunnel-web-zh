@@ -176,7 +176,7 @@ export default defineComponent({
         cancelShow={false}
         onConfirm={this.confirmModal}
         style={{ width: '60%' }}
-        confirmText={t('modal.close')}
+        confirmText={t('关闭')}
       >
         <NLog
           rows={30}
