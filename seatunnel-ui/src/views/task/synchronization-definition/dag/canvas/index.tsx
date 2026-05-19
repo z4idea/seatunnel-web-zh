@@ -79,6 +79,30 @@ const DagCanvas = defineComponent({
       )
     }
 
+    const fitGraphViewport = (force = false) => {
+      if (!graph.value || !dagContainer.value || !graph.value.getNodes().length) {
+        return
+      }
+
+      const viewportWidth = dagContainer.value.offsetWidth
+      const viewportHeight = dagContainer.value.offsetHeight
+      const contentBBox = graph.value.getContentBBox()
+      const needsFit =
+        force ||
+        viewportWidth < 720 ||
+        contentBBox.width > Math.max(viewportWidth - 48, 0) ||
+        contentBBox.height > Math.max(viewportHeight - 48, 0)
+
+      if (needsFit) {
+        graph.value.zoomToFit({
+          padding: 24,
+          maxScale: 1
+        })
+      }
+
+      graph.value.centerContent()
+    }
+
     const registerNode = () => {
       Graph.unregisterNode(DagNodeName)
       Graph.registerNode(DagNodeName, useDagNode())
@@ -134,7 +158,9 @@ const DagCanvas = defineComponent({
       updateNode(graph.value as Graph)
     }
 
-    useDagResize(container, graph as Ref<Graph>)
+    useDagResize(container, graph as Ref<Graph>, () => {
+      fitGraphViewport()
+    })
 
     ctx.expose({
       addNode: (cell: Cell.Metadata) => {
@@ -156,14 +182,18 @@ const DagCanvas = defineComponent({
       addNodesAndEdges: (cells: Cell.Metadata[], edges: InputEdge[]) => {
         initNodesAndEdges(graph.value as Graph, cells, edges)
         nextTick(() => {
-          graph.value?.centerContent()
+          fitGraphViewport(true)
         })
       },
       getSelectedCells: () => graph.value?.getSelectedCells(),
       removeCell: (id: string) => graph.value?.removeCell(id),
       getDagData: () => getDagData(graph.value as Graph, t),
-      layoutDag: (layoutType: 'grid' | 'dagre', cols: number, rows: number) =>
+      layoutDag: (layoutType: 'grid' | 'dagre', cols: number, rows: number) => {
         formatLayout(graph.value, layoutType, cols, rows)
+        nextTick(() => {
+          fitGraphViewport(true)
+        })
+      }
     })
 
     onMounted(() => {

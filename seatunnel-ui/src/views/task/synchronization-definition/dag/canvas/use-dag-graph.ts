@@ -28,7 +28,15 @@ export function useDagGraph(
     scroller: {
       enabled: true,
       pannable: true,
-      autoResize: false
+      autoResize: true,
+      autoResizeOptions: {
+        padding: {
+          top: 80,
+          right: 80,
+          bottom: 80,
+          left: 80
+        }
+      }
     },
     grid: {
       size: 10,

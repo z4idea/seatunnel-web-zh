@@ -20,14 +20,19 @@ import { useResizeObserver } from '@vueuse/core'
 import type { Graph } from '@antv/x6'
 import type { Ref } from 'vue'
 
-export function useDagResize(container: Ref<HTMLElement>, graph: Ref<Graph>) {
+export function useDagResize(
+  container: Ref<HTMLElement>,
+  graph: Ref<Graph>,
+  onResize?: (graph: Graph) => void
+) {
   const resize = debounce(() => {
-    if (container.value) {
+    if (container.value && graph.value) {
       const w = container.value.offsetWidth
       const h = container.value.offsetHeight
       graph.value?.resize(w, h)
+      onResize?.(graph.value)
     }
-  }, 200)
+  }, 120)
 
   useResizeObserver(container, resize)
 }

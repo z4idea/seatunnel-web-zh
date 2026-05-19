@@ -16,7 +16,7 @@
  */
 
 .task-container {
-  width: 250px;
+  width: clamp(200px, 22vw, 250px);
   flex-shrink: 0;
   overflow-y: auto;
 }
