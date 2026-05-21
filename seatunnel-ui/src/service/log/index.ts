@@ -17,7 +17,15 @@
 
 import { axios } from '@/service/service'
 import rawAxios from 'axios'
+import { useUserStore } from '@/store/user'
 import type { LogParams, LogRes } from './types'
+
+function getLogRequestHeaders(): Record<string, string> {
+  const userStore = useUserStore()
+  const token = (userStore.getUserInfo as { token?: string }).token
+
+  return token ? { token } : {}
+}
 
 // Query task logs
 export function queryLog(params: LogParams): Promise<LogRes> {
@@ -32,7 +40,8 @@ export function queryLog(params: LogParams): Promise<LogRes> {
 export function getLogNodes(jobId: string | number): Promise<any> {
   // Here we use raw axios to make direct requests, avoiding the addition of /seatunnel/api/v1 prefix
   return rawAxios.get(`/api/logs/${jobId}`, {
-    params: { format: 'json' }
+    params: { format: 'json' },
+    headers: getLogRequestHeaders()
   })
 }
 
@@ -49,22 +58,30 @@ export function getLogContent(logUrl: string): Promise<{ data: string }> {
       const pathName = url.pathname
       const search = url.search
 
-      return rawAxios.get(`/api${pathName}${search}`)
+      return rawAxios.get(`/api${pathName}${search}`, {
+        headers: getLogRequestHeaders()
+      })
     } catch (e) {
       return Promise.reject(new Error('Failed to fetch log content'))
     }
   }
 
   if (logUrl.startsWith('/logs/')) {
-    return rawAxios.get(`/api${logUrl}`)
+    return rawAxios.get(`/api${logUrl}`, {
+      headers: getLogRequestHeaders()
+    })
   }
 
   if (logUrl.startsWith('logs/')) {
-    return rawAxios.get(`/api/${logUrl}`)
+    return rawAxios.get(`/api/${logUrl}`, {
+      headers: getLogRequestHeaders()
+    })
   }
 
   const [rawFileName] = logUrl.split('?')
   const logFileName = rawFileName.split('/').pop() || ''
 
-  return rawAxios.get(`/api/logs/${encodeURIComponent(logFileName)}`)
+  return rawAxios.get(`/api/logs/${encodeURIComponent(logFileName)}`, {
+    headers: getLogRequestHeaders()
+  })
 }

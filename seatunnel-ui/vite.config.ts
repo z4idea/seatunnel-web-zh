@@ -43,9 +43,8 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true
         },
         '/api': {
-          target: 'http://localhost:8080',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, '')
+          target: env.VITE_APP_DEV_WEB_URL || 'http://127.0.0.1:8801',
+          changeOrigin: true
         }
       }
     }
