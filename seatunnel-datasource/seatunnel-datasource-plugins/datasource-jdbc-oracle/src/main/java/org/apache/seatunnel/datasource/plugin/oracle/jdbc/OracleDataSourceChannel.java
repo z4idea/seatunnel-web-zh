@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+/* @author: zhjj */
+
 package org.apache.seatunnel.datasource.plugin.oracle.jdbc;
 
 import org.apache.seatunnel.api.configuration.util.OptionRule;
@@ -224,7 +226,11 @@ public class OracleDataSourceChannel implements DataSourceChannel {
 
     private Connection getConnection(Map<String, String> requestParams)
             throws SQLException, ClassNotFoundException {
-        checkNotNull(requestParams.get(OracleOptionRule.DRIVER.key()));
+        String configuredDriver =
+                checkNotNull(
+                        requestParams.get(OracleOptionRule.DRIVER.key()),
+                        "Jdbc driver cannot be null");
+        Class.forName(resolveDriverClassName(configuredDriver));
         checkNotNull(requestParams.get(OracleOptionRule.URL.key()), "Jdbc url cannot be null");
         String url = requestParams.get(OracleOptionRule.URL.key());
         if (requestParams.containsKey(OracleOptionRule.USER.key())) {
@@ -233,5 +239,16 @@ public class OracleDataSourceChannel implements DataSourceChannel {
             return DriverManager.getConnection(url, username, password);
         }
         return DriverManager.getConnection(url);
+    }
+
+    private String resolveDriverClassName(String configuredDriver) {
+        if (configuredDriver.contains(".")) {
+            return configuredDriver;
+        }
+        try {
+            return OracleOptionRule.DriverType.valueOf(configuredDriver).getDriverClassName();
+        } catch (IllegalArgumentException ignored) {
+            return configuredDriver;
+        }
     }
 }
