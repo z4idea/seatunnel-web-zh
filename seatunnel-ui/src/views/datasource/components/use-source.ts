@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// @author: zhjj
 import { onMounted, reactive, watch } from 'vue'
 import { getDatasourceType } from '@/service/data-source'
 import { useI18n } from 'vue-i18n'
@@ -27,6 +28,27 @@ type IType = {
   label: string
   key: string
   children: SelectOption[]
+}
+
+const DATASOURCE_PRIORITY_KEYWORDS = ['mysql', 'oracle', 'sqlserver', 'dm']
+
+const getDatasourcePriority = (name: string): number => {
+  const lowerName = name.toLowerCase()
+  const priority = DATASOURCE_PRIORITY_KEYWORDS.findIndex((keyword) =>
+    lowerName.includes(keyword)
+  )
+  return priority === -1 ? Number.MAX_SAFE_INTEGER : priority
+}
+
+const sortDatasourceOptions = (options: SelectOption[]): SelectOption[] => {
+  return options
+    .map((option, index) => ({
+      option,
+      index,
+      priority: getDatasourcePriority((option.label as string) || '')
+    }))
+    .sort((a, b) => a.priority - b.priority || a.index - b.index)
+    .map(({ option }) => option)
 }
 
 export const useSource = (showVirtualDataSource = false) => {
@@ -54,18 +76,21 @@ export const useSource = (showVirtualDataSource = false) => {
       }
 
       state.types = Object.entries(res).map(([key, value]) => {
+        const typeKey = TYPE_MAP[key as Key]
+        const options = (value as any).map((item: any) => {
+          locales.zh_CN[item.name] = item.chineseName
+          locales.en_US[item.name] = item.name
+          return {
+            label: item.name,
+            value: item.name
+          }
+        })
         return {
           type: 'group',
-          label: i18n.t(`datasource.${TYPE_MAP[key as Key]}`),
-          key: TYPE_MAP[key as Key],
-          children: (value as any).map((item: any) => {
-            locales.zh_CN[item.name] = item.chineseName
-            locales.en_US[item.name] = item.name
-            return {
-              label: item.name,
-              value: item.name
-            }
-          })
+          label: i18n.t(`datasource.${typeKey}`),
+          key: typeKey,
+          children:
+            typeKey === 'database' ? sortDatasourceOptions(options) : options
         }
       })
 
