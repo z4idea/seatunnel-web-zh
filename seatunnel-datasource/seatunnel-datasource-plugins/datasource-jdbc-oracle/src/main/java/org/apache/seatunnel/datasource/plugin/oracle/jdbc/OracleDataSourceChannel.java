@@ -73,7 +73,7 @@ public class OracleDataSourceChannel implements DataSourceChannel {
                         + "AND OWNER NOT IN ('APPQOSSYS', 'AUDSYS', 'CTXSYS', 'DVSYS', 'DBSFWUSER', 'DBSNMP',\n"
                         + "                    'GSMADMIN_INTERNAL', 'LBACSYS', 'MDSYS', 'OJVMSYS', 'OLAPSYS',\n"
                         + "                    'ORDDATA', 'ORDSYS', 'OUTLN', 'SYS', 'SYSTEM', 'WMSYS',\n"
-                        + "                    'XDB', 'EXFSYS', 'SYSMAN')";
+                        + "                    'XDB', 'EXFSYS', 'SYSMAN', 'VECSYS')";
         sqlWhere.append(sql);
         String filterName = options.get("filterName");
         if (StringUtils.isNotEmpty(filterName)) {
