@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -103,10 +106,11 @@ public class SeaTunnelOptionRuleWrapper {
         if (defValue == null) {
             return null;
         }
+        String value = resolveSelectOptionValue(defValue);
         if (String.class.equals(option.typeReference().getType())) {
-            return PlaceholderUtil.escapePlaceholders(defValue.toString());
+            return PlaceholderUtil.escapePlaceholders(value);
         }
-        return defValue.toString();
+        return value;
     }
 
     private static List<AbstractFormOption> wrapperOptionOptions(
@@ -335,7 +339,7 @@ public class SeaTunnelOptionRuleWrapper {
             List<?> optionValues = ((SingleChoiceOption<?>) option).getOptionValues();
             List<ImmutablePair> staticSelectOptions =
                     optionValues.stream()
-                            .map(o -> new ImmutablePair(o.toString(), o.toString()))
+                            .map(SeaTunnelOptionRuleWrapper::buildSelectOption)
                             .collect(Collectors.toList());
             return selectInput(connectorName, option, staticSelectOptions, locale);
         }
@@ -344,7 +348,7 @@ public class SeaTunnelOptionRuleWrapper {
             Object[] enumConstants = ((Class) option.typeReference().getType()).getEnumConstants();
             List<ImmutablePair> staticSelectOptions =
                     Arrays.stream(enumConstants)
-                            .map(o -> new ImmutablePair(o.toString(), o.toString()))
+                            .map(SeaTunnelOptionRuleWrapper::buildSelectOption)
                             .collect(Collectors.toList());
             return selectInput(connectorName, option, staticSelectOptions, locale);
         }
@@ -384,6 +388,25 @@ public class SeaTunnelOptionRuleWrapper {
             labelEnableI18n = true;
         }
         return labelEnableI18n;
+    }
+
+    private static ImmutablePair buildSelectOption(Object optionValue) {
+        return new ImmutablePair(optionValue.toString(), resolveSelectOptionValue(optionValue));
+    }
+
+    private static String resolveSelectOptionValue(Object optionValue) {
+        if (optionValue == null) {
+            return null;
+        }
+        try {
+            Object value = optionValue.getClass().getMethod("getValue").invoke(optionValue);
+            if (value != null) {
+                return value.toString();
+            }
+        } catch (ReflectiveOperationException ignored) {
+            // Fallback to enum name / raw option value when no getValue() contract exists.
+        }
+        return optionValue.toString();
     }
 
     private static AbstractFormOption selectInput(

@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,7 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// @author: zhjj
 import { onMounted, reactive, watch } from 'vue'
 import { getDatasourceType } from '@/service/data-source'
 import { useI18n } from 'vue-i18n'
@@ -78,7 +80,8 @@ export const useSource = (showVirtualDataSource = false) => {
       state.types = Object.entries(res).map(([key, value]) => {
         const typeKey = TYPE_MAP[key as Key]
         const options = (value as any).map((item: any) => {
-          locales.zh_CN[item.name] = item.chineseName
+          locales.zh_CN[item.name] =
+            item.name === 'LocalFile' ? '本地文件' : item.chineseName
           locales.en_US[item.name] = item.name
           return {
             label: item.name,

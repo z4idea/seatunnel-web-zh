@@ -57,7 +57,7 @@ seatunnel-web:
   schedule:
     time-zone: Asia/Shanghai
   engine:
-    base-url: http://localhost:5555
+    base-url: http://localhost:8080
   datasource:
     encryption:
       type: none

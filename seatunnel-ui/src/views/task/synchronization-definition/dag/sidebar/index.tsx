@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -39,8 +42,8 @@ const DagSidebar = defineComponent({
     const businessModel = ref('data-integration')
     const { variables, getConnectorTransformsTypeList } = useSidebar()
     const { t } = useI18n()
-    const handleDragstart = (type: string, name?: string) => {
-      ctx.emit('dragstart', type, name)
+    const handleDragstart = (type: string, name?: string, sourceKind?: string) => {
+      ctx.emit('dragstart', type, name, sourceKind)
     }
 
     const getComponentDescription = (name: string) => {
@@ -100,6 +103,28 @@ const DagSidebar = defineComponent({
               title={this.getComponentDescription('Source')}
             >
              <InfoCircleOutlined style={{width:'17px', height:'17px'}} />
+            </span>
+          </div>
+          <div
+            class={styles['task-item']}
+            draggable='true'
+            onDragstart={() =>
+              this.handleDragstart(
+                'source',
+                this.t('project.synchronization_definition.file_source'),
+                'LOCAL_FILE'
+              )
+            }
+          >
+            <NSpace align='center'>
+              <img class={styles['task-image']} src={SourceImg} />
+              <span>{this.t('project.synchronization_definition.file_source')}</span>
+            </NSpace>
+            <span
+              class="task-item-info ml-auto inline-block"
+              title={this.t('project.synchronization_definition.file_source_description')}
+            >
+              <InfoCircleOutlined style={{width:'17px', height:'17px'}} />
             </span>
           </div>
           <div

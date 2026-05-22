@@ -22,6 +22,8 @@ import org.apache.seatunnel.engine.core.job.JobStatus;
 import org.apache.seatunnel.server.common.SeatunnelErrorEnum;
 import org.apache.seatunnel.server.common.SeatunnelException;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,28 @@ public class JobUtils {
         return message.length() > ERROR_MESSAGE_MAX_LENGTH
                 ? message.substring(0, ERROR_MESSAGE_MAX_LENGTH)
                 : message;
+    }
+
+    public static String resolveJobExecutionErrorMessage(Throwable throwable) {
+        if (throwable == null) {
+            return null;
+        }
+        Throwable root = throwable;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        if (root instanceof ClassNotFoundException) {
+            String missingClass = root.getMessage();
+            if (missingClass != null && missingClass.contains("hadoop")) {
+                return "LocalFile/HdfsFile 连接器依赖 Hadoop 类库，请在 SEATUNNEL_HOME 下执行 "
+                        + "bin/install-plugin.sh connector-file-local（Windows 可用 Git Bash 运行），"
+                        + "或把 seatunnel-hadoop3-*-uber.jar 复制到 lib 目录后重启引擎。"
+                        + " Missing class: "
+                        + missingClass;
+            }
+        }
+        String message = throwable.getMessage();
+        return StringUtils.isNotBlank(message) ? message : root.toString();
     }
 
     public static void updateDataSource(JobExecParam jobExecParam, List<JobTask> tasks) {

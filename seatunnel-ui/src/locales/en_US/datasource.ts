@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -87,5 +90,17 @@ export default {
   storage: 'Storage',
   data_analysis: 'Data Analysis',
   remote_connection: 'Remote Connection',
-  fake_connection: 'Fake Connection'
+  fake_connection: 'Fake Connection',
+  local_file_browse: 'Browse',
+  local_file_select: 'Select Local File',
+  local_file_name: 'Name',
+  local_file_type: 'Type',
+  local_file_size: 'Size',
+  local_file_dir: 'Directory',
+  local_file_unsupported: 'Unsupported',
+  local_file_roots: 'Roots',
+  local_file_parent: 'Parent',
+  local_file_search_placeholder: 'Search files or folders in the current directory',
+  local_file_path_placeholder: 'Select a csv or json file on the server',
+  local_file_format_placeholder: 'Select file format'
 }

@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -83,5 +86,17 @@ export default {
   storage: '存储',
   data_analysis: '数据分析',
   remote_connection: '远程连接',
-  fake_connection: '假连接'
+  fake_connection: '假连接',
+  local_file_browse: '浏览',
+  local_file_select: '选择本地文件',
+  local_file_name: '名称',
+  local_file_type: '类型',
+  local_file_size: '大小',
+  local_file_dir: '目录',
+  local_file_unsupported: '不支持',
+  local_file_roots: '根目录',
+  local_file_parent: '上一级',
+  local_file_search_placeholder: '搜索当前目录下的文件或文件夹',
+  local_file_path_placeholder: '请选择服务器上的 csv 或 json 文件',
+  local_file_format_placeholder: '请选择文件格式'
 }

@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -85,6 +88,23 @@ export function useNodeModel(
         onSwitchTable(state.currentTable)
       })
 
+    } else if (state.datasourceName === 'LocalFile') {
+      const formValues = refForm.value?.getValues?.() || {}
+      const fields =
+        formValues.localFileSchemaFields ||
+        ((state.optionsOutputTableData[0] as any)?.fields || [])
+      state.allTableData = [
+        {
+          database: state.database || 'default',
+          tableInfos: [
+            {
+              tableName: state.currentTable,
+              fields
+            }
+          ]
+        }
+      ] as any
+      onSwitchTable(state.currentTable)
     } else {
       modelInfo(state.datasourceInstanceId, [{
         database: state.database,
@@ -308,6 +328,7 @@ export function useNodeModel(
     state.columnSelectable = info.columnSelectable || false
     state.database = info.database || ''
     state.datasourceInstanceId = info.datasourceInstanceId || ''
+    state.datasourceName = info.datasourceName || ''
     state.format = info.format
     state.transformOptions = info.transformOptions
     // It is used to judge the output model of multiple continuously operable transform nodes.

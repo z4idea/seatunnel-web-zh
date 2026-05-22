@@ -142,6 +142,11 @@ public abstract class AbstractDataSourceConfigSwitcher implements DataSourceConf
                                                                 requiredOption;
                                         Expression expression = conditionalRequired.getExpression();
                                         Condition<?> condition = expression.getCondition();
+                                        String conditionKey = condition.getOption().key();
+                                        if (dataSourceRequiredAllKey.contains(conditionKey)
+                                                || dataSourceOptionAllKey.contains(conditionKey)) {
+                                            return null;
+                                        }
                                         List<Option<?>> requiredOptionList =
                                                 conditionalRequired.getRequiredOption();
                                         List<Option<?>> requiredOpList =
@@ -158,6 +163,9 @@ public abstract class AbstractDataSourceConfigSwitcher implements DataSourceConf
                                                                                                     .key());
                                                                 })
                                                         .collect(Collectors.toList());
+                                        if (requiredOpList.isEmpty()) {
+                                            return null;
+                                        }
                                         Expression expressionNew = Expression.of(condition);
                                         return RequiredOption.ConditionalRequiredOptions.of(
                                                 expressionNew, requiredOpList);

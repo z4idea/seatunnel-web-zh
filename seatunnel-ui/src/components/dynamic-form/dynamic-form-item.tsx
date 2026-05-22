@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -26,6 +29,7 @@ import {
   NCheckbox
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
+import LocalFilePicker from '@/components/local-file-picker'
 import type { PropType } from 'vue'
 import type { SelectOption } from 'naive-ui'
 
@@ -69,6 +73,8 @@ const DynamicFormItem = defineComponent({
     const formItemDisabled = (field: string, value: Array<any>) => {
       return value.map((v) => field === v).indexOf(false) < 0
     }
+
+    const isLocalFile = (name: string) => name.split('[')[0] === 'LocalFile'
 
     const normalizeKey = (value: string) =>
       String(value || '')
@@ -137,7 +143,8 @@ const DynamicFormItem = defineComponent({
       getTranslation,
       translateOptionLabel,
       formatClass,
-      formItemDisabled
+      formItemDisabled,
+      isLocalFile
     }
   },
   render() {
@@ -159,7 +166,31 @@ const DynamicFormItem = defineComponent({
                 path={f.field}
                 span={f.span || 24}
               >
-                {f.type === 'input' && (
+                {this.isLocalFile(this.name) && f.field === 'path' && (
+                  <LocalFilePicker model={this.model as Record<string, any>} />
+                )}
+                {this.isLocalFile(this.name) &&
+                  f.field === 'file_format_type' && (
+                    <NSelect
+                      class={`dynamic-form_${this.formatClass(
+                        this.name,
+                        f.field
+                      )}`}
+                      v-model={[(this.model as any)[f.field], 'value']}
+                      options={[
+                        { label: 'csv', value: 'csv' },
+                        { label: 'json', value: 'json' }
+                      ]}
+                      placeholder={this.t(
+                        'datasource.local_file_format_placeholder'
+                      )}
+                    />
+                  )}
+                {f.type === 'input' &&
+                  !(
+                    this.isLocalFile(this.name) &&
+                    ['path', 'file_format_type'].includes(f.field)
+                  ) && (
                   <NInput
                     class={`dynamic-form_${this.formatClass(
                       this.name,
@@ -182,6 +213,10 @@ const DynamicFormItem = defineComponent({
                   />
                 )}
                 {f.type === 'select' &&
+                  !(
+                    this.isLocalFile(this.name) &&
+                    ['path', 'file_format_type'].includes(f.field)
+                  ) &&
                   (f.show
                     ? this.formItemDisabled(
                         (this.model as any)[f.show.field],

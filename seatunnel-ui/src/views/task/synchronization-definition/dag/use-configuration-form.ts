@@ -35,6 +35,8 @@ import {
   findSink,
   getInputTableSchema
 } from '@/service/sync-task-definition'
+import { getDatasourceDetail } from '@/service/data-source'
+import { previewLocalFile } from '@/service/local-file'
 import type { JdbcIncrementalColumnType } from '@/service/sync-task-definition'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
 import { getDefaultNodeName, isComponentDefaultName } from './component-display'
@@ -47,11 +49,17 @@ type TableSchemaField = {
   name: string
   type?: string
   outputDataType?: string
+  nullable?: boolean
+  primaryKey?: boolean
+  defaultValue?: string
+  comment?: string
+  unSupport?: boolean
 }
 
 export const useConfigurationForm = (
   nodeType: NodeType,
-  transformType: string
+  transformType: string,
+  sourceKind = ''
 ) => {
   const { t } = useI18n()
   const dagStore = useSynchronizationDefinitionStore()
@@ -68,7 +76,16 @@ export const useConfigurationForm = (
     columnSelectable: false,
     pluginName: '',
     datasourceName: '',
-    query: ''
+    query: '',
+    sourceKind,
+    localFilePath: '',
+    localFileFormat: '',
+    localFilePreviewRows: [] as Record<string, any>[],
+    localFileSchemaFields: [] as TableSchemaField[],
+    localFileWarnings: [] as string[],
+    csv_use_header_line: true,
+    skip_header_row_number: 0,
+    encoding: 'UTF-8'
   }
 
   const state = reactive<{
@@ -90,6 +107,7 @@ export const useConfigurationForm = (
     tableColumnsLoading: boolean
     incrementalColumnLoading: boolean
     incrementalColumnTypeMap: Record<string, JdbcIncrementalColumnType>
+    localFilePreviewLoading: boolean
     rules: any
   }>({
     model: cloneDeep(initialModel),
@@ -110,6 +128,7 @@ export const useConfigurationForm = (
     tableColumnsLoading: false,
     incrementalColumnLoading: false,
     incrementalColumnTypeMap: {},
+    localFilePreviewLoading: false,
     rules: {
       name: {
         required: true,
@@ -204,6 +223,27 @@ export const useConfigurationForm = (
 
   const getSingleValue = (value: null | string | string[]) =>
     Array.isArray(value) ? value[0] || null : value
+
+  const isLocalFileSource = () =>
+    nodeType === 'source' &&
+    (state.model.sourceKind === 'LOCAL_FILE' ||
+      state.model.datasourceName === 'LocalFile' ||
+      transformType === 'LocalFile')
+
+  const getLocalFileTableName = (path: string) => {
+    const fileName = String(path || '').split(/[\\/]/).pop() || 'local_file'
+    const dotIndex = fileName.lastIndexOf('.')
+    const baseName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName
+    return baseName.replace(/[^A-Za-z0-9_]/g, '_') || 'local_file'
+  }
+
+  const syncLocalFileTableOptions = () => {
+    const tableName = getLocalFileTableName(state.model.localFilePath)
+    state.databaseOptions = [{ label: 'default', value: 'default' }]
+    state.tableOptions = [{ label: tableName, value: tableName }]
+    state.model.database = 'default'
+    state.model.tableName = tableName
+  }
 
   const decorateIncrementalFormFields = (forms: Array<any>) => {
     if (nodeType !== 'source') return forms
@@ -379,13 +419,17 @@ export const useConfigurationForm = (
         route.params.jobDefinitionCode as string,
         sceneMode
       )
-      state.datasourceOptions = result.map((item: any) => ({
+      const options = result.map((item: any) => ({
         label: item.dataSourceInstanceName,
         value: item.dataSourceInstanceId,
         pluginName:
           item.dataSourceInfo?.connectorInfo?.pluginIdentifier.pluginName,
         datasourceName: item.dataSourceInfo?.datasourceName
       }))
+      state.datasourceOptions =
+        state.model.sourceKind === 'LOCAL_FILE'
+          ? options.filter((item: any) => item.datasourceName === 'LocalFile')
+          : options
     } finally {
       state.datasourceLoading = false
     }
@@ -398,9 +442,25 @@ export const useConfigurationForm = (
     if (option?.label) state.model.datasourceInstanceName = option.label
     if (option?.datasourceName) {
       state.model.datasourceName = option.datasourceName
-      getColumnSelectable(option.datasourceName)
+      if (option.datasourceName !== 'LocalFile') {
+        getColumnSelectable(option.datasourceName)
+      }
     }
     if (option?.pluginName) state.model.pluginName = option.pluginName
+    if (option?.datasourceName === 'LocalFile') {
+      const datasourceDetail = await getDatasourceDetail(datasourceInstanceId)
+      const datasourceConfig = datasourceDetail.datasourceConfig || {}
+      state.model.localFilePath = datasourceConfig.path || ''
+      state.model.localFileFormat =
+        (datasourceConfig.file_format_type || '').toLowerCase()
+      state.model.encoding = datasourceConfig.encoding || 'UTF-8'
+      state.model.sceneMode = 'SINGLE_TABLE'
+      state.model.columnSelectable = false
+      syncLocalFileTableOptions()
+      await getFormStructure(datasourceInstanceId)
+      await previewLocalFileData()
+      return
+    }
     if (state.databaseLoading) return
     state.databaseLoading = true
     try {
@@ -525,10 +585,46 @@ export const useConfigurationForm = (
     dagStore.setColumnSelectable(pluginName, res)
   }
 
+  const normalizeLocalFileFields = (fields: TableSchemaField[]) =>
+    fields.map((field) => ({
+      name: field.name,
+      type: field.outputDataType || field.type || 'STRING',
+      outputDataType: field.outputDataType || field.type || 'STRING',
+      nullable: field.nullable ?? true,
+      primaryKey: field.primaryKey ?? false,
+      defaultValue: field.defaultValue || '',
+      comment: field.comment || '',
+      unSupport: field.unSupport ?? false
+    }))
+
+  const previewLocalFileData = async () => {
+    if (!state.model.localFilePath) return
+    state.localFilePreviewLoading = true
+    try {
+      const result = await previewLocalFile({
+        path: state.model.localFilePath,
+        fileFormatType: state.model.localFileFormat,
+        encoding: state.model.encoding || 'UTF-8',
+        csvUseHeaderLine: state.model.csv_use_header_line,
+        skipHeaderRowNumber: Number(state.model.skip_header_row_number || 0),
+        limit: 20
+      })
+      state.model.localFilePreviewRows = result.rows || []
+      state.model.localFileWarnings = result.warnings || []
+      state.model.localFileSchemaFields = normalizeLocalFileFields(
+        result.fields || []
+      )
+      syncLocalFileTableOptions()
+    } finally {
+      state.localFilePreviewLoading = false
+    }
+  }
+
   const updateFormValues = async (values: any) => {
     if (state.loading) return
     state.loading = true
     try {
+      state.model.sourceKind = values.sourceKind || sourceKind || ''
       state.model.datasourceInstanceId = values.dataSourceId
       const localizedDefaultName = getDefaultNodeName(
         nodeType,
@@ -540,6 +636,9 @@ export const useConfigurationForm = (
           ? localizedDefaultName
           : values.name
       state.model.sceneMode = values.sceneMode
+      if (state.model.sourceKind === 'LOCAL_FILE' && !state.model.sceneMode) {
+        state.model.sceneMode = 'SINGLE_TABLE'
+      }
       if (values.sceneMode === 'SPLIT_TABLE') {
         state.model.database = values.tableOption?.databases || []
       } else {
@@ -548,8 +647,8 @@ export const useConfigurationForm = (
           : null
       }
 
-      if (values.sceneMode) {
-        await getDatasourceOptions(values.sceneMode)
+      if (state.model.sceneMode) {
+        await getDatasourceOptions(state.model.sceneMode)
       }
       if (nodeType === 'sink') {
         await getSinks()
@@ -595,6 +694,15 @@ export const useConfigurationForm = (
           )
         }
       }
+      if (
+        isLocalFileSource() &&
+        values.outputSchema &&
+        values.outputSchema.length
+      ) {
+        state.model.localFileSchemaFields = normalizeLocalFileFields(
+          values.outputSchema[0].fields || []
+        )
+      }
       await refreshIncrementalColumnOptions()
     } finally {
       state.loading = false
@@ -608,6 +716,9 @@ export const useConfigurationForm = (
     getDatabaseOptions,
     getTableOptions,
     getFormStructure,
+    previewLocalFileData,
+    isLocalFileSource,
+    getLocalFileTableName,
     clearIncrementalValues,
     refreshIncrementalColumnOptions,
     updateFormValues,

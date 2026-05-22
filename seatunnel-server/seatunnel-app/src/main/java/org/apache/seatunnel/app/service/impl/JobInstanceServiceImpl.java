@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -729,6 +732,17 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
                             String key = entry.getKey();
                             ConfigValue configValue = entry.getValue();
                             try {
+                                if (typeReferenceMap.containsKey(key) && !isEmptyValue(configValue)) {
+                                    TypeReference<?> typeReference = typeReferenceMap.get(key);
+                                    String normalizedEnumValue =
+                                            normalizeEnumOptionValue(typeReference, configValue);
+                                    if (normalizedEnumValue != null) {
+                                        needReplaceList.put(
+                                                key,
+                                                ConfigValueFactory.fromAnyRef(normalizedEnumValue));
+                                        return;
+                                    }
+                                }
                                 if (typeReferenceMap.containsKey(key)
                                         && isComplexType(typeReferenceMap.get(key))
                                         && !isEmptyValue(configValue)) {
@@ -769,6 +783,41 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
             config = config.withValue(entry.getKey(), entry.getValue());
         }
         return config;
+    }
+
+    private String normalizeEnumOptionValue(TypeReference<?> typeReference, ConfigValue configValue) {
+        if (configValue.valueType() != ConfigValueType.STRING
+                || !(typeReference.getType() instanceof Class)) {
+            return null;
+        }
+        Class<?> valueClass = (Class<?>) typeReference.getType();
+        if (!valueClass.isEnum()) {
+            return null;
+        }
+        String configString = String.valueOf(configValue.unwrapped());
+        for (Object enumConstant : valueClass.getEnumConstants()) {
+            String rawValue = enumConstant.toString();
+            String actualValue = resolveEnumOptionValue(enumConstant);
+            if (configString.equals(actualValue)) {
+                return null;
+            }
+            if (configString.equals(rawValue) && !configString.equals(actualValue)) {
+                return actualValue;
+            }
+        }
+        return null;
+    }
+
+    private String resolveEnumOptionValue(Object enumConstant) {
+        try {
+            Object value = enumConstant.getClass().getMethod("getValue").invoke(enumConstant);
+            if (value != null) {
+                return value.toString();
+            }
+        } catch (ReflectiveOperationException ignored) {
+            // Most enums use their name directly; only special enums expose getValue().
+        }
+        return enumConstant.toString();
     }
 
     private boolean isComplexType(TypeReference<?> typeReference) {

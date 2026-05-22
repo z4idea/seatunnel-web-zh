@@ -84,6 +84,9 @@ public class DatasourceLoadConfig {
         classLoaderFactoryName.put(
                 "S3", "org.apache.seatunnel.datasource.plugin.s3.S3DataSourceFactory");
         classLoaderFactoryName.put(
+                "LOCALFILE",
+                "org.apache.seatunnel.datasource.plugin.localfile.LocalFileDataSourceFactory");
+        classLoaderFactoryName.put(
                 "S3-REDSHIFT",
                 "org.apache.seatunnel.datasource.plugin.redshift.s3.S3RedshiftDataSourceFactory");
         classLoaderFactoryName.put(
@@ -122,6 +125,7 @@ public class DatasourceLoadConfig {
         classLoaderJarName.put("MYSQL-CDC", "datasource-mysql-cdc-");
 
         classLoaderJarName.put("ELASTICSEARCH", "datasource-elasticsearch-");
+        classLoaderJarName.put("LOCALFILE", "datasource-localfile-");
         classLoaderJarName.put("S3", "datasource-s3-");
         classLoaderJarName.put("HIVE", "datasource-hive-");
         classLoaderJarName.put("KAFKA", "datasource-kafka-");
@@ -150,6 +154,7 @@ public class DatasourceLoadConfig {
                     "JDBC-Hive",
                     "Kafka",
                     "MySQL-CDC",
+                    "LocalFile",
                     "S3",
                     "SqlServer-CDC",
                     "StarRocks",

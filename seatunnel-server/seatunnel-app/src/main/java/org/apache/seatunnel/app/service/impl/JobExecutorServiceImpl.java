@@ -95,7 +95,8 @@ public class JobExecutorServiceImpl implements IJobExecutorService {
                     jobInstance.setJobStatus(JobStatus.FAILED);
                     jobInstance.setEndTime(new Date());
                     jobInstance.setErrorMessage(
-                            JobUtils.getJobInstanceErrorMessage(e.getMessage()));
+                            JobUtils.getJobInstanceErrorMessage(
+                                    JobUtils.resolveJobExecutionErrorMessage(e)));
                     jobInstanceDao.update(jobInstance);
                 }
                 jobIncrementalService.cleanupExecutionPreparation(
@@ -149,7 +150,9 @@ public class JobExecutorServiceImpl implements IJobExecutorService {
             JobInstance jobInstance = jobInstanceDao.getJobInstance(jobInstanceId);
             jobInstance.setJobStatus(JobStatus.FAILED);
             jobInstance.setEndTime(new Date());
-            String jobInstanceErrorMessage = JobUtils.getJobInstanceErrorMessage(e.getMessage());
+            String jobInstanceErrorMessage =
+                    JobUtils.getJobInstanceErrorMessage(
+                            JobUtils.resolveJobExecutionErrorMessage(e));
             jobInstance.setErrorMessage(jobInstanceErrorMessage);
             jobInstanceDao.update(jobInstance);
             throw new RuntimeException(e.getMessage(), e);

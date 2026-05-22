@@ -453,6 +453,9 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
     }
 
     private List<JobMetrics> getJobPipelineDetailMetrics(@NonNull JobInstance jobInstance) {
+        if (StringUtils.isEmpty(jobInstance.getJobEngineId())) {
+            return jobMetricsDao.getByInstanceId(jobInstance.getId());
+        }
         List<JobMetrics> jobMetrics;
         if (JobUtils.isJobEndStatus(jobInstance.getJobStatus())) {
             jobMetrics = getJobMetricsFromDb(jobInstance, jobInstance.getJobEngineId());
@@ -501,6 +504,13 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
         funcPermissionCheck(SeatunnelFuncPermissionKeyConstant.JOB_DAG, userId);
         JobInstance jobInstance = jobInstanceDao.getJobInstance(jobInstanceId);
         String jobEngineId = jobInstance.getJobEngineId();
+        if (StringUtils.isEmpty(jobEngineId)) {
+            JobInstanceHistory history = jobInstanceHistoryDao.getByInstanceId(jobInstance.getId());
+            if (history != null && StringUtils.isNotBlank(history.getDag())) {
+                return JsonUtils.parseObject(history.getDag(), JobDAG.class);
+            }
+            return null;
+        }
         JobInstanceHistory history = getJobHistoryFromDb(jobInstance, jobEngineId);
         if (history != null) {
             String dag = history.getDag();
@@ -536,8 +546,9 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
 
     private JobInstanceHistory getJobHistoryFromDb(
             @NonNull JobInstance jobInstance, String jobEngineId) {
-        // relation jobInstanceId and jobEngineId
-        relationJobInstanceAndJobEngineId(jobInstance, jobEngineId);
+        if (StringUtils.isNotEmpty(jobEngineId)) {
+            relationJobInstanceAndJobEngineId(jobInstance, jobEngineId);
+        }
         return jobInstanceHistoryDao.getByInstanceId(jobInstance.getId());
     }
 
@@ -650,12 +661,10 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
     }
 
     private List<JobMetrics> getJobMetricsFromDb(
-            @NonNull JobInstance jobInstance, @NonNull String jobEngineId) {
-
-        // relation jobInstanceId and jobEngineId
-        relationJobInstanceAndJobEngineId(jobInstance, jobEngineId);
-
-        // get metrics from db
+            @NonNull JobInstance jobInstance, String jobEngineId) {
+        if (StringUtils.isNotEmpty(jobEngineId)) {
+            relationJobInstanceAndJobEngineId(jobInstance, jobEngineId);
+        }
         return jobMetricsDao.getByInstanceId(jobInstance.getId());
     }
 

@@ -67,6 +67,11 @@ const NodeSetting = defineComponent({
       ctx.emit('cancelModal', props.show)
     }
 
+    const isLocalFileSource = () =>
+      props.nodeInfo.type === 'source' &&
+      (props.nodeInfo.sourceKind === 'LOCAL_FILE' ||
+        props.nodeInfo.connectorType === 'LocalFile')
+
     watch(
       () => props.show,
       async () => {
@@ -98,6 +103,7 @@ const NodeSetting = defineComponent({
                     nodeType={props.nodeInfo.type}
                     nodeId={props.nodeInfo.pluginId}
                     transformType={props.nodeInfo.connectorType}
+                    sourceKind={props.nodeInfo.sourceKind}
                     ref={configurationFormRef}
                     onTableNameChange={handleChangeTable}
                   />
@@ -117,7 +123,7 @@ const NodeSetting = defineComponent({
                     refForm={configurationFormRef}
                   />
                 </NTabPane>
-                {props.nodeInfo.type === 'source' && (
+                {props.nodeInfo.type === 'source' && !isLocalFileSource() && (
                   <NTabPane
                     name='incremental-state'
                     tab={t(

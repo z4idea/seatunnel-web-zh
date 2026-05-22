@@ -1197,6 +1197,7 @@ export default {
     end_node_tips: 'The ending node be sink node',
     save_node_tips: 'Please save the nodes on the canvas first',
     source: 'Source',
+    file_source: 'File Source',
     sink: 'Sink',
     drag_source_hint:
       'Drag Source into canvas and double click to configure it',
@@ -1204,6 +1205,7 @@ export default {
     drag_transform_hint:
       'Drag {name} into canvas and double click to configure it',
     source_description: 'Reads source data from an external system.',
+    file_source_description: 'Reads server local CSV or JSON files.',
     sink_description: 'Writes processed data into the target system.',
     copy_description: 'Copies field values into new output fields.',
     field_mapper_description:
@@ -1235,6 +1237,14 @@ export default {
       'If two fields are separated, you can fill in field1, field2',
     copy_field: 'Copy Field',
     check_model: 'Please check the model information',
+    local_file_path: 'File Path',
+    local_file_format: 'File Type',
+    local_file_schema: 'File Schema',
+    local_file_preview: 'Preview Data',
+    local_file_add_field: 'Add Field',
+    local_file_schema_required: 'Please preview or edit file schema first',
+    csv_use_header_line: 'Use Header Line',
+    skip_header_row_number: 'Skip Header Row Number',
     sql_content_label: 'SQL',
     sql_content_label_placeholder: 'please input the SQL statement',
     query_validate: 'please input the SQL statement',

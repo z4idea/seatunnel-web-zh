@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -47,7 +50,8 @@ export function addNode(graph: Graph, cell: Cell.Metadata) {
       isError: false,
       name: cell.label,
       pluginId: id,
-      connectorType: cell.node === 'transform' ? cell.label : ''
+      connectorType: cell.node === 'transform' ? cell.label : '',
+      sourceKind: cell.sourceKind || ''
     }
   } as Cell.Metadata
   ;(graph as Graph).addNode(nodeShape)

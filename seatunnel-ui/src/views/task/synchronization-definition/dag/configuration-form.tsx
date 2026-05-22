@@ -18,13 +18,18 @@
  * limitations under the License.
  */
 
-import { defineComponent, nextTick, PropType, ref } from 'vue'
+import { defineComponent, h, nextTick, PropType, ref } from 'vue'
 import {
   NForm,
   NFormItem,
   NInput,
   NSelect,
   NSpace,
+  NButton,
+  NDataTable,
+  NInputNumber,
+  NSwitch,
+  NAlert,
   NRadioGroup,
   NRadio,
   NCheckboxGroup,
@@ -56,6 +61,10 @@ const ConfigurationForm = defineComponent({
     // eslint-disable-next-line vue/require-default-prop
     transformType: {
       type: String as PropType<string>
+    },
+    sourceKind: {
+      type: String as PropType<string>,
+      default: ''
     }
   },
   emits: ['tableNameChange'],
@@ -68,10 +77,13 @@ const ConfigurationForm = defineComponent({
       getTableOptions,
       clearIncrementalValues,
       refreshIncrementalColumnOptions,
-      updateFormValues
+      updateFormValues,
+      previewLocalFileData,
+      isLocalFileSource
     } = useConfigurationForm(
       props.nodeType as NodeType,
-      props.transformType as string
+      props.transformType as string,
+      props.sourceKind
     )
     const { t } = useI18n()
     const formRef = ref()
@@ -80,13 +92,99 @@ const ConfigurationForm = defineComponent({
       ...kind,
       label: t(`project.synchronization_definition.${kind.labelKey}`)
     }))
+    const localFileFormatOptions = [
+      { label: 'csv', value: 'csv' },
+      { label: 'json', value: 'json' }
+    ]
+    const schemaTypeOptions = [
+      'STRING',
+      'BOOLEAN',
+      'INT',
+      'BIGINT',
+      'DOUBLE',
+      'DECIMAL',
+      'DATE',
+      'TIMESTAMP'
+    ].map((value) => ({ label: value, value }))
+
+    const addLocalFileField = () => {
+      state.model.localFileSchemaFields.push({
+        name: `column_${state.model.localFileSchemaFields.length + 1}`,
+        type: 'STRING',
+        outputDataType: 'STRING',
+        nullable: true,
+        primaryKey: false,
+        defaultValue: '',
+        comment: '',
+        unSupport: false
+      })
+    }
+
+    const localFileSchemaColumns = [
+      {
+        title: '#',
+        key: 'index',
+        width: 54,
+        render: (_row: any, index: number) => index + 1
+      },
+      {
+        title: t('project.synchronization_definition.field_name'),
+        key: 'name',
+        render: (row: any) =>
+          h(NInput, {
+            value: row.name,
+            onUpdateValue: (value: string) => {
+              row.name = value
+            }
+          })
+      },
+      {
+        title: t('project.synchronization_definition.field_type'),
+        key: 'type',
+        render: (row: any) =>
+          h(NSelect, {
+            value: row.outputDataType || row.type,
+            options: schemaTypeOptions,
+            onUpdateValue: (value: string) => {
+              row.type = value
+              row.outputDataType = value
+            }
+          })
+      },
+      {
+        title: t('project.synchronization_definition.operation'),
+        key: 'operation',
+        width: 92,
+        render: (_row: any, index: number) =>
+          h(
+            NButton,
+            {
+              text: true,
+              type: 'error',
+              onClick: () => {
+                state.model.localFileSchemaFields.splice(index, 1)
+              }
+            },
+            () => t('project.synchronization_definition.delete')
+          )
+      }
+    ]
+
+    const getLocalFilePreviewColumns = () =>
+      state.model.localFileSchemaFields.map((field: any) => ({
+        title: field.name,
+        key: field.name,
+        ellipsis: {
+          tooltip: true
+        }
+      }))
 
     const onTableChange = async (tableName: any) => {
       state.model.tableName = tableName
       if (props.nodeType === 'sink' && state.model.database) {
         await getTableOptions(state.model.database, '')
       }
-      if (props.nodeType === 'source') {
+      if (props.nodeType === 'source' && !isLocalFileSource()) {
         await refreshIncrementalColumnOptions()
       }
       emit('tableNameChange', state.model)
@@ -159,6 +257,18 @@ const ConfigurationForm = defineComponent({
       validate: async () => {
         try {
           await formRef.value.validate()
+          if (isLocalFileSource()) {
+            const fields = state.model.localFileSchemaFields || []
+            if (
+              fields.length === 0 ||
+              fields.some((field: any) => !field.name || !field.type)
+            ) {
+              window.$message.warning(
+                t('project.synchronization_definition.local_file_schema_required')
+              )
+              return false
+            }
+          }
           return true
         } catch (err) {
           return false
@@ -202,6 +312,7 @@ const ConfigurationForm = defineComponent({
             >
               <NSelect
                 filterable
+                disabled={isLocalFileSource()}
                 options={getSceneModeOptions(dagStore.getDagInfo.jobType, t)}
                 v-model={[state.model.sceneMode, 'value']}
                 onUpdateValue={(v) => {
@@ -245,7 +356,99 @@ const ConfigurationForm = defineComponent({
             </NFormItem>
           )}
 
-          {props.nodeType !== 'transform' && (
+          {isLocalFileSource() && (
+            <>
+              <NFormItem
+                label={t('project.synchronization_definition.local_file_path')}
+              >
+                <NInput value={state.model.localFilePath} readonly />
+              </NFormItem>
+              <NFormItem
+                label={t('project.synchronization_definition.local_file_format')}
+              >
+                <NSelect
+                  disabled
+                  options={localFileFormatOptions}
+                  v-model={[state.model.localFileFormat, 'value']}
+                />
+              </NFormItem>
+              <NFormItem label='encoding'>
+                <NInput
+                  v-model={[state.model.encoding, 'value']}
+                  placeholder='UTF-8'
+                />
+              </NFormItem>
+              {state.model.localFileFormat === 'csv' && (
+                <>
+                  <NFormItem
+                    label={t(
+                      'project.synchronization_definition.csv_use_header_line'
+                    )}
+                  >
+                    <NSwitch
+                      v-model={[state.model.csv_use_header_line, 'value']}
+                    />
+                  </NFormItem>
+                  <NFormItem
+                    label={t(
+                      'project.synchronization_definition.skip_header_row_number'
+                    )}
+                  >
+                    <NInputNumber
+                      min={0}
+                      v-model={[
+                        state.model.skip_header_row_number,
+                        'value'
+                      ]}
+                    />
+                  </NFormItem>
+                </>
+              )}
+              <NFormItem
+                label={t('project.synchronization_definition.local_file_schema')}
+              >
+                <NSpace vertical style={{ width: '100%' }}>
+                  <NSpace>
+                    <NButton
+                      type='primary'
+                      secondary
+                      loading={state.localFilePreviewLoading}
+                      onClick={previewLocalFileData}
+                    >
+                      {t('project.synchronization_definition.local_file_preview')}
+                    </NButton>
+                    <NButton onClick={addLocalFileField}>
+                      {t('project.synchronization_definition.local_file_add_field')}
+                    </NButton>
+                  </NSpace>
+                  {state.model.localFileWarnings.map((warning: string) => (
+                    <NAlert type='warning' showIcon>
+                      {warning}
+                    </NAlert>
+                  ))}
+                  <NDataTable
+                    size='small'
+                    columns={localFileSchemaColumns}
+                    data={state.model.localFileSchemaFields}
+                    rowKey={(row) => row.name}
+                  />
+                </NSpace>
+              </NFormItem>
+              <NFormItem
+                label={t('project.synchronization_definition.local_file_preview')}
+              >
+                <NDataTable
+                  size='small'
+                  columns={getLocalFilePreviewColumns()}
+                  data={state.model.localFilePreviewRows}
+                  maxHeight={240}
+                  scrollX={900}
+                />
+              </NFormItem>
+            </>
+          )}
+
+          {props.nodeType !== 'transform' && !isLocalFileSource() && (
             <NFormItem
               label={t('project.synchronization_definition.database')}
               path='database'
@@ -268,7 +471,8 @@ const ConfigurationForm = defineComponent({
           )}
 
           {dagStore.getDagInfo.jobType === 'DATA_INTEGRATION' &&
-            (props.nodeType === 'sink' || props.nodeType === 'source') && (
+            (props.nodeType === 'sink' || props.nodeType === 'source') &&
+            !isLocalFileSource() && (
               <NFormItem
                 label={t('project.synchronization_definition.table_name')}
                 path='tableName'
@@ -293,7 +497,7 @@ const ConfigurationForm = defineComponent({
               </NFormItem>
             )}
 
-          {state.model.sceneMode === 'MULTIPLE_TABLE' && (
+          {state.model.sceneMode === 'MULTIPLE_TABLE' && !isLocalFileSource() && (
             <NFormItem
               label={t('project.synchronization_definition.table_name')}
               path='tableName'
@@ -364,7 +568,7 @@ const ConfigurationForm = defineComponent({
             </NFormItem>
           )}
 
-          {state.formStructure.length > 0 && (
+          {state.formStructure.length > 0 && !isLocalFileSource() && (
             <DynamicFormItem
               model={state.model}
               formStructure={state.formStructure}

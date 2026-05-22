@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -59,6 +62,7 @@ export function useForm(type: string) {
   })
 
   const getFormItems = async (value: string) => {
+    state.formName = value
     if (formStructuresStore.getItem(value)) {
       state.formStructure = formStructuresStore.getItem(value) as StructureItem[]
       return

@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -30,13 +33,15 @@ const SynchronizationDefinitionDag = defineComponent({
 
     const tempNode = {
       type: '',
-      name: ''
+      name: '',
+      sourceKind: ''
     }
     const { t, locale } = useI18n()
     const { state, detailInit, onDelete, onSave } = useDagDetail()
-    const handelDragstart = (type: any, name: any) => {
+    const handelDragstart = (type: any, name: any, sourceKind = '') => {
       tempNode.type = type
       tempNode.name = name
+      tempNode.sourceKind = sourceKind
     }
 
     const handelDrop = (e: DragEvent) => {
@@ -45,7 +50,8 @@ const SynchronizationDefinitionDag = defineComponent({
         clientX: e.clientX,
         clientY: e.clientY,
         label: tempNode.name || tempNode.type,
-        node: tempNode.type
+        node: tempNode.type,
+        sourceKind: tempNode.sourceKind
       })
     }
 

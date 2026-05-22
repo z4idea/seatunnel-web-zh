@@ -44,6 +44,32 @@ export function useNodeSettingModal(
     tab: 'configuration'
   })
 
+  const isLocalFileValues = (values: any) =>
+    props.nodeInfo.type === 'source' &&
+    (values.sourceKind === 'LOCAL_FILE' ||
+      values.datasourceName === 'LocalFile' ||
+      props.nodeInfo.connectorType === 'LocalFile')
+
+  const getLocalFileTableName = (path: string) => {
+    const fileName = String(path || '').split(/[\\/]/).pop() || 'local_file'
+    const dotIndex = fileName.lastIndexOf('.')
+    const baseName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName
+    return baseName.replace(/[^A-Za-z0-9_]/g, '_') || 'local_file'
+  }
+
+  const quoteSchemaKey = (key: string) =>
+    `"${String(key || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+
+  const toLocalFileSchema = (fields: ModelRecord[]) =>
+    `fields {\n${fields
+      .map(
+        (field: ModelRecord) =>
+          `  ${quoteSchemaKey(field.name)} = ${String(
+            field.outputDataType || field.type || 'STRING'
+          ).toLowerCase()}`
+      )
+      .join('\n')}\n}`
+
   const formatParams = (values: any) => {
     const params = {
       pluginId: props.nodeInfo.pluginId,
@@ -66,9 +92,15 @@ export function useNodeSettingModal(
       'pluginName',
       'datasourceName',
       'columnSelectable',
+      'sourceKind',
+      'localFilePath',
+      'localFileFormat',
+      'localFilePreviewRows',
+      'localFileSchemaFields',
+      'localFileWarnings',
       'excludeKind',
       'includeKind'
-    ]) as { [key: string]: string }
+    ]) as { [key: string]: any }
 
     if (values.kinds.length) {
       config[values.kind ? 'exclude_kinds' : 'include_kinds'] = JSON.stringify(
@@ -96,7 +128,29 @@ export function useNodeSettingModal(
           : []
     }
 
-    if (modelRef.value) {
+    if (isLocalFileValues(values)) {
+      const tableName =
+        values.tableName || getLocalFileTableName(values.localFilePath)
+      params.tableOption = {
+        databases: ['default'],
+        tables: [tableName]
+      }
+      const fields = values.localFileSchemaFields || []
+      config.schema = toLocalFileSchema(fields)
+      config.encoding = values.encoding || 'UTF-8'
+      if (values.localFileFormat === 'csv') {
+        config.csv_use_header_line = values.csv_use_header_line
+        config.skip_header_row_number = Number(
+          values.skip_header_row_number || 0
+        )
+      }
+      params.selectTableFields = {
+        all: true,
+        tableFields: fields.map((field: ModelRecord) => field.name)
+      }
+    }
+
+    if (modelRef.value && !isLocalFileValues(values)) {
       params.selectTableFields = modelRef.value?.getSelectFields()
     }
     if (values.datasourceInstanceId) {
@@ -142,6 +196,24 @@ export function useNodeSettingModal(
 
       let modelOutputTableData
       if (props.nodeInfo.type === 'source') {
+        if (isLocalFileValues(values)) {
+          const fields = values.localFileSchemaFields || []
+          if (!fields.length) {
+            window.$message.warning(
+              t('project.synchronization_definition.local_file_schema_required')
+            )
+            state.saving = false
+            return false
+          }
+          modelOutputTableData = [
+            {
+              database: 'default',
+              tableName:
+                values.tableName || getLocalFileTableName(values.localFilePath),
+              fields
+            }
+          ]
+        } else {
         const resultSchema = modelRef.value.getOutputSchema()
         // check debezium
         if (values.format && values.format === 'COMPATIBLE_DEBEZIUM_JSON') {
@@ -172,6 +244,7 @@ export function useNodeSettingModal(
             state.saving = false
             return false
           }
+        }
         }
       }
 
@@ -258,21 +331,25 @@ export function useNodeSettingModal(
         }]
       }
 
+      const taskParams = {
+        ...formatParams(values),
+        outputSchema: modelOutputTableData,
+        transformOptions
+      }
+
       await saveTaskDefinitionItem(
         route.params.jobDefinitionCode as string,
-        {
-          ...formatParams(values),
-          outputSchema: modelOutputTableData,
-          transformOptions
-        }
+        taskParams
       )
 
       ctx.emit(
         'confirmModal',
         {
-          ...formatParams(values),
-          outputSchema: modelOutputTableData,
-          transformOptions
+          ...taskParams,
+          connectorType: isLocalFileValues(values)
+            ? 'LocalFile'
+            : taskParams.connectorType,
+          sourceKind: values.sourceKind
         }
       )
 
@@ -317,6 +394,7 @@ export function useNodeSettingModal(
 
   const handleChangeTable = async (node: any) => {
     if (!modelRef.value) return
+    if (isLocalFileValues(node)) return
     const currentTable = _.isArray(node.tableName)
       ? node.tableName[0]
       : node.tableName

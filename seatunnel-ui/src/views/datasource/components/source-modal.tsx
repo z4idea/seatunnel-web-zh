@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -67,9 +70,9 @@ const SourceModal = defineComponent({
                   {item?.children.map((slip: SelectOption) => (
                     <div
                       class={styles.itemBox}
-                      onClick={() => handleTypeSelect(slip.label as string)}
+                      onClick={() => handleTypeSelect(slip.value as string)}
                     >
-                      <div class='font-bold'>{slip.label}</div>
+                      <div class='font-bold'>{t(slip.label as string)}</div>
                       <div class='text-xs mt-1.5'>{item.label}</div>
                     </div>
                   ))}

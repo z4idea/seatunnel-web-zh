@@ -49,6 +49,10 @@ connector-datasource-mapper:
       dataSources:
         - S3
 
+    LocalFile:
+      dataSources:
+        - LocalFile
+
     SqlServer-CDC:
       dataSources:
         - SqlServer-CDC
@@ -137,6 +141,11 @@ connector-datasource-mapper:
       sceneMode:
         - SINGLE_TABLE
 
+    LocalFile:
+      businessMode:
+        - DATA_INTEGRATION
+      sceneMode:
+        - SINGLE_TABLE
 
     SqlServer-CDC:
       businessMode:
