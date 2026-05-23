@@ -732,7 +732,8 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
                             String key = entry.getKey();
                             ConfigValue configValue = entry.getValue();
                             try {
-                                if (typeReferenceMap.containsKey(key) && !isEmptyValue(configValue)) {
+                                if (typeReferenceMap.containsKey(key)
+                                        && !isEmptyValue(configValue)) {
                                     TypeReference<?> typeReference = typeReferenceMap.get(key);
                                     String normalizedEnumValue =
                                             normalizeEnumOptionValue(typeReference, configValue);
@@ -785,7 +786,8 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
         return config;
     }
 
-    private String normalizeEnumOptionValue(TypeReference<?> typeReference, ConfigValue configValue) {
+    private String normalizeEnumOptionValue(
+            TypeReference<?> typeReference, ConfigValue configValue) {
         if (configValue.valueType() != ConfigValueType.STRING
                 || !(typeReference.getType() instanceof Class)) {
             return null;

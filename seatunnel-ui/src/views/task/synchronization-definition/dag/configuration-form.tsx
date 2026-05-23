@@ -35,9 +35,11 @@ import {
   NCheckboxGroup,
   NCheckbox,
   NSpin,
-  NTransfer
+  NTransfer,
+  NPopover
 } from 'naive-ui'
 import { DynamicFormItem } from '@/components/dynamic-form/dynamic-form-item'
+import JsonHighlight from '@/views/datasource/components/json-highlight'
 import { KINDS } from './config'
 import {
   useConfigurationForm,
@@ -79,7 +81,9 @@ const ConfigurationForm = defineComponent({
       refreshIncrementalColumnOptions,
       updateFormValues,
       previewLocalFileData,
-      isLocalFileSource
+      previewHttpSourceData,
+      isLocalFileSource,
+      isHttpSource
     } = useConfigurationForm(
       props.nodeType as NodeType,
       props.transformType as string,
@@ -107,9 +111,25 @@ const ConfigurationForm = defineComponent({
       'TIMESTAMP'
     ].map((value) => ({ label: value, value }))
 
+    const isSpecialSource = () => isLocalFileSource() || isHttpSource()
+
     const addLocalFileField = () => {
       state.model.localFileSchemaFields.push({
         name: `column_${state.model.localFileSchemaFields.length + 1}`,
+        type: 'STRING',
+        outputDataType: 'STRING',
+        nullable: true,
+        primaryKey: false,
+        defaultValue: '',
+        comment: '',
+        unSupport: false
+      })
+    }
+
+    const addHttpField = () => {
+      state.model.httpSchemaCustomized = true
+      state.model.httpSchemaFields.push({
+        name: `column_${state.model.httpSchemaFields.length + 1}`,
         type: 'STRING',
         outputDataType: 'STRING',
         nullable: true,
@@ -179,14 +199,284 @@ const ConfigurationForm = defineComponent({
         }
       }))
 
+    const httpSchemaColumns = [
+      {
+        title: '#',
+        key: 'index',
+        width: 54,
+        render: (_row: any, index: number) => index + 1
+      },
+      {
+        title: t('project.synchronization_definition.field_name'),
+        key: 'name',
+        render: (row: any) =>
+          h(NInput, {
+            value: row.name,
+            onUpdateValue: (value: string) => {
+              state.model.httpSchemaCustomized = true
+              row.name = value
+            }
+          })
+      },
+      {
+        title: t('project.synchronization_definition.field_type'),
+        key: 'type',
+        render: (row: any) =>
+          h(NSelect, {
+            value: row.outputDataType || row.type,
+            options: schemaTypeOptions,
+            onUpdateValue: (value: string) => {
+              state.model.httpSchemaCustomized = true
+              row.type = value
+              row.outputDataType = value
+            }
+          })
+      },
+      {
+        title: t('project.synchronization_definition.operation'),
+        key: 'operation',
+        width: 92,
+        render: (_row: any, index: number) =>
+          h(
+            NButton,
+            {
+              text: true,
+              type: 'error',
+              onClick: () => {
+                state.model.httpSchemaCustomized = true
+                state.model.httpSchemaFields.splice(index, 1)
+              }
+            },
+            () => t('project.synchronization_definition.delete')
+          )
+      }
+    ]
+
+    const tryParseJsonLikeText = (value: any) => {
+      if (typeof value !== 'string') return null
+      const trimmed = value.trim()
+      if (
+        !(trimmed.startsWith('{') && trimmed.endsWith('}')) &&
+        !(trimmed.startsWith('[') && trimmed.endsWith(']'))
+      ) {
+        return null
+      }
+      try {
+        return JSON.parse(trimmed)
+      } catch (error) {
+        return null
+      }
+    }
+
+    const formatHttpPreviewValue = (value: any) => {
+      if (value === null || value === undefined || value === '') return '-'
+      if (typeof value === 'boolean') return value ? 'true' : 'false'
+      if (typeof value === 'number') return String(value)
+
+      const parsed = tryParseJsonLikeText(value)
+      if (Array.isArray(parsed)) {
+        return t(
+          'project.synchronization_definition.http_preview_json_array',
+          { count: parsed.length }
+        )
+      }
+      if (parsed && typeof parsed === 'object') {
+        return t(
+          'project.synchronization_definition.http_preview_json_object',
+          { count: Object.keys(parsed).length }
+        )
+      }
+
+      return String(value)
+    }
+
+    const renderHttpPreviewPopoverContent = (value: any) => {
+      const parsed = tryParseJsonLikeText(value)
+      if (parsed && !Array.isArray(parsed)) {
+        return h(JsonHighlight, {
+          params: JSON.stringify(parsed)
+        })
+      }
+      return h(
+        'pre',
+        {
+          style: {
+            maxWidth: '420px',
+            maxHeight: '320px',
+            margin: '0',
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            fontSize: '12px',
+            lineHeight: '1.5'
+          }
+        },
+        parsed ? JSON.stringify(parsed, null, 2) : formatSummaryValue(value)
+      )
+    }
+
+    const renderHttpPreviewCell = (value: any) =>
+      h(
+        NPopover,
+        {
+          trigger: 'hover',
+          placement: 'top-start',
+          width: 420
+        },
+        {
+          trigger: () =>
+            h(
+              'div',
+              {
+                style: {
+                  maxWidth: '160px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                  color: '#1f2937'
+                }
+              },
+              formatHttpPreviewValue(value)
+            ),
+          default: () => renderHttpPreviewPopoverContent(value)
+        }
+      )
+
+    const renderHttpColumnTitle = (fullKey: string, label: string) =>
+      h(
+        NPopover,
+        {
+          trigger: 'hover',
+          placement: 'top'
+        },
+        {
+          trigger: () =>
+            h(
+              'div',
+              {
+                style: {
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap'
+                }
+              },
+              label
+            ),
+          default: () =>
+            h(
+              'div',
+              {
+                style: {
+                  maxWidth: '320px',
+                  wordBreak: 'break-all',
+                  fontSize: '12px'
+                }
+              },
+              `${t(
+                'project.synchronization_definition.http_preview_field_path'
+              )}: ${fullKey}`
+            )
+        }
+      )
+
+    const buildHttpPreviewColumnTree = (
+      columns: Array<{ key: string; path: string }>
+    ) => {
+      const root: any[] = []
+
+      columns.forEach(({ key, path }) => {
+        const normalizedPath = String(path || key || '')
+        const segments = normalizedPath.split('.').filter(Boolean)
+        if (!segments.length) return
+
+        let currentLevel = root
+        segments.forEach((segment, index) => {
+          let node = currentLevel.find((item: any) => item.label === segment)
+          if (!node) {
+            node = {
+              label: segment,
+              fullKey: null,
+              children: [] as any[]
+            }
+            currentLevel.push(node)
+          }
+
+          if (index === segments.length - 1) {
+            node.fullKey = key
+            node.originalPath = normalizedPath
+          }
+          currentLevel = node.children
+        })
+      })
+
+      return root
+    }
+
+    const buildHttpPreviewColumns = (nodes: any[]): any[] =>
+      nodes.map((node) => {
+        if (node.children?.length) {
+          return {
+            title: node.label,
+            key: `group-${node.label}-${node.fullKey || ''}`,
+            children: buildHttpPreviewColumns(node.children)
+          }
+        }
+
+        const columnKey = node.fullKey || node.label
+        return {
+          title: renderHttpColumnTitle(node.originalPath || columnKey, node.label),
+          key: columnKey,
+          width: 160,
+          minWidth: 140,
+          ellipsis: false,
+          render: (row: any) => renderHttpPreviewCell(row[columnKey])
+        }
+      })
+
+    const getHttpPreviewColumns = () => {
+      const schemaFields = state.model.httpSchemaFields || []
+      const columns = schemaFields.length
+        ? schemaFields.map((field: any) => ({
+            key: field.name,
+            path: field.comment || field.name
+          }))
+        : Object.keys(state.model.httpPreviewRows[0] || {}).map((key) => ({
+            key,
+            path: key
+          }))
+      if (!columns.length) return []
+      return buildHttpPreviewColumns(buildHttpPreviewColumnTree(columns))
+    }
+
+    const getHttpPreviewScrollX = () => {
+      const schemaFields = state.model.httpSchemaFields || []
+      const keys = schemaFields.length
+        ? schemaFields.map((field: any) => field.name)
+        : Object.keys(state.model.httpPreviewRows[0] || {})
+      return Math.max(keys.length * 160, 900)
+    }
+
+    const formatSummaryValue = (value: any) => {
+      if (value === null || value === undefined || value === '') return '-'
+      if (typeof value === 'object') {
+        return JSON.stringify(value, null, 2)
+      }
+      return String(value)
+    }
+
     const onTableChange = async (tableName: any) => {
       state.model.tableName = tableName
       if (props.nodeType === 'sink' && state.model.database) {
         await getTableOptions(state.model.database, '')
       }
-      if (props.nodeType === 'source' && !isLocalFileSource()) {
+      if (props.nodeType === 'source' && !isSpecialSource()) {
         await refreshIncrementalColumnOptions()
       }
+      emit('tableNameChange', state.model)
+    }
+
+    const onLogicalTableNameChange = (value: string) => {
+      state.model.tableName = value
       emit('tableNameChange', state.model)
     }
 
@@ -269,6 +559,18 @@ const ConfigurationForm = defineComponent({
               return false
             }
           }
+          if (isHttpSource()) {
+            const fields = state.model.httpSchemaFields || []
+            if (
+              fields.length === 0 ||
+              fields.some((field: any) => !field.name || !field.type)
+            ) {
+              window.$message.warning(
+                t('project.synchronization_definition.http_schema_required')
+              )
+              return false
+            }
+          }
           return true
         } catch (err) {
           return false
@@ -312,7 +614,7 @@ const ConfigurationForm = defineComponent({
             >
               <NSelect
                 filterable
-                disabled={isLocalFileSource()}
+                disabled={isSpecialSource()}
                 options={getSceneModeOptions(dagStore.getDagInfo.jobType, t)}
                 v-model={[state.model.sceneMode, 'value']}
                 onUpdateValue={(v) => {
@@ -344,12 +646,12 @@ const ConfigurationForm = defineComponent({
                 v-model={[state.model.datasourceInstanceId, 'value']}
                 onUpdateValue={(v, option) => {
                   if (v !== state.model.datasourceInstanceId) {
-                    getDatabaseOptions(v, option)
                     state.model.database = null
                     state.model.tableName = null
                     clearIncrementalValues()
                     state.formFieldNames = []
                     state.tableOptions = []
+                    getDatabaseOptions(v, option)
                   }
                 }}
               />
@@ -448,7 +750,158 @@ const ConfigurationForm = defineComponent({
             </>
           )}
 
-          {props.nodeType !== 'transform' && !isLocalFileSource() && (
+          {isHttpSource() && (
+            <>
+              <NFormItem
+                label={t(
+                  'project.synchronization_definition.http_request_summary'
+                )}
+              >
+                <NSpace vertical style={{ width: '100%' }}>
+                  <NFormItem
+                    label={t('project.synchronization_definition.http_summary_url')}
+                  >
+                    <NInput
+                      value={formatSummaryValue(state.model.httpDatasourceConfig.url)}
+                      readonly
+                      type='textarea'
+                      rows={2}
+                    />
+                  </NFormItem>
+                  <NFormItem
+                    label={t(
+                      'project.synchronization_definition.http_summary_method'
+                    )}
+                  >
+                    <NInput
+                      value={formatSummaryValue(
+                        state.model.httpDatasourceConfig.method
+                      )}
+                      readonly
+                    />
+                  </NFormItem>
+                  <NFormItem
+                    label={t(
+                      'project.synchronization_definition.http_summary_headers'
+                    )}
+                  >
+                    <NInput
+                      value={formatSummaryValue(
+                        state.model.httpDatasourceConfig.headers
+                      )}
+                      readonly
+                      type='textarea'
+                      rows={3}
+                    />
+                  </NFormItem>
+                  <NFormItem
+                    label={t(
+                      'project.synchronization_definition.http_summary_params'
+                    )}
+                  >
+                    <NInput
+                      value={formatSummaryValue(
+                        state.model.httpDatasourceConfig.params
+                      )}
+                      readonly
+                      type='textarea'
+                      rows={3}
+                    />
+                  </NFormItem>
+                  <NFormItem
+                    label={t(
+                      'project.synchronization_definition.http_summary_content_type'
+                    )}
+                  >
+                    <NInput
+                      value={formatSummaryValue(
+                        state.model.httpDatasourceConfig.content_type
+                      )}
+                      readonly
+                    />
+                  </NFormItem>
+                  <NFormItem
+                    label={t('project.synchronization_definition.http_summary_body')}
+                  >
+                    <NInput
+                      value={formatSummaryValue(
+                        state.model.httpDatasourceConfig.body
+                      )}
+                      readonly
+                      type='textarea'
+                      rows={4}
+                    />
+                  </NFormItem>
+                </NSpace>
+              </NFormItem>
+
+              <NFormItem
+                label={t('project.synchronization_definition.table_name')}
+                path='tableName'
+              >
+                <NInput
+                  clearable
+                  v-model={[state.model.tableName, 'value']}
+                  placeholder={t(
+                    'project.synchronization_definition.http_table_name_placeholder'
+                  )}
+                  onUpdateValue={onLogicalTableNameChange}
+                />
+              </NFormItem>
+
+              <NFormItem
+                label={t('project.synchronization_definition.http_schema')}
+              >
+                <NSpace vertical style={{ width: '100%' }}>
+                  <NSpace>
+                    <NButton
+                      type='primary'
+                      secondary
+                      loading={state.httpPreviewLoading}
+                      onClick={previewHttpSourceData}
+                    >
+                      {t('project.synchronization_definition.http_preview')}
+                    </NButton>
+                    <NButton onClick={addHttpField}>
+                      {t('project.synchronization_definition.http_add_field')}
+                    </NButton>
+                  </NSpace>
+                  {state.model.httpWarnings.map((warning: string) => (
+                    <NAlert type='warning' showIcon>
+                      {warning}
+                    </NAlert>
+                  ))}
+                  <NDataTable
+                    size='small'
+                    columns={httpSchemaColumns}
+                    data={state.model.httpSchemaFields}
+                    rowKey={(row) => row.name}
+                  />
+                </NSpace>
+              </NFormItem>
+
+              <NFormItem
+                label={t('project.synchronization_definition.http_preview')}
+              >
+                <NSpace vertical style={{ width: '100%' }}>
+                  <NAlert type='info' showIcon={false}>
+                    {t(
+                      'project.synchronization_definition.http_preview_grouped_hint'
+                    )}
+                  </NAlert>
+                  <NDataTable
+                    size='small'
+                    columns={getHttpPreviewColumns()}
+                    data={state.model.httpPreviewRows}
+                    maxHeight={280}
+                    scrollX={getHttpPreviewScrollX()}
+                  />
+                </NSpace>
+              </NFormItem>
+            </>
+          )}
+
+          {props.nodeType !== 'transform' && !isSpecialSource() && (
             <NFormItem
               label={t('project.synchronization_definition.database')}
               path='database'
@@ -472,7 +925,7 @@ const ConfigurationForm = defineComponent({
 
           {dagStore.getDagInfo.jobType === 'DATA_INTEGRATION' &&
             (props.nodeType === 'sink' || props.nodeType === 'source') &&
-            !isLocalFileSource() && (
+            !isSpecialSource() && (
               <NFormItem
                 label={t('project.synchronization_definition.table_name')}
                 path='tableName'
@@ -495,9 +948,9 @@ const ConfigurationForm = defineComponent({
                   )}
                 />
               </NFormItem>
-            )}
+          )}
 
-          {state.model.sceneMode === 'MULTIPLE_TABLE' && !isLocalFileSource() && (
+          {state.model.sceneMode === 'MULTIPLE_TABLE' && !isSpecialSource() && (
             <NFormItem
               label={t('project.synchronization_definition.table_name')}
               path='tableName'

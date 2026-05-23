@@ -2,6 +2,9 @@
  * @author: zhjj
  */
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -66,6 +69,8 @@ export function useNodeModel(
 
   let tempOutputTables = [] as ModelRecord[]
 
+  const isHttpSource = () => type === 'source' && state.datasourceName === 'Http'
+
   const getModelData = () => {
     // The sink or transform model does not have an output table structure, and
     // the input table structure will be rendered according to the upstream node
@@ -92,6 +97,23 @@ export function useNodeModel(
       const formValues = refForm.value?.getValues?.() || {}
       const fields =
         formValues.localFileSchemaFields ||
+        ((state.optionsOutputTableData[0] as any)?.fields || [])
+      state.allTableData = [
+        {
+          database: state.database || 'default',
+          tableInfos: [
+            {
+              tableName: state.currentTable,
+              fields
+            }
+          ]
+        }
+      ] as any
+      onSwitchTable(state.currentTable)
+    } else if (isHttpSource()) {
+      const formValues = refForm.value?.getValues?.() || {}
+      const fields =
+        formValues.httpSchemaFields ||
         ((state.optionsOutputTableData[0] as any)?.fields || [])
       state.allTableData = [
         {

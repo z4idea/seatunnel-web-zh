@@ -72,6 +72,12 @@ const NodeSetting = defineComponent({
       (props.nodeInfo.sourceKind === 'LOCAL_FILE' ||
         props.nodeInfo.connectorType === 'LocalFile')
 
+    const isHttpSource = () =>
+      props.nodeInfo.type === 'source' &&
+      (props.nodeInfo.sourceKind === 'HTTP_API' ||
+        props.nodeInfo.connectorType === 'Http' ||
+        props.nodeInfo.datasourceName === 'Http')
+
     watch(
       () => props.show,
       async () => {
@@ -123,7 +129,9 @@ const NodeSetting = defineComponent({
                     refForm={configurationFormRef}
                   />
                 </NTabPane>
-                {props.nodeInfo.type === 'source' && !isLocalFileSource() && (
+                {props.nodeInfo.type === 'source' &&
+                  !isLocalFileSource() &&
+                  !isHttpSource() && (
                   <NTabPane
                     name='incremental-state'
                     tab={t(

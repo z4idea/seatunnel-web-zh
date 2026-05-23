@@ -37,6 +37,7 @@ import {
 } from '@/service/sync-task-definition'
 import { getDatasourceDetail } from '@/service/data-source'
 import { previewLocalFile } from '@/service/local-file'
+import { previewHttpDatasource } from '@/service/http-datasource'
 import type { JdbcIncrementalColumnType } from '@/service/sync-task-definition'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
 import { getDefaultNodeName, isComponentDefaultName } from './component-display'
@@ -83,6 +84,11 @@ export const useConfigurationForm = (
     localFilePreviewRows: [] as Record<string, any>[],
     localFileSchemaFields: [] as TableSchemaField[],
     localFileWarnings: [] as string[],
+    httpDatasourceConfig: {} as Record<string, any>,
+    httpPreviewRows: [] as Record<string, any>[],
+    httpSchemaFields: [] as TableSchemaField[],
+    httpWarnings: [] as string[],
+    httpSchemaCustomized: false,
     csv_use_header_line: true,
     skip_header_row_number: 0,
     encoding: 'UTF-8'
@@ -108,6 +114,7 @@ export const useConfigurationForm = (
     incrementalColumnLoading: boolean
     incrementalColumnTypeMap: Record<string, JdbcIncrementalColumnType>
     localFilePreviewLoading: boolean
+    httpPreviewLoading: boolean
     rules: any
   }>({
     model: cloneDeep(initialModel),
@@ -129,6 +136,7 @@ export const useConfigurationForm = (
     incrementalColumnLoading: false,
     incrementalColumnTypeMap: {},
     localFilePreviewLoading: false,
+    httpPreviewLoading: false,
     rules: {
       name: {
         required: true,
@@ -230,6 +238,12 @@ export const useConfigurationForm = (
       state.model.datasourceName === 'LocalFile' ||
       transformType === 'LocalFile')
 
+  const isHttpSource = () =>
+    nodeType === 'source' &&
+    (state.model.sourceKind === 'HTTP_API' ||
+      state.model.datasourceName === 'Http' ||
+      transformType === 'Http')
+
   const getLocalFileTableName = (path: string) => {
     const fileName = String(path || '').split(/[\\/]/).pop() || 'local_file'
     const dotIndex = fileName.lastIndexOf('.')
@@ -243,6 +257,24 @@ export const useConfigurationForm = (
     state.tableOptions = [{ label: tableName, value: tableName }]
     state.model.database = 'default'
     state.model.tableName = tableName
+  }
+
+  const syncHttpTableOptions = (tableName?: string | null) => {
+    const logicalTableName =
+      String(tableName || state.model.datasourceInstanceName || '').trim() ||
+      'http_source'
+    state.databaseOptions = [{ label: 'default', value: 'default' }]
+    state.tableOptions = [{ label: logicalTableName, value: logicalTableName }]
+    state.model.database = 'default'
+    state.model.tableName = logicalTableName
+  }
+
+  const clearHttpSourceState = () => {
+    state.model.httpDatasourceConfig = {}
+    state.model.httpPreviewRows = []
+    state.model.httpSchemaFields = []
+    state.model.httpWarnings = []
+    state.model.httpSchemaCustomized = false
   }
 
   const decorateIncrementalFormFields = (forms: Array<any>) => {
@@ -339,7 +371,7 @@ export const useConfigurationForm = (
   }
 
   const refreshIncrementalColumnOptions = async () => {
-    if (nodeType !== 'source' || !hasIncrementalFields()) return
+    if (nodeType !== 'source' || !hasIncrementalFields() || isHttpSource()) return
 
     const datasourceInstanceId = state.model.datasourceInstanceId
     const database = getSingleValue(state.model.database)
@@ -429,6 +461,8 @@ export const useConfigurationForm = (
       state.datasourceOptions =
         state.model.sourceKind === 'LOCAL_FILE'
           ? options.filter((item: any) => item.datasourceName === 'LocalFile')
+          : state.model.sourceKind === 'HTTP_API'
+          ? options.filter((item: any) => item.datasourceName === 'Http')
           : options
     } finally {
       state.datasourceLoading = false
@@ -442,11 +476,14 @@ export const useConfigurationForm = (
     if (option?.label) state.model.datasourceInstanceName = option.label
     if (option?.datasourceName) {
       state.model.datasourceName = option.datasourceName
-      if (option.datasourceName !== 'LocalFile') {
+      if (!['LocalFile', 'Http'].includes(option.datasourceName)) {
         getColumnSelectable(option.datasourceName)
       }
     }
     if (option?.pluginName) state.model.pluginName = option.pluginName
+    if (option?.datasourceName !== 'Http') {
+      clearHttpSourceState()
+    }
     if (option?.datasourceName === 'LocalFile') {
       const datasourceDetail = await getDatasourceDetail(datasourceInstanceId)
       const datasourceConfig = datasourceDetail.datasourceConfig || {}
@@ -459,6 +496,16 @@ export const useConfigurationForm = (
       syncLocalFileTableOptions()
       await getFormStructure(datasourceInstanceId)
       await previewLocalFileData()
+      return
+    }
+    if (option?.datasourceName === 'Http') {
+      const datasourceDetail = await getDatasourceDetail(datasourceInstanceId)
+      const datasourceConfig = datasourceDetail.datasourceConfig || {}
+      state.model.httpDatasourceConfig = datasourceConfig
+      state.model.sceneMode = 'SINGLE_TABLE'
+      state.model.columnSelectable = false
+      syncHttpTableOptions(state.model.tableName || option.label)
+      await getFormStructure(datasourceInstanceId)
       return
     }
     if (state.databaseLoading) return
@@ -585,7 +632,7 @@ export const useConfigurationForm = (
     dagStore.setColumnSelectable(pluginName, res)
   }
 
-  const normalizeLocalFileFields = (fields: TableSchemaField[]) =>
+  const normalizeSchemaFields = (fields: TableSchemaField[]) =>
     fields.map((field) => ({
       name: field.name,
       type: field.outputDataType || field.type || 'STRING',
@@ -596,6 +643,50 @@ export const useConfigurationForm = (
       comment: field.comment || '',
       unSupport: field.unSupport ?? false
     }))
+
+  const inferSchemaFieldType = (value: any) => {
+    if (typeof value === 'boolean') return 'BOOLEAN'
+    if (typeof value === 'number') {
+      return Number.isInteger(value) ? 'BIGINT' : 'DOUBLE'
+    }
+    return 'STRING'
+  }
+
+  const inferSchemaFieldsFromRows = (rows: Record<string, any>[]) => {
+    const fieldTypes = new Map<string, string>()
+    rows.forEach((row) => {
+      Object.entries(row || {}).forEach(([key, value]) => {
+        const nextType = inferSchemaFieldType(value)
+        const currentType = fieldTypes.get(key)
+        if (!currentType) {
+          fieldTypes.set(key, nextType)
+          return
+        }
+        if (currentType === nextType) {
+          return
+        }
+        if (
+          ['BIGINT', 'DOUBLE'].includes(currentType) &&
+          ['BIGINT', 'DOUBLE'].includes(nextType)
+        ) {
+          fieldTypes.set(key, 'DOUBLE')
+          return
+        }
+        fieldTypes.set(key, 'STRING')
+      })
+    })
+
+    return Array.from(fieldTypes.entries()).map(([name, type]) => ({
+      name,
+      type,
+      outputDataType: type,
+      nullable: true,
+      primaryKey: false,
+      defaultValue: '',
+      comment: '',
+      unSupport: false
+    }))
+  }
 
   const previewLocalFileData = async () => {
     if (!state.model.localFilePath) return
@@ -611,12 +702,73 @@ export const useConfigurationForm = (
       })
       state.model.localFilePreviewRows = result.rows || []
       state.model.localFileWarnings = result.warnings || []
-      state.model.localFileSchemaFields = normalizeLocalFileFields(
+      state.model.localFileSchemaFields = normalizeSchemaFields(
         result.fields || []
       )
       syncLocalFileTableOptions()
     } finally {
       state.localFilePreviewLoading = false
+    }
+  }
+
+  const buildHttpConnectorPreviewConfig = () =>
+    omit(state.model, [
+      'name',
+      'datasourceInstanceId',
+      'sceneMode',
+      'kind',
+      'kinds',
+      'database',
+      'tableName',
+      'datasourceInstanceName',
+      'pluginName',
+      'datasourceName',
+      'columnSelectable',
+      'sourceKind',
+      'localFilePath',
+      'localFileFormat',
+      'localFilePreviewRows',
+      'localFileSchemaFields',
+      'localFileWarnings',
+      'httpDatasourceConfig',
+      'httpPreviewRows',
+      'httpSchemaFields',
+      'httpWarnings',
+      'httpSchemaCustomized',
+      'excludeKind',
+      'includeKind'
+    ]) as Record<string, any>
+
+  const previewHttpSourceData = async () => {
+    if (!isHttpSource() || !state.model.datasourceInstanceId) return
+    state.httpPreviewLoading = true
+    try {
+      const connectorConfig = buildHttpConnectorPreviewConfig()
+      const result = await previewHttpDatasource({
+        datasourceConfig: state.model.httpDatasourceConfig || {},
+        connectorConfig,
+        schemaFields: state.model.httpSchemaCustomized
+          ? state.model.httpSchemaFields
+          : undefined,
+        limit: 20
+      })
+      state.model.httpPreviewRows = result.rows || []
+      state.model.httpWarnings = result.warnings || []
+      if (
+        !state.model.httpSchemaCustomized ||
+        state.model.httpSchemaFields.length === 0
+      ) {
+        const previewFields = normalizeSchemaFields(result.fields || [])
+        state.model.httpSchemaFields =
+          previewFields.length > 0
+            ? previewFields
+            : inferSchemaFieldsFromRows(state.model.httpPreviewRows || [])
+      }
+      if (!state.model.tableName) {
+        syncHttpTableOptions(state.model.datasourceInstanceName)
+      }
+    } finally {
+      state.httpPreviewLoading = false
     }
   }
 
@@ -637,6 +789,9 @@ export const useConfigurationForm = (
           : values.name
       state.model.sceneMode = values.sceneMode
       if (state.model.sourceKind === 'LOCAL_FILE' && !state.model.sceneMode) {
+        state.model.sceneMode = 'SINGLE_TABLE'
+      }
+      if (state.model.sourceKind === 'HTTP_API' && !state.model.sceneMode) {
         state.model.sceneMode = 'SINGLE_TABLE'
       }
       if (values.sceneMode === 'SPLIT_TABLE') {
@@ -699,8 +854,19 @@ export const useConfigurationForm = (
         values.outputSchema &&
         values.outputSchema.length
       ) {
-        state.model.localFileSchemaFields = normalizeLocalFileFields(
+        state.model.localFileSchemaFields = normalizeSchemaFields(
           values.outputSchema[0].fields || []
+        )
+      }
+      if (isHttpSource() && values.outputSchema && values.outputSchema.length) {
+        state.model.httpSchemaFields = normalizeSchemaFields(
+          values.outputSchema[0].fields || []
+        )
+        state.model.httpSchemaCustomized = state.model.httpSchemaFields.length > 0
+        syncHttpTableOptions(
+          values.tableOption?.tables?.length
+            ? values.tableOption.tables[0]
+            : state.model.datasourceInstanceName
         )
       }
       await refreshIncrementalColumnOptions()
@@ -717,7 +883,9 @@ export const useConfigurationForm = (
     getTableOptions,
     getFormStructure,
     previewLocalFileData,
+    previewHttpSourceData,
     isLocalFileSource,
+    isHttpSource,
     getLocalFileTableName,
     clearIncrementalValues,
     refreshIncrementalColumnOptions,

@@ -1198,6 +1198,7 @@ export default {
     save_node_tips: 'Please save the nodes on the canvas first',
     source: 'Source',
     file_source: 'File Source',
+    http_source: 'HTTP Source',
     sink: 'Sink',
     drag_source_hint:
       'Drag Source into canvas and double click to configure it',
@@ -1206,6 +1207,8 @@ export default {
       'Drag {name} into canvas and double click to configure it',
     source_description: 'Reads source data from an external system.',
     file_source_description: 'Reads server local CSV or JSON files.',
+    http_source_description:
+      'Reads JSON data from HTTP APIs with preview and editable schema support.',
     sink_description: 'Writes processed data into the target system.',
     copy_description: 'Copies field values into new output fields.',
     field_mapper_description:
@@ -1243,6 +1246,24 @@ export default {
     local_file_preview: 'Preview Data',
     local_file_add_field: 'Add Field',
     local_file_schema_required: 'Please preview or edit file schema first',
+    http_request_summary: 'Request Summary',
+    http_summary_url: 'URL',
+    http_summary_method: 'Method',
+    http_summary_headers: 'Headers',
+    http_summary_params: 'Params',
+    http_summary_content_type: 'Content-Type',
+    http_summary_body: 'Body',
+    http_table_name_placeholder:
+      'Enter a logical table name, defaults to the datasource instance name',
+    http_schema: 'HTTP Schema',
+    http_preview: 'Preview Data',
+    http_add_field: 'Add Field',
+    http_schema_required: 'Please preview or edit the HTTP schema first',
+    http_preview_grouped_hint:
+      'Nested object fields are flattened into underscore column names for table creation. Hover a header to view the original JSON path and hover a cell to view the full value.',
+    http_preview_field_path: 'Field Path',
+    http_preview_json_object: 'JSON Object ({count} fields)',
+    http_preview_json_array: 'JSON Array ({count} items)',
     csv_use_header_line: 'Use Header Line',
     skip_header_row_number: 'Skip Header Row Number',
     sql_content_label: 'SQL',

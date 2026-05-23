@@ -130,6 +130,28 @@ const DagSidebar = defineComponent({
           <div
             class={styles['task-item']}
             draggable='true'
+            onDragstart={() =>
+              this.handleDragstart(
+                'source',
+                this.t('project.synchronization_definition.http_source'),
+                'HTTP_API'
+              )
+            }
+          >
+            <NSpace align='center'>
+              <img class={styles['task-image']} src={SourceImg} />
+              <span>{this.t('project.synchronization_definition.http_source')}</span>
+            </NSpace>
+            <span
+              class="task-item-info ml-auto inline-block"
+              title={this.t('project.synchronization_definition.http_source_description')}
+            >
+              <InfoCircleOutlined style={{width:'17px', height:'17px'}} />
+            </span>
+          </div>
+          <div
+            class={styles['task-item']}
+            draggable='true'
             onDragstart={() => this.handleDragstart('sink', this.t('project.synchronization_definition.sink'))}
           >
             <NSpace align='center'>

@@ -50,6 +50,12 @@ export function useNodeSettingModal(
       values.datasourceName === 'LocalFile' ||
       props.nodeInfo.connectorType === 'LocalFile')
 
+  const isHttpValues = (values: any) =>
+    props.nodeInfo.type === 'source' &&
+    (values.sourceKind === 'HTTP_API' ||
+      values.datasourceName === 'Http' ||
+      props.nodeInfo.connectorType === 'Http')
+
   const getLocalFileTableName = (path: string) => {
     const fileName = String(path || '').split(/[\\/]/).pop() || 'local_file'
     const dotIndex = fileName.lastIndexOf('.')
@@ -60,7 +66,28 @@ export function useNodeSettingModal(
   const quoteSchemaKey = (key: string) =>
     `"${String(key || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 
-  const toLocalFileSchema = (fields: ModelRecord[]) =>
+  const normalizeHttpFieldName = (name: string) => {
+    const normalized = String(name || '')
+      .replace(/[^A-Za-z0-9_]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+    return normalized || 'field'
+  }
+
+  const normalizeHttpFields = (fields: ModelRecord[]) => {
+    const nameCounter: Record<string, number> = {}
+    return fields.map((field: ModelRecord) => {
+      const baseName = normalizeHttpFieldName(String(field.name || ''))
+      const nextCount = (nameCounter[baseName] || 0) + 1
+      nameCounter[baseName] = nextCount
+      const safeName = nextCount === 1 ? baseName : `${baseName}_${nextCount}`
+      return {
+        ...field,
+        name: safeName
+      }
+    })
+  }
+
+  const toSchemaConfig = (fields: ModelRecord[]) =>
     `fields {\n${fields
       .map(
         (field: ModelRecord) =>
@@ -69,6 +96,15 @@ export function useNodeSettingModal(
           ).toLowerCase()}`
       )
       .join('\n')}\n}`
+
+  const buildHttpJsonFieldConfig = (fields: ModelRecord[]) =>
+    fields.reduce((config: Record<string, string>, field: ModelRecord) => {
+      const fieldName = String(field.name || '').trim()
+      if (!fieldName) return config
+      const originalPath = String(field.comment || field.name || '').trim()
+      config[fieldName] = originalPath || fieldName
+      return config
+    }, {})
 
   const formatParams = (values: any) => {
     const params = {
@@ -98,6 +134,11 @@ export function useNodeSettingModal(
       'localFilePreviewRows',
       'localFileSchemaFields',
       'localFileWarnings',
+      'httpDatasourceConfig',
+      'httpPreviewRows',
+      'httpSchemaFields',
+      'httpWarnings',
+      'httpSchemaCustomized',
       'excludeKind',
       'includeKind'
     ]) as { [key: string]: any }
@@ -136,7 +177,7 @@ export function useNodeSettingModal(
         tables: [tableName]
       }
       const fields = values.localFileSchemaFields || []
-      config.schema = toLocalFileSchema(fields)
+      config.schema = toSchemaConfig(fields)
       config.encoding = values.encoding || 'UTF-8'
       if (values.localFileFormat === 'csv') {
         config.csv_use_header_line = values.csv_use_header_line
@@ -150,7 +191,25 @@ export function useNodeSettingModal(
       }
     }
 
-    if (modelRef.value && !isLocalFileValues(values)) {
+    if (isHttpValues(values)) {
+      const tableName =
+        values.tableName || values.datasourceInstanceName || 'http_source'
+      const fields = normalizeHttpFields(values.httpSchemaFields || [])
+      params.tableOption = {
+        databases: ['default'],
+        tables: [tableName]
+      }
+      config.schema = toSchemaConfig(fields)
+      config.format = 'json'
+      config.json_field = buildHttpJsonFieldConfig(fields)
+      config.json_filed_missed_return_null = true
+      params.selectTableFields = {
+        all: true,
+        tableFields: fields.map((field: ModelRecord) => field.name)
+      }
+    }
+
+    if (modelRef.value && !isLocalFileValues(values) && !isHttpValues(values)) {
       params.selectTableFields = modelRef.value?.getSelectFields()
     }
     if (values.datasourceInstanceId) {
@@ -210,6 +269,23 @@ export function useNodeSettingModal(
               database: 'default',
               tableName:
                 values.tableName || getLocalFileTableName(values.localFilePath),
+              fields
+            }
+          ]
+        } else if (isHttpValues(values)) {
+          const fields = normalizeHttpFields(values.httpSchemaFields || [])
+          if (!fields.length) {
+            window.$message.warning(
+              t('project.synchronization_definition.http_schema_required')
+            )
+            state.saving = false
+            return false
+          }
+          modelOutputTableData = [
+            {
+              database: 'default',
+              tableName:
+                values.tableName || values.datasourceInstanceName || 'http_source',
               fields
             }
           ]
@@ -348,6 +424,8 @@ export function useNodeSettingModal(
           ...taskParams,
           connectorType: isLocalFileValues(values)
             ? 'LocalFile'
+            : isHttpValues(values)
+            ? 'Http'
             : taskParams.connectorType,
           sourceKind: values.sourceKind
         }
@@ -395,6 +473,7 @@ export function useNodeSettingModal(
   const handleChangeTable = async (node: any) => {
     if (!modelRef.value) return
     if (isLocalFileValues(node)) return
+    if (isHttpValues(node)) return
     const currentTable = _.isArray(node.tableName)
       ? node.tableName[0]
       : node.tableName
