@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -22,7 +25,7 @@ import en_US from './en_US'
 const i18n = createI18n({
   legacy: false,
   globalInjection: true,
-  locale: 'en_US',
+  locale: 'zh_CN',
   messages: {
     zh_CN,
     en_US

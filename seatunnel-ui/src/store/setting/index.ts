@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -25,7 +28,7 @@ export const useSettingStore = defineStore({
     dataUniqueValue: false,
     fillet: 15,
     requestTime: 6000,
-    locales: 'en_US',
+    locales: 'zh_CN',
     workspaces: []
   }),
   persist: true,
