@@ -26,6 +26,7 @@ import org.apache.seatunnel.app.bean.engine.EngineDataType;
 import org.apache.seatunnel.app.config.ConnectorDataSourceMapperConfig;
 import org.apache.seatunnel.app.domain.request.job.DataSourceOption;
 import org.apache.seatunnel.app.domain.request.job.TableSchemaReq;
+import org.apache.seatunnel.app.domain.response.datasource.DatasourceDetailRes;
 import org.apache.seatunnel.app.domain.response.job.TableSchemaRes;
 import org.apache.seatunnel.app.permission.constants.SeatunnelFuncPermissionKeyConstant;
 import org.apache.seatunnel.app.service.IDatasourceService;
@@ -59,6 +60,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TableSchemaServiceImpl extends SeatunnelBaseServiceImpl
         implements ITableSchemaService {
+
+    private static final String HTTP_DATASOURCE_PLUGIN_NAME = "Http";
 
     @Resource private ConnectorCache connectorCache;
 
@@ -178,8 +181,10 @@ public class TableSchemaServiceImpl extends SeatunnelBaseServiceImpl
     public DataSourceOption checkDatabaseAndTable(
             String datasourceId, DataSourceOption dataSourceOption) {
         List<String> notExistDatabases = new ArrayList<>();
-        String datasourceName =
-                dataSourceService.queryDatasourceDetailById(datasourceId).getDatasourceName();
+        DatasourceDetailRes datasourceDetail =
+                dataSourceService.queryDatasourceDetailById(datasourceId);
+        String datasourceName = datasourceDetail.getDatasourceName();
+        String pluginName = datasourceDetail.getPluginName();
         if (dataSourceOption.getDatabases() != null) {
             List<String> databases =
                     dataSourceService.queryDatabaseByDatasourceName(datasourceName);
@@ -187,6 +192,9 @@ public class TableSchemaServiceImpl extends SeatunnelBaseServiceImpl
                     dataSourceOption.getDatabases().stream()
                             .filter(database -> !databases.contains(database))
                             .collect(Collectors.toList()));
+        }
+        if (HTTP_DATASOURCE_PLUGIN_NAME.equals(pluginName)) {
+            return new DataSourceOption(notExistDatabases, new ArrayList<>());
         }
         Map<String, Set<String>> tables = new HashMap<>();
         if (dataSourceOption.getTables() != null) {

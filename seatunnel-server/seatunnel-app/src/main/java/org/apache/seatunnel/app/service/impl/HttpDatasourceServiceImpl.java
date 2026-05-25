@@ -523,8 +523,8 @@ public class HttpDatasourceServiceImpl implements IHttpDatasourceService {
 
     private String ensureSafeFieldName(
             LinkedHashMap<String, String> fieldPathMap, String rawFieldPath) {
-        String normalized = NON_WORD_PATTERN.matcher(StringUtils.defaultString(rawFieldPath))
-                .replaceAll("_");
+        String normalized =
+                NON_WORD_PATTERN.matcher(StringUtils.defaultString(rawFieldPath)).replaceAll("_");
         normalized = StringUtils.strip(normalized, "_");
         if (StringUtils.isBlank(normalized)) {
             normalized = "field";
