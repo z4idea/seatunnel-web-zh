@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-import { defineComponent, h, nextTick, PropType, ref } from 'vue'
+import { defineComponent, h, nextTick, PropType, ref, watch } from 'vue'
 import {
   NForm,
   NFormItem,
@@ -92,6 +92,8 @@ const ConfigurationForm = defineComponent({
     const { t } = useI18n()
     const formRef = ref()
     const transfer = ref()
+    const sinkTableMode = ref<'existing' | 'custom'>('existing')
+    const sinkCustomTableName = ref('')
     const localizedKinds = KINDS.map((kind) => ({
       ...kind,
       label: t(`project.synchronization_definition.${kind.labelKey}`)
@@ -275,10 +277,9 @@ const ConfigurationForm = defineComponent({
 
       const parsed = tryParseJsonLikeText(value)
       if (Array.isArray(parsed)) {
-        return t(
-          'project.synchronization_definition.http_preview_json_array',
-          { count: parsed.length }
-        )
+        return t('project.synchronization_definition.http_preview_json_array', {
+          count: parsed.length
+        })
       }
       if (parsed && typeof parsed === 'object') {
         return t(
@@ -424,7 +425,10 @@ const ConfigurationForm = defineComponent({
 
         const columnKey = node.fullKey || node.label
         return {
-          title: renderHttpColumnTitle(node.originalPath || columnKey, node.label),
+          title: renderHttpColumnTitle(
+            node.originalPath || columnKey,
+            node.label
+          ),
           key: columnKey,
           width: 160,
           minWidth: 140,
@@ -475,6 +479,36 @@ const ConfigurationForm = defineComponent({
       emit('tableNameChange', state.model)
     }
 
+    const onSinkCustomTableNameChange = (value: string) => {
+      sinkCustomTableName.value = value
+      state.model.tableName = value
+      emit('tableNameChange', state.model)
+    }
+
+    const onSinkTableModeChange = (mode: 'existing' | 'custom') => {
+      sinkTableMode.value = mode
+      if (mode === 'custom') {
+        const currentTableName = String(state.model.tableName || '').trim()
+        sinkCustomTableName.value = currentTableName
+        state.model.tableName = currentTableName || sinkCustomTableName.value
+        emit('tableNameChange', state.model)
+        return
+      }
+
+      const currentTableName = String(state.model.tableName || '').trim()
+      const matchedOption = state.tableOptions.find(
+        (option: TableOption) => option.value === currentTableName
+      )
+      if (matchedOption) {
+        state.model.tableName = matchedOption.value
+        emit('tableNameChange', state.model)
+        return
+      }
+
+      state.model.tableName = null
+      emit('tableNameChange', state.model)
+    }
+
     const onLogicalTableNameChange = (value: string) => {
       state.model.tableName = value
       emit('tableNameChange', state.model)
@@ -482,49 +516,39 @@ const ConfigurationForm = defineComponent({
 
     const prevQueryTableName = ref('')
     const onTableSearch = debounce(async (tableName: any) => {
-      // If it is a sink node and there is input content.
-      if (props.nodeType === 'sink' && tableName) {
-        try {
-          // rely on database
-          if (state.model.database && prevQueryTableName.value !== tableName) {
-            await getTableOptions(state.model.database, tableName)
-            prevQueryTableName.value = tableName
-
-            // If there are no results after searching, add user input as a custom value to the options
-            const existingOption = state.tableOptions.find(
-              (option: TableOption) => option.value === tableName
-            )
-
-            if (!existingOption) {
-              const newOption: TableOption = {
-                label: tableName,
-                value: tableName
-              }
-              state.tableOptions = [...state.tableOptions, newOption]
-            }
-          }
-        } catch (err) {
-          // If the interface call fails, also use user input as a custom value
-          const existingOption = state.tableOptions.find(
-            (option: TableOption) => option.value === tableName
-          )
-
-          if (!existingOption) {
-            const newOption: TableOption = {
-              label: tableName,
-              value: tableName
-            }
-            state.tableOptions = [...state.tableOptions, newOption]
-          }
-        }
-      } else {
-        // The source node maintains its original logic
-        if (state.model.database && prevQueryTableName.value !== tableName) {
-          getTableOptions(state.model.database, tableName)
-          prevQueryTableName.value = tableName
-        }
+      if (state.model.database && prevQueryTableName.value !== tableName) {
+        getTableOptions(state.model.database, tableName)
+        prevQueryTableName.value = tableName
       }
     }, 1000)
+
+    watch(
+      [() => state.model.tableName, () => state.tableOptions],
+      ([tableName, tableOptions]) => {
+        if (props.nodeType !== 'sink') return
+        const normalizedTableName = String(tableName || '').trim()
+        if (!normalizedTableName) {
+          if (sinkTableMode.value === 'custom') {
+            sinkCustomTableName.value = ''
+          }
+          return
+        }
+
+        const matchesExistingOption = tableOptions.some(
+          (option: TableOption) => option.value === normalizedTableName
+        )
+        if (matchesExistingOption) {
+          if (sinkTableMode.value !== 'custom') {
+            sinkTableMode.value = 'existing'
+          }
+          return
+        }
+
+        sinkTableMode.value = 'custom'
+        sinkCustomTableName.value = normalizedTableName
+      },
+      { deep: true, immediate: true }
+    )
 
     const onDatabaseChange = () => {
       clearIncrementalValues()
@@ -554,7 +578,9 @@ const ConfigurationForm = defineComponent({
               fields.some((field: any) => !field.name || !field.type)
             ) {
               window.$message.warning(
-                t('project.synchronization_definition.local_file_schema_required')
+                t(
+                  'project.synchronization_definition.local_file_schema_required'
+                )
               )
               return false
             }
@@ -666,7 +692,9 @@ const ConfigurationForm = defineComponent({
                 <NInput value={state.model.localFilePath} readonly />
               </NFormItem>
               <NFormItem
-                label={t('project.synchronization_definition.local_file_format')}
+                label={t(
+                  'project.synchronization_definition.local_file_format'
+                )}
               >
                 <NSelect
                   disabled
@@ -698,16 +726,15 @@ const ConfigurationForm = defineComponent({
                   >
                     <NInputNumber
                       min={0}
-                      v-model={[
-                        state.model.skip_header_row_number,
-                        'value'
-                      ]}
+                      v-model={[state.model.skip_header_row_number, 'value']}
                     />
                   </NFormItem>
                 </>
               )}
               <NFormItem
-                label={t('project.synchronization_definition.local_file_schema')}
+                label={t(
+                  'project.synchronization_definition.local_file_schema'
+                )}
               >
                 <NSpace vertical style={{ width: '100%' }}>
                   <NSpace>
@@ -717,10 +744,14 @@ const ConfigurationForm = defineComponent({
                       loading={state.localFilePreviewLoading}
                       onClick={previewLocalFileData}
                     >
-                      {t('project.synchronization_definition.local_file_preview')}
+                      {t(
+                        'project.synchronization_definition.local_file_preview'
+                      )}
                     </NButton>
                     <NButton onClick={addLocalFileField}>
-                      {t('project.synchronization_definition.local_file_add_field')}
+                      {t(
+                        'project.synchronization_definition.local_file_add_field'
+                      )}
                     </NButton>
                   </NSpace>
                   {state.model.localFileWarnings.map((warning: string) => (
@@ -737,7 +768,9 @@ const ConfigurationForm = defineComponent({
                 </NSpace>
               </NFormItem>
               <NFormItem
-                label={t('project.synchronization_definition.local_file_preview')}
+                label={t(
+                  'project.synchronization_definition.local_file_preview'
+                )}
               >
                 <NDataTable
                   size='small'
@@ -759,10 +792,14 @@ const ConfigurationForm = defineComponent({
               >
                 <NSpace vertical style={{ width: '100%' }}>
                   <NFormItem
-                    label={t('project.synchronization_definition.http_summary_url')}
+                    label={t(
+                      'project.synchronization_definition.http_summary_url'
+                    )}
                   >
                     <NInput
-                      value={formatSummaryValue(state.model.httpDatasourceConfig.url)}
+                      value={formatSummaryValue(
+                        state.model.httpDatasourceConfig.url
+                      )}
                       readonly
                       type='textarea'
                       rows={2}
@@ -821,7 +858,9 @@ const ConfigurationForm = defineComponent({
                     />
                   </NFormItem>
                   <NFormItem
-                    label={t('project.synchronization_definition.http_summary_body')}
+                    label={t(
+                      'project.synchronization_definition.http_summary_body'
+                    )}
                   >
                     <NInput
                       value={formatSummaryValue(
@@ -916,6 +955,8 @@ const ConfigurationForm = defineComponent({
                   if (v !== state.model.database) {
                     onDatabaseChange()
                     state.model.tableName = null
+                    sinkCustomTableName.value = ''
+                    sinkTableMode.value = 'existing'
                     clearIncrementalValues()
                   }
                 }}
@@ -930,25 +971,71 @@ const ConfigurationForm = defineComponent({
                 label={t('project.synchronization_definition.table_name')}
                 path='tableName'
               >
-                <NSelect
-                  filterable
-                  loading={state.tableLoading}
-                  options={state.tableOptions}
-                  v-model={[state.model.tableName, 'value']}
-                  onUpdateValue={onTableChange}
-                  onSearch={onTableSearch}
-                  remote
-                  virtualScroll
-                  clearable
-                  tag={props.nodeType === 'sink'}
-                  showArrow={true}
-                  allowInput={props.nodeType === 'sink'}
-                  placeholder={t(
-                    'project.synchronization_definition.target_name_tips'
-                  )}
-                />
+                {props.nodeType === 'sink' ? (
+                  <NSpace vertical style={{ width: '100%' }}>
+                    <NRadioGroup
+                      value={sinkTableMode.value}
+                      onUpdateValue={onSinkTableModeChange}
+                    >
+                      <NSpace>
+                        <NRadio value='existing'>
+                          {t(
+                            'project.synchronization_definition.table_name_mode_select'
+                          )}
+                        </NRadio>
+                        <NRadio value='custom'>
+                          {t(
+                            'project.synchronization_definition.table_name_mode_custom'
+                          )}
+                        </NRadio>
+                      </NSpace>
+                    </NRadioGroup>
+                    {sinkTableMode.value === 'existing' ? (
+                      <NSelect
+                        filterable
+                        loading={state.tableLoading}
+                        options={state.tableOptions}
+                        value={state.model.tableName}
+                        onUpdateValue={onTableChange}
+                        onSearch={onTableSearch}
+                        remote
+                        virtualScroll
+                        clearable
+                        showArrow
+                        placeholder={t(
+                          'project.synchronization_definition.select_table_name_placeholder'
+                        )}
+                      />
+                    ) : (
+                      <NInput
+                        clearable
+                        value={sinkCustomTableName.value}
+                        onUpdateValue={onSinkCustomTableNameChange}
+                        placeholder={t(
+                          'project.synchronization_definition.custom_table_name_placeholder'
+                        )}
+                      />
+                    )}
+                  </NSpace>
+                ) : (
+                  <NSelect
+                    filterable
+                    loading={state.tableLoading}
+                    options={state.tableOptions}
+                    v-model={[state.model.tableName, 'value']}
+                    onUpdateValue={onTableChange}
+                    onSearch={onTableSearch}
+                    remote
+                    virtualScroll
+                    clearable
+                    showArrow
+                    placeholder={t(
+                      'project.synchronization_definition.target_name_tips'
+                    )}
+                  />
+                )}
               </NFormItem>
-          )}
+            )}
 
           {state.model.sceneMode === 'MULTIPLE_TABLE' && !isSpecialSource() && (
             <NFormItem

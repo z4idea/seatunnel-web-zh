@@ -1269,6 +1269,10 @@ export default {
     sql_content_label: 'SQL',
     sql_content_label_placeholder: 'please input the SQL statement',
     query_validate: 'please input the SQL statement',
+    table_name_mode_select: 'Select existing table',
+    table_name_mode_custom: 'Manual input',
+    select_table_name_placeholder: 'Please select an existing table',
+    custom_table_name_placeholder: 'Please enter target table name',
     target_name_tips: 'Please enter or select table name',
     start_success: 'Start success',
     start_failed: 'Start failed'

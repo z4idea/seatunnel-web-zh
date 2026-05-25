@@ -1179,7 +1179,8 @@ export default {
     drag_transform_hint: '将 {name} 拖入画布后，双击进行配置',
     source_description: '用于连接并读取外部系统中的源数据。',
     file_source_description: '用于读取服务器本地 CSV 或 JSON 文件。',
-    http_source_description: '用于通过 HTTP 接口读取 JSON 数据，并支持预览与自定义 Schema。',
+    http_source_description:
+      '用于通过 HTTP 接口读取 JSON 数据，并支持预览与自定义 Schema。',
     sink_description: '用于接收处理后的数据并写入目标系统。',
     copy_description: '用于复制字段内容，生成新的输出字段。',
     field_mapper_description: '用于调整字段映射关系，统一输入输出字段结构。',
@@ -1235,6 +1236,10 @@ export default {
     sql_content_label: 'SQL',
     sql_content_label_placeholder: '请输入SQL语句',
     query_validate: '请输入SQL语句',
+    table_name_mode_select: '选择已有表',
+    table_name_mode_custom: '手动输入',
+    select_table_name_placeholder: '请选择已有表',
+    custom_table_name_placeholder: '请输入目标表名',
     target_name_tips: '请输入或选择表名(必填)',
     start_success: '启动成功',
     start_failed: '启动失败'
