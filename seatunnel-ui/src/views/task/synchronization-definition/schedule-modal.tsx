@@ -87,6 +87,8 @@ const CRON_TEMPLATE_OPTIONS = [
   { label: '周末固定时间', value: 'WEEKENDS_AT' },
   { label: '每月第一天固定时间', value: 'MONTH_FIRST_AT' },
   { label: '每月最后一天固定时间', value: 'MONTH_LAST_AT' },
+  { label: '每季度第一天固定时间', value: 'QUARTER_FIRST_AT' },
+  { label: '每年第一天固定时间', value: 'YEAR_FIRST_AT' },
   { label: '每隔几小时', value: 'EVERY_N_HOURS' },
   { label: '每隔几分钟', value: 'EVERY_N_MINUTES' },
   { label: '每隔几秒', value: 'EVERY_N_SECONDS' }
@@ -184,7 +186,9 @@ const ScheduleModal = defineComponent({
     ]
 
     const normalizeValue = (value: number | null, min: number, max: number) => {
-      const numericValue = Number.isFinite(value as number) ? Number(value) : min
+      const numericValue = Number.isFinite(value as number)
+        ? Number(value)
+        : min
       return Math.min(Math.max(numericValue, min), max)
     }
 
@@ -208,9 +212,9 @@ const ScheduleModal = defineComponent({
         case 'DAILY_AT':
           return `${second} ${minute} ${hour} * * ?`
         case 'WEEKLY_DAYS_AT':
-          return `${second} ${minute} ${hour} ? * ${
-            normalizeWeekDays(cronTemplate.weekDays).join(',')
-          }`
+          return `${second} ${minute} ${hour} ? * ${normalizeWeekDays(
+            cronTemplate.weekDays
+          ).join(',')}`
         case 'WEEKDAYS_AT':
           return `${second} ${minute} ${hour} ? * MON-FRI`
         case 'WEEKENDS_AT':
@@ -219,6 +223,10 @@ const ScheduleModal = defineComponent({
           return `${second} ${minute} ${hour} 1 * ?`
         case 'MONTH_LAST_AT':
           return `${second} ${minute} ${hour} L * ?`
+        case 'QUARTER_FIRST_AT':
+          return `${second} ${minute} ${hour} 1 1/3 ?`
+        case 'YEAR_FIRST_AT':
+          return `${second} ${minute} ${hour} 1 1 ?`
         case 'EVERY_N_HOURS':
           return `${second} ${minute} 0/${interval} * * ?`
         case 'EVERY_N_MINUTES':
@@ -237,7 +245,9 @@ const ScheduleModal = defineComponent({
         return
       }
 
-      let match = cronExpression.match(/^(\d{1,2}) (\d{1,2}) (\d{1,2}) \* \* \?$/)
+      let match = cronExpression.match(
+        /^(\d{1,2}) (\d{1,2}) (\d{1,2}) \* \* \?$/
+      )
       if (match) {
         Object.assign(cronTemplate, {
           type: 'DAILY_AT',
@@ -269,7 +279,9 @@ const ScheduleModal = defineComponent({
         return
       }
 
-      match = cronExpression.match(/^(\d{1,2}) (\d{1,2}) (\d{1,2}) \? \* MON-FRI$/)
+      match = cronExpression.match(
+        /^(\d{1,2}) (\d{1,2}) (\d{1,2}) \? \* MON-FRI$/
+      )
       if (match) {
         Object.assign(cronTemplate, {
           type: 'WEEKDAYS_AT',
@@ -281,7 +293,9 @@ const ScheduleModal = defineComponent({
         return
       }
 
-      match = cronExpression.match(/^(\d{1,2}) (\d{1,2}) (\d{1,2}) \? \* SAT,SUN$/)
+      match = cronExpression.match(
+        /^(\d{1,2}) (\d{1,2}) (\d{1,2}) \? \* SAT,SUN$/
+      )
       if (match) {
         Object.assign(cronTemplate, {
           type: 'WEEKENDS_AT',
@@ -315,7 +329,31 @@ const ScheduleModal = defineComponent({
         return
       }
 
-      match = cronExpression.match(/^(\d{1,2}) (\d{1,2}) 0\/(\d{1,2}) \* \* \?$/)
+      match = cronExpression.match(/^(\d{1,2}) (\d{1,2}) (\d{1,2}) 1 1\/3 \?$/)
+      if (match) {
+        Object.assign(cronTemplate, {
+          type: 'QUARTER_FIRST_AT',
+          second: Number(match[1]),
+          minute: Number(match[2]),
+          hour: Number(match[3])
+        })
+        return
+      }
+
+      match = cronExpression.match(/^(\d{1,2}) (\d{1,2}) (\d{1,2}) 1 1 \?$/)
+      if (match) {
+        Object.assign(cronTemplate, {
+          type: 'YEAR_FIRST_AT',
+          second: Number(match[1]),
+          minute: Number(match[2]),
+          hour: Number(match[3])
+        })
+        return
+      }
+
+      match = cronExpression.match(
+        /^(\d{1,2}) (\d{1,2}) 0\/(\d{1,2}) \* \* \?$/
+      )
       if (match) {
         Object.assign(cronTemplate, {
           type: 'EVERY_N_HOURS',
@@ -349,9 +387,16 @@ const ScheduleModal = defineComponent({
     }
 
     const buildCronDescription = () => {
-      const hour = String(normalizeValue(cronTemplate.hour, 0, 23)).padStart(2, '0')
-      const minute = String(normalizeValue(cronTemplate.minute, 0, 59)).padStart(2, '0')
-      const second = String(normalizeValue(cronTemplate.second, 0, 59)).padStart(2, '0')
+      const hour = String(normalizeValue(cronTemplate.hour, 0, 23)).padStart(
+        2,
+        '0'
+      )
+      const minute = String(
+        normalizeValue(cronTemplate.minute, 0, 59)
+      ).padStart(2, '0')
+      const second = String(
+        normalizeValue(cronTemplate.second, 0, 59)
+      ).padStart(2, '0')
       const interval = normalizeValue(cronTemplate.interval, 1, 59)
       const selectedWeekDays = WEEK_DAY_OPTIONS.filter((item) =>
         normalizeWeekDays(cronTemplate.weekDays).includes(item.value)
@@ -363,7 +408,9 @@ const ScheduleModal = defineComponent({
         case 'DAILY_AT':
           return `每天 ${hour}:${minute}:${second} 执行`
         case 'WEEKLY_DAYS_AT':
-          return `每周${selectedWeekDays || '一'} ${hour}:${minute}:${second} 执行`
+          return `每周${
+            selectedWeekDays || '一'
+          } ${hour}:${minute}:${second} 执行`
         case 'WEEKDAYS_AT':
           return `每个工作日 ${hour}:${minute}:${second} 执行`
         case 'WEEKENDS_AT':
@@ -372,6 +419,10 @@ const ScheduleModal = defineComponent({
           return `每月第一天 ${hour}:${minute}:${second} 执行`
         case 'MONTH_LAST_AT':
           return `每月最后一天 ${hour}:${minute}:${second} 执行`
+        case 'QUARTER_FIRST_AT':
+          return `每季度第一天 ${hour}:${minute}:${second} 执行`
+        case 'YEAR_FIRST_AT':
+          return `每年第一天 ${hour}:${minute}:${second} 执行`
         case 'EVERY_N_HOURS':
           return `每隔 ${interval} 小时，在第 ${minute} 分 ${second} 秒执行`
         case 'EVERY_N_MINUTES':
@@ -664,7 +715,9 @@ const ScheduleModal = defineComponent({
                                   'WEEKDAYS_AT',
                                   'WEEKENDS_AT',
                                   'MONTH_FIRST_AT',
-                                  'MONTH_LAST_AT'
+                                  'MONTH_LAST_AT',
+                                  'QUARTER_FIRST_AT',
+                                  'YEAR_FIRST_AT'
                                 ].includes(this.cronTemplate.type) && (
                                   <NSpace
                                     vertical
@@ -701,7 +754,8 @@ const ScheduleModal = defineComponent({
                                         placeholder='0-59'
                                         style={CRON_FIELD_INPUT_STYLE}
                                         onUpdateValue={(value) =>
-                                          (this.cronTemplate.minute = value || 0)
+                                          (this.cronTemplate.minute =
+                                            value || 0)
                                         }
                                       />
                                     </div>
@@ -718,19 +772,20 @@ const ScheduleModal = defineComponent({
                                         placeholder='0-59'
                                         style={CRON_FIELD_INPUT_STYLE}
                                         onUpdateValue={(value) =>
-                                          (this.cronTemplate.second = value || 0)
+                                          (this.cronTemplate.second =
+                                            value || 0)
                                         }
                                       />
                                     </div>
                                   </NSpace>
                                 )}
-                                {this.cronTemplate.type === 'WEEKLY_DAYS_AT' && (
+                                {this.cronTemplate.type ===
+                                  'WEEKLY_DAYS_AT' && (
                                   <NCheckboxGroup
                                     value={this.cronTemplate.weekDays}
                                     onUpdateValue={(value) =>
-                                      (this.cronTemplate.weekDays = normalizeWeekDays(
-                                        value as string[]
-                                      ))
+                                      (this.cronTemplate.weekDays =
+                                        normalizeWeekDays(value as string[]))
                                     }
                                   >
                                     <NSpace>
@@ -744,10 +799,9 @@ const ScheduleModal = defineComponent({
                                     </NSpace>
                                   </NCheckboxGroup>
                                 )}
-                                {[
-                                  'EVERY_N_HOURS',
-                                  'EVERY_N_MINUTES'
-                                ].includes(this.cronTemplate.type) && (
+                                {['EVERY_N_HOURS', 'EVERY_N_MINUTES'].includes(
+                                  this.cronTemplate.type
+                                ) && (
                                   <NSpace
                                     vertical
                                     size={10}
@@ -766,7 +820,8 @@ const ScheduleModal = defineComponent({
                                         placeholder='1-59'
                                         style={CRON_FIELD_INPUT_STYLE}
                                         onUpdateValue={(value) =>
-                                          (this.cronTemplate.interval = value || 1)
+                                          (this.cronTemplate.interval =
+                                            value || 1)
                                         }
                                       />
                                     </div>
@@ -783,7 +838,8 @@ const ScheduleModal = defineComponent({
                                         placeholder='0-59'
                                         style={CRON_FIELD_INPUT_STYLE}
                                         onUpdateValue={(value) =>
-                                          (this.cronTemplate.minute = value || 0)
+                                          (this.cronTemplate.minute =
+                                            value || 0)
                                         }
                                       />
                                     </div>
@@ -800,13 +856,15 @@ const ScheduleModal = defineComponent({
                                         placeholder='0-59'
                                         style={CRON_FIELD_INPUT_STYLE}
                                         onUpdateValue={(value) =>
-                                          (this.cronTemplate.second = value || 0)
+                                          (this.cronTemplate.second =
+                                            value || 0)
                                         }
                                       />
                                     </div>
                                   </NSpace>
                                 )}
-                                {this.cronTemplate.type === 'EVERY_N_SECONDS' && (
+                                {this.cronTemplate.type ===
+                                  'EVERY_N_SECONDS' && (
                                   <div style={CRON_FIELD_ROW_STYLE}>
                                     <span style={CRON_FIELD_LABEL_STYLE}>
                                       {this.t(
@@ -820,7 +878,8 @@ const ScheduleModal = defineComponent({
                                       placeholder='1-59'
                                       style={CRON_FIELD_INPUT_STYLE}
                                       onUpdateValue={(value) =>
-                                        (this.cronTemplate.interval = value || 1)
+                                        (this.cronTemplate.interval =
+                                          value || 1)
                                       }
                                     />
                                   </div>
@@ -873,7 +932,9 @@ const ScheduleModal = defineComponent({
                                 </NAlert>
                                 <NInput
                                   value={this.formModel.cronExpression}
-                                  onUpdateValue={this.handleCronExpressionChange}
+                                  onUpdateValue={
+                                    this.handleCronExpressionChange
+                                  }
                                   placeholder={this.t(
                                     'project.synchronization_definition.schedule_cron_placeholder'
                                   )}
