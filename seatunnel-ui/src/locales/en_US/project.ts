@@ -1088,7 +1088,7 @@ export default {
     confirm: 'Confirm',
     cancel: 'Cancel',
     configuration: 'Configuration',
-    model: 'Model',
+    model: 'Table Structure',
     incremental_state: 'Incremental State',
     incremental_state_hint:
       'JDBC incremental state advances automatically after successful runs. This tab only supports view and reset.',
@@ -1210,6 +1210,15 @@ export default {
     drag_sink_hint: 'Drag Sink into canvas and double click to configure it',
     drag_transform_hint:
       'Drag {name} into canvas and double click to configure it',
+    leave_tip: 'Save Reminder',
+    leave_content_tip:
+      'The current canvas has unsaved changes. Leaving now will discard unsaved nodes or connections.',
+    force_leave: 'Leave Anyway',
+    cancel_edit_tip: 'Cancel Reminder',
+    cancel_edit_content_tip:
+      'The current node settings have unsaved changes. Cancelling now will discard them.',
+    discard_changes: 'Discard Changes',
+    continue_edit: 'Continue Editing',
     source_description: 'Reads source data from an external system.',
     file_source_description: 'Reads server local CSV or JSON files.',
     http_source_description:

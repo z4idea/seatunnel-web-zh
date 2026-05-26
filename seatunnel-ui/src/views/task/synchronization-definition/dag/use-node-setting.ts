@@ -40,8 +40,9 @@ export function useNodeSettingModal(
     nodeSettingModelFormRef: ref(),
     saving: false,
     loading: false,
-    width: '60%',
-    tab: 'configuration'
+    width: '80vw',
+    tab: 'configuration',
+    initialSnapshot: ''
   })
 
   const isLocalFileValues = (values: any) =>
@@ -106,6 +107,27 @@ export function useNodeSettingModal(
       return config
     }, {})
 
+  const sleep = (ms: number) =>
+    new Promise((resolve) => window.setTimeout(resolve, ms))
+
+  const ensureModelSchemaReady = async (values: any) => {
+    if (!modelRef.value || isLocalFileValues(values) || isHttpValues(values)) {
+      return true
+    }
+
+    initModelData(values)
+
+    for (let i = 0; i < 40; i++) {
+      const resultSchema = modelRef.value.getOutputSchema()
+      if (resultSchema.allTableData.length) {
+        return true
+      }
+      await sleep(100)
+    }
+
+    return false
+  }
+
   const formatParams = (values: any) => {
     const params = {
       pluginId: props.nodeInfo.pluginId,
@@ -125,6 +147,7 @@ export function useNodeSettingModal(
       'database',
       'tableName',
       'datasourceInstanceName',
+      'datasourceOrigin',
       'pluginName',
       'datasourceName',
       'columnSelectable',
@@ -253,6 +276,8 @@ export function useNodeSettingModal(
 
       const values = configurationFormRef.value.getValues()
 
+      await ensureModelSchemaReady(values)
+
       let modelOutputTableData
       if (props.nodeInfo.type === 'source') {
         if (isLocalFileValues(values)) {
@@ -290,37 +315,37 @@ export function useNodeSettingModal(
             }
           ]
         } else {
-        const resultSchema = modelRef.value.getOutputSchema()
-        // check debezium
-        if (values.format && values.format === 'COMPATIBLE_DEBEZIUM_JSON') {
-          modelOutputTableData = values.tableName.map((t: any) => {
-            return {
-              database: values.database,
-              tableName: t,
-              fields: [
-                { name: 'topic', type: 'string' },
-                { name: 'key', type: 'string' },
-                { name: 'value', type: 'string' }
-              ]
-            }
-          })
-        } else {
-          if (resultSchema.allTableData.length) {
-            if (values.sceneMode === 'SINGLE_TABLE') {
-              const result = resultSchema.allTableData
-              if (resultSchema.outputTableData.length) {
-                result[0].tableInfos[0].fields = resultSchema.outputTableData
+          const resultSchema = modelRef.value.getOutputSchema()
+          // check debezium
+          if (values.format && values.format === 'COMPATIBLE_DEBEZIUM_JSON') {
+            modelOutputTableData = values.tableName.map((t: any) => {
+              return {
+                database: values.database,
+                tableName: t,
+                fields: [
+                  { name: 'topic', type: 'string' },
+                  { name: 'key', type: 'string' },
+                  { name: 'value', type: 'string' }
+                ]
               }
-              modelOutputTableData = formatOutputSchema(result)
-            } else {
-              modelOutputTableData = formatOutputSchema(resultSchema.allTableData)
-            }
+            })
           } else {
-            window.$message.warning(t('project.synchronization_definition.check_model'), { duration: 0, closable: true })
-            state.saving = false
-            return false
+            if (resultSchema.allTableData.length) {
+              if (values.sceneMode === 'SINGLE_TABLE') {
+                const result = resultSchema.allTableData
+                if (resultSchema.outputTableData.length) {
+                  result[0].tableInfos[0].fields = resultSchema.outputTableData
+                }
+                modelOutputTableData = formatOutputSchema(result)
+              } else {
+                modelOutputTableData = formatOutputSchema(resultSchema.allTableData)
+              }
+            } else {
+              window.$message.warning(t('project.synchronization_definition.check_model'), { duration: 0, closable: true })
+              state.saving = false
+              return false
+            }
           }
-        }
         }
       }
 
@@ -433,7 +458,7 @@ export function useNodeSettingModal(
 
       state.saving = false
       state.tab = 'configuration'
-      state.width = '60%'
+      state.width = '80vw'
       return true
     } catch (err) {
       state.saving = false
@@ -442,6 +467,8 @@ export function useNodeSettingModal(
   }
 
   const initModelData = (node: any) => {
+    if (!modelRef.value) return
+
     const obj: any = {
       tables: node.tableName
         ? typeof node.tableName === 'string'
@@ -497,9 +524,9 @@ export function useNodeSettingModal(
   const handleTab = (
     tab: 'configuration' | 'model' | 'incremental-state'
   ) => {
-    state.width = tab === 'configuration' ? '60%' : '80%'
+    state.width = tab === 'configuration' ? '80vw' : '92vw'
     if (tab === 'incremental-state') {
-      state.width = '60%'
+      state.width = '80vw'
     }
     state.tab = tab
     if (tab === 'model' && modelRef.value) {
@@ -512,6 +539,7 @@ export function useNodeSettingModal(
     configurationFormRef,
     modelRef,
     onSave,
+    initModelData,
     handleTab,
     handleChangeTable
   }

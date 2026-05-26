@@ -1055,7 +1055,7 @@ export default {
     confirm: '确定',
     cancel: '取消',
     configuration: '配置',
-    model: '模型',
+    model: '表结构',
     incremental_state: '增量状态',
     incremental_state_hint:
       'JDBC 增量状态会在任务成功执行后自动推进，这里仅提供查看与重置入口。',
@@ -1182,6 +1182,15 @@ export default {
     drag_source_hint: '将数据源拖入画布后，双击进行配置',
     drag_sink_hint: '将数据目标拖入画布后，双击进行配置',
     drag_transform_hint: '将 {name} 拖入画布后，双击进行配置',
+    leave_tip: '保存提醒',
+    leave_content_tip:
+      '当前画布已修改但尚未保存，离开后未保存的节点或连线将会丢失。',
+    force_leave: '强制离开',
+    cancel_edit_tip: '取消提醒',
+    cancel_edit_content_tip:
+      '当前节点配置已修改但尚未保存，确认取消后将丢失本次修改。',
+    discard_changes: '放弃修改',
+    continue_edit: '继续编辑',
     source_description: '用于连接并读取外部系统中的源数据。',
     file_source_description: '用于读取服务器本地 CSV 或 JSON 文件。',
     http_source_description:

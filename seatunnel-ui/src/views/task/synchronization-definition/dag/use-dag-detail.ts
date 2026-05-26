@@ -128,7 +128,8 @@ export const useDagDetail = () => {
       plugins: InputPlugin[]
       edges: InputEdge[]
     },
-    graph: any
+    graph: any,
+    onSaved?: () => void
   ): Promise<boolean> => {
     if (state.loading) return false
     state.loading = true
@@ -149,6 +150,7 @@ export const useDagDetail = () => {
           duration: 0
         })
       } else {
+        onSaved?.()
         router.push({
           name: 'synchronization-definition',
           query: {

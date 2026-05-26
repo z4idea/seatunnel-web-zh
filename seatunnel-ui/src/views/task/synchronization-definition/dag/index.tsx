@@ -17,19 +17,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { defineComponent, ref, onMounted, watch } from 'vue'
+import { defineComponent, ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import { DagSidebar } from './sidebar'
 import { DagCanvas } from './canvas'
 import { DagToolbar } from './toolbar'
-import { NSpace, NSpin } from 'naive-ui'
+import { NSpace, NSpin, useDialog } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useDagDetail } from './use-dag-detail'
+import { onBeforeRouteLeave } from 'vue-router'
 import styles from './index.module.scss'
+import type { InputEdge } from './types'
 
 const SynchronizationDefinitionDag = defineComponent({
   name: 'SynchronizationDefinitionDag',
   setup() {
     const dagRef = ref()
+    const dialog = useDialog()
+    const persistedEdges = ref<InputEdge[]>([])
+    let leaveResolver: ((value: boolean) => void) | null = null
 
     const tempNode = {
       type: '',
@@ -38,6 +43,78 @@ const SynchronizationDefinitionDag = defineComponent({
     }
     const { t, locale } = useI18n()
     const { state, detailInit, onDelete, onSave } = useDagDetail()
+
+    const normalizeEdges = (edges: InputEdge[]) =>
+      [...edges].sort((prev, next) =>
+        `${prev.inputPluginId}-${prev.targetPluginId}`.localeCompare(
+          `${next.inputPluginId}-${next.targetPluginId}`
+        )
+      )
+
+    const getCurrentEdges = (): InputEdge[] =>
+      normalizeEdges(dagRef.value?.getEdgeState?.() || [])
+
+    const syncPersistedEdges = () => {
+      persistedEdges.value = getCurrentEdges()
+    }
+
+    const removePersistedNodeEdges = (pluginId: string) => {
+      persistedEdges.value = persistedEdges.value.filter(
+        (edge) =>
+          edge.inputPluginId !== pluginId && edge.targetPluginId !== pluginId
+      )
+    }
+
+    const hasPendingChanges = () => {
+      const hasUnsavedNodes = dagRef.value?.hasUnsavedNodes?.() || false
+      const edgeChanged =
+        JSON.stringify(getCurrentEdges()) !== JSON.stringify(persistedEdges.value)
+      return hasUnsavedNodes || edgeChanged
+    }
+
+    const confirmLeave = () => {
+      if (!hasPendingChanges()) {
+        return Promise.resolve(true)
+      }
+      if (leaveResolver) {
+        return Promise.resolve(false)
+      }
+      return new Promise<boolean>((resolve) => {
+        leaveResolver = resolve
+        const finish = (value: boolean) => {
+          if (leaveResolver) {
+            leaveResolver = null
+            resolve(value)
+          }
+        }
+        dialog.warning({
+          title: t('project.synchronization_definition.leave_tip'),
+          content: t('project.synchronization_definition.leave_content_tip'),
+          positiveText: t('project.synchronization_definition.force_leave'),
+          negativeText: t('project.synchronization_definition.cancel'),
+          maskClosable: false,
+          closable: false,
+          onPositiveClick: () => {
+            finish(true)
+          },
+          onNegativeClick: () => {
+            finish(false)
+          },
+          onClose: () => {
+            finish(false)
+          }
+        })
+      })
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasPendingChanges()) {
+        return
+      }
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
     const handelDragstart = (type: any, name: any, sourceKind = '') => {
       tempNode.type = type
       tempNode.name = name
@@ -64,15 +141,24 @@ const SynchronizationDefinitionDag = defineComponent({
         return
       }
       let result = true
+      const deletingSavedNode = cells[0].isNode() && !cells[0].getData().unsaved
       if (cells[0].isNode() && !cells[0].getData().unsaved) {
         result = await onDelete(cells[0].getData().pluginId)
       }
-      if (result) dagRef.value.removeCell(cells[0].id)
+      if (result) {
+        dagRef.value.removeCell(cells[0].id)
+        if (deletingSavedNode) {
+          removePersistedNodeEdges(cells[0].getData().pluginId)
+        }
+      }
     }
 
     const handleSave = () => {
       const result = dagRef.value.getDagData()
-      result && onSave(dagRef.value.getDagData(), dagRef.value.getGraph())
+      result &&
+        onSave(result, dagRef.value.getGraph(), () => {
+          syncPersistedEdges()
+        })
     }
 
     const handleLayout = (
@@ -84,6 +170,7 @@ const SynchronizationDefinitionDag = defineComponent({
     }
 
     onMounted(async () => {
+      window.addEventListener('beforeunload', handleBeforeUnload)
       const result = await detailInit()
       if (result?.nodesAndEdges) {
         dagRef.value.addNodesAndEdges(
@@ -91,10 +178,23 @@ const SynchronizationDefinitionDag = defineComponent({
           result.nodesAndEdges.edges
         )
       }
+      syncPersistedEdges()
       document.documentElement.style.setProperty(
         '--node-config-hint',
         `"${t('dag.nodeConfigHint')}"`
       )
+    })
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    })
+
+    onBeforeRouteLeave(async () => {
+      const shouldLeave = await confirmLeave()
+      if (!shouldLeave) {
+        return false
+      }
+      return true
     })
 
     watch(
