@@ -18,7 +18,15 @@
  * limitations under the License.
  */
 
-import { defineComponent, ref, onMounted, reactive, provide, nextTick } from 'vue'
+import {
+  defineComponent,
+  ref,
+  onMounted,
+  reactive,
+  provide,
+  nextTick,
+  onBeforeUnmount
+} from 'vue'
 import { Cell, Graph } from '@antv/x6'
 import { useI18n } from 'vue-i18n'
 import {
@@ -80,6 +88,14 @@ const DagCanvas = defineComponent({
         dagContainer.value,
         minimapContainer.value
       )
+    }
+
+    const destroyGraph = () => {
+      state.show = false
+      if (!graph.value) return
+      graph.value.unlockScroller()
+      graph.value.dispose()
+      graph.value = undefined
     }
 
     const fitGraphViewport = (force = false) => {
@@ -212,6 +228,11 @@ const DagCanvas = defineComponent({
       registerEdge()
       onDoubleClick()
     })
+
+    onBeforeUnmount(() => {
+      destroyGraph()
+    })
+
     return () => (
       <div
         ref={container}

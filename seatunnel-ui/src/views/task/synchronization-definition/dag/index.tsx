@@ -34,6 +34,7 @@ const SynchronizationDefinitionDag = defineComponent({
     const dagRef = ref()
     const dialog = useDialog()
     const persistedEdges = ref<InputEdge[]>([])
+    let destroyed = false
     let leaveResolver: ((value: boolean) => void) | null = null
 
     const tempNode = {
@@ -172,20 +173,23 @@ const SynchronizationDefinitionDag = defineComponent({
     onMounted(async () => {
       window.addEventListener('beforeunload', handleBeforeUnload)
       const result = await detailInit()
-      if (result?.nodesAndEdges) {
+      if (!destroyed && result?.nodesAndEdges && dagRef.value) {
         dagRef.value.addNodesAndEdges(
           result.nodesAndEdges.plugins,
           result.nodesAndEdges.edges
         )
       }
-      syncPersistedEdges()
-      document.documentElement.style.setProperty(
-        '--node-config-hint',
-        `"${t('dag.nodeConfigHint')}"`
-      )
+      if (!destroyed) {
+        syncPersistedEdges()
+        document.documentElement.style.setProperty(
+          '--node-config-hint',
+          `"${t('dag.nodeConfigHint')}"`
+        )
+      }
     })
 
     onBeforeUnmount(() => {
+      destroyed = true
       window.removeEventListener('beforeunload', handleBeforeUnload)
     })
 

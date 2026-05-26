@@ -62,6 +62,14 @@ export function initNodesAndEdges(
   cells: Cell.Metadata[],
   edges: InputEdge[]
 ) {
+  const validNodeIds = new Set(cells.map((cell: Cell.Metadata) => cell.pluginId))
+  const validEdges = edges.filter(
+    (edge) =>
+      validNodeIds.has(edge.inputPluginId) &&
+      validNodeIds.has(edge.targetPluginId)
+  )
+
+  graph.resetCells([])
   graph.addNodes(
     cells.map((cell: Cell.Metadata) => ({
       shape: DagNodeName,
@@ -82,7 +90,7 @@ export function initNodesAndEdges(
     }))
   )
   graph.addEdges(
-    edges.map((edge) => ({
+    validEdges.map((edge) => ({
       shape: DagEdgeName,
       source: {
         cell: edge.inputPluginId,
@@ -176,7 +184,13 @@ export function formatLayout(
       }
     })
 
-  const edges = json.cells.filter((cell: any) => cell.shape === DagEdgeName)
+  const validNodeIds = new Set(nodes.map((node: any) => node.id))
+  const edges = json.cells.filter(
+    (cell: any) =>
+      cell.shape === DagEdgeName &&
+      validNodeIds.has(cell.source?.cell) &&
+      validNodeIds.has(cell.target?.cell)
+  )
 
   const newModel: any = layoutFunc?.layout({
     nodes,
