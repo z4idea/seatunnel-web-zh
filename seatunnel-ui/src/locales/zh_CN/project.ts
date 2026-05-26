@@ -1,6 +1,7 @@
 /*
  * @author: zhjj
  */
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,7 +18,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 export default {
   list: {
     create_project: '创建项目',
@@ -996,6 +996,9 @@ export default {
     task_name_tips: '请输入任务名称',
     task_describe_tips: '请输入任务描述',
     task_name_validate: '任务名称不能为空',
+    task_detail: '采集任务详情',
+    source_database_table: '采集库表',
+    offline_collect: '离线采集',
     copy: '复制',
     open_full_screen: '打开全屏',
     close_full_screen: '关闭全屏',
@@ -1121,6 +1124,8 @@ export default {
     schedule_last_status: '最近状态',
     schedule_trigger_time: '触发时间',
     schedule_status: '执行状态',
+    schedule_write_row_count: '已写入数据量（行）',
+    schedule_error_message: '错误信息',
     schedule_message: '结果消息',
     schedule_instance_id: '任务实例 ID',
     schedule_history_empty: '暂无调度历史',

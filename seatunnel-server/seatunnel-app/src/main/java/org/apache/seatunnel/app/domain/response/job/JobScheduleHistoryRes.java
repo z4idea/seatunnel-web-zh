@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -51,6 +52,12 @@ public class JobScheduleHistoryRes {
 
     @ApiModelProperty(value = "job instance id", dataType = "Long")
     private Long jobInstanceId;
+
+    @ApiModelProperty(value = "write row count", dataType = "Long")
+    private Long writeRowCount;
+
+    @ApiModelProperty(value = "error message", dataType = "String")
+    private String errorMessage;
 
     @ApiModelProperty(value = "create time", dataType = "Date")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

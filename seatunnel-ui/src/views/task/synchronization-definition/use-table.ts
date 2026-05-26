@@ -25,11 +25,12 @@ import {
   PlayCircleOutlined,
   ReloadOutlined
 } from '@vicons/antd'
-import { NTag } from 'naive-ui'
+import { NButton, NTag } from 'naive-ui'
 import {
   querySyncTaskDefinitionPaging,
   deleteSyncTaskDefinition,
-  executeJob
+  executeJob,
+  getDefinitionNodesAndEdges
 } from '@/service/sync-task-definition'
 import { useRouter } from 'vue-router'
 import type { Router } from 'vue-router'
@@ -54,6 +55,7 @@ export function useTable() {
     totalPage: ref(1),
     tableWidth: ref(0),
     showModalRef: ref(false),
+    showDetailModalRef: ref(false),
     showScheduleModalRef: ref(false),
     statusRef: ref(0),
     row: {},
@@ -70,8 +72,55 @@ export function useTable() {
 
   const loadingStates = ref(new Map<number | string, boolean>())
 
+  const getSourceDatabaseTable = (plugins: any[] = []) => {
+    const sourcePlugin = plugins.find(
+      (plugin: any) => plugin?.type === 'SOURCE' && plugin?.dataSourceId
+    )
+
+    if (!sourcePlugin) {
+      return '-'
+    }
+
+    const database = sourcePlugin.tableOption?.databases?.find(
+      (item: string) => !!item
+    )
+    let table = sourcePlugin.tableOption?.tables?.find((item: string) => !!item)
+
+    if ((!database || !table) && table?.includes('.')) {
+      const [parsedDatabase, ...rest] = table.split('.')
+      if (!database && parsedDatabase && rest.length > 0) {
+        return `${parsedDatabase}-${rest.join('.')}`
+      }
+    }
+
+    if (!database || !table) {
+      return '-'
+    }
+
+    return `${database}-${table}`
+  }
+
+  const enrichTableData = async (rows: any[] = []) =>
+    Promise.all(
+      rows.map(async (row: any) => {
+        try {
+          const nodesAndEdges = await getDefinitionNodesAndEdges(String(row.id))
+          return {
+            ...row,
+            sourceDatabaseTable: getSourceDatabaseTable(nodesAndEdges?.plugins)
+          }
+        } catch {
+          return {
+            ...row,
+            sourceDatabaseTable: '-'
+          }
+        }
+      })
+    )
+
   const createColumns = (
     variables: any,
+    onOpenDetailModal?: (row: any) => void,
     onOpenScheduleModal?: (row: any) => void
   ) => {
     variables.columns = [
@@ -80,7 +129,19 @@ export function useTable() {
           'project.synchronization_definition.synchronization_task_name'
         ),
         key: 'name',
-        ...COLUMN_WIDTH_CONFIG['name']
+        ...COLUMN_WIDTH_CONFIG['name'],
+        render: (row: any) =>
+          h(
+            NButton,
+            {
+              text: true,
+              type: 'primary',
+              onClick: () => onOpenDetailModal && onOpenDetailModal(row)
+            },
+            {
+              default: () => row.name || '-'
+            }
+          )
       },
       {
         title: t('project.synchronization_definition.business_model'),
@@ -95,24 +156,9 @@ export function useTable() {
         ...COLUMN_WIDTH_CONFIG['description']
       },
       {
-        title: t('project.synchronization_definition.create_user'),
-        key: 'createUserName',
-        ...COLUMN_WIDTH_CONFIG['userName']
-      },
-      {
-        title: t('project.synchronization_definition.create_time'),
-        key: 'createTime',
-        ...COLUMN_WIDTH_CONFIG['time']
-      },
-      {
-        title: t('project.synchronization_definition.update_user'),
-        key: 'updateUserName',
-        ...COLUMN_WIDTH_CONFIG['userName']
-      },
-      {
-        title: t('project.synchronization_definition.update_time'),
-        key: 'updateTime',
-        ...COLUMN_WIDTH_CONFIG['time']
+        title: t('project.synchronization_definition.source_database_table'),
+        key: 'sourceDatabaseTable',
+        ...COLUMN_WIDTH_CONFIG['description']
       },
       {
         title: t('project.synchronization_definition.schedule_status'),
@@ -224,8 +270,8 @@ export function useTable() {
     variables.loadingRef = true
 
     querySyncTaskDefinitionPaging(params)
-      .then((res: any) => {
-        variables.tableData = res.data
+      .then(async (res: any) => {
+        variables.tableData = await enrichTableData(res.data)
         variables.totalPage = res.totalPage
         variables.loadingRef = false
       })

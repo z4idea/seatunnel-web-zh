@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,7 +18,11 @@
 
 package org.apache.seatunnel.app.dal.dao.impl;
 
+import org.apache.seatunnel.app.dal.dao.IJobInstanceDao;
+import org.apache.seatunnel.app.dal.dao.IJobMetricsDao;
 import org.apache.seatunnel.app.dal.dao.IJobScheduleHistoryDao;
+import org.apache.seatunnel.app.dal.entity.JobInstance;
+import org.apache.seatunnel.app.dal.entity.JobMetrics;
 import org.apache.seatunnel.app.dal.entity.JobScheduleHistory;
 import org.apache.seatunnel.app.dal.mapper.JobScheduleHistoryMapper;
 import org.apache.seatunnel.app.domain.response.PageInfo;
@@ -31,6 +36,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import javax.annotation.Resource;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.apache.seatunnel.app.utils.ServletUtils.getCurrentWorkspaceId;
@@ -39,6 +47,12 @@ import static org.apache.seatunnel.app.utils.ServletUtils.getCurrentWorkspaceId;
 public class JobScheduleHistoryDaoImpl implements IJobScheduleHistoryDao {
 
     @Resource private JobScheduleHistoryMapper jobScheduleHistoryMapper;
+
+    @Resource(name = "jobInstanceDaoImpl")
+    private IJobInstanceDao jobInstanceDao;
+
+    @Resource(name = "jobMetricsDaoImpl")
+    private IJobMetricsDao jobMetricsDao;
 
     @Override
     public void insert(JobScheduleHistory history) {
@@ -55,11 +69,40 @@ public class JobScheduleHistoryDaoImpl implements IJobScheduleHistoryDao {
                                 .eq(JobScheduleHistory::getJobDefineId, jobDefineId)
                                 .eq(JobScheduleHistory::getWorkspaceId, getCurrentWorkspaceId())
                                 .orderByDesc(JobScheduleHistory::getTriggerTime));
+        List<Long> jobInstanceIds =
+                page.getRecords().stream()
+                        .map(JobScheduleHistory::getJobInstanceId)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .collect(Collectors.toList());
+        Map<Long, JobInstance> jobInstanceMap =
+                jobInstanceDao.getAllJobInstance(jobInstanceIds).stream()
+                        .collect(Collectors.toMap(JobInstance::getId, jobInstance -> jobInstance));
+        Map<Long, Long> writeRowCountMap =
+                jobInstanceIds.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        jobInstanceId -> jobInstanceId,
+                                        jobInstanceId ->
+                                                jobMetricsDao.getByInstanceId(jobInstanceId).stream()
+                                                        .mapToLong(
+                                                                metrics ->
+                                                                        metrics.getWriteRowCount())
+                                                        .sum()));
         PageInfo<JobScheduleHistoryRes> pageInfo = new PageInfo<>();
         pageInfo.setData(
                 page.getRecords().stream()
                         .map(
-                                history ->
+                                history -> {
+                                    JobInstance jobInstance =
+                                            history.getJobInstanceId() == null
+                                                    ? null
+                                                    : jobInstanceMap.get(history.getJobInstanceId());
+                                    Long writeRowCount =
+                                            history.getJobInstanceId() == null
+                                                    ? null
+                                                    : writeRowCountMap.get(history.getJobInstanceId());
+                                    return
                                         JobScheduleHistoryRes.builder()
                                                 .id(history.getId())
                                                 .scheduleConfigId(history.getScheduleConfigId())
@@ -68,8 +111,14 @@ public class JobScheduleHistoryDaoImpl implements IJobScheduleHistoryDao {
                                                 .status(history.getStatus())
                                                 .message(history.getMessage())
                                                 .jobInstanceId(history.getJobInstanceId())
+                                                .writeRowCount(writeRowCount)
+                                                .errorMessage(
+                                                        jobInstance == null
+                                                                ? null
+                                                                : jobInstance.getErrorMessage())
                                                 .createTime(history.getCreateTime())
-                                                .build())
+                                                .build();
+                                })
                         .collect(Collectors.toList()));
         pageInfo.setPageNo(pageNo);
         pageInfo.setPageSize(pageSize);

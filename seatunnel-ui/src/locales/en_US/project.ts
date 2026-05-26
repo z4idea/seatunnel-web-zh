@@ -1,6 +1,7 @@
 /*
  * @author: zhjj
  */
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,7 +18,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 export default {
   list: {
     create_project: 'Create Project',
@@ -1028,6 +1028,9 @@ export default {
     task_name_tips: 'Please entry task name',
     task_describe_tips: 'Please entry task describe',
     task_name_validate: 'Task name cannot be empty',
+    task_detail: 'Task Details',
+    source_database_table: 'Source Database-Table',
+    offline_collect: 'Offline Collection',
     copy: 'Copy',
     open_full_screen: 'Open Full Screen',
     close_full_screen: 'Close Full Screen',
@@ -1146,6 +1149,8 @@ export default {
     schedule_last_status: 'Last Status',
     schedule_trigger_time: 'Trigger Time',
     schedule_status: 'Execution Status',
+    schedule_write_row_count: 'Written Rows',
+    schedule_error_message: 'Error Message',
     schedule_message: 'Result Message',
     schedule_instance_id: 'Job Instance ID',
     schedule_history_empty: 'No schedule history',

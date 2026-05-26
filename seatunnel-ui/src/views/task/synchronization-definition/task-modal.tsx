@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -44,6 +45,7 @@ const TaskModal = defineComponent({
     const cancelModal = () => {
       variables.model.name = ''
       variables.model.description = ''
+      variables.model.jobType = 'DATA_INTEGRATION'
       ctx.emit('cancelModal', props.showModalRef)
     }
 
@@ -51,6 +53,7 @@ const TaskModal = defineComponent({
       ctx.emit('cancelModal')
       variables.model.name = ''
       variables.model.description = ''
+      variables.model.jobType = 'DATA_INTEGRATION'
     }
 
     const confirmModal = () => {
@@ -63,6 +66,7 @@ const TaskModal = defineComponent({
           if (!valid) {
             variables.model.name = ''
             variables.model.description = ''
+            variables.model.jobType = 'DATA_INTEGRATION'
           }
         })
       }
@@ -138,9 +142,7 @@ const TaskModal = defineComponent({
                     )}
                   </NRadio>
                   <NRadio key='dataIntegration' value='DATA_INTEGRATION'>
-                    {this.t(
-                      'project.synchronization_definition.data_integration'
-                    )}
+                    {this.t('project.synchronization_definition.offline_collect')}
                   </NRadio>
                 </NSpace>
               </NRadioGroup>
