@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -49,6 +52,13 @@ public interface IDatasourceDao {
             List<Long> availableDatasourceIds,
             String searchVal,
             String pluginName);
+
+    IPage<Datasource> selectDatasourceByParam(
+            Page<Datasource> page,
+            List<Long> availableDatasourceIds,
+            String searchVal,
+            String pluginName,
+            String origin);
 
     List<Datasource> selectDatasourceByIds(List<Long> ids);
 

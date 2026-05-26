@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -100,12 +103,24 @@ public class DatasourceDaoImpl implements IDatasourceDao {
             List<Long> availableDatasourceIds,
             String searchVal,
             String pluginName) {
+        return selectDatasourceByParam(page, availableDatasourceIds, searchVal, pluginName, null);
+    }
 
+    @Override
+    public IPage<Datasource> selectDatasourceByParam(
+            Page<Datasource> page,
+            List<Long> availableDatasourceIds,
+            String searchVal,
+            String pluginName,
+            String origin) {
         QueryWrapper<Datasource> datasourceQueryWrapper = new QueryWrapper<>();
         if (availableDatasourceIds != null) {
             datasourceQueryWrapper.in("id", availableDatasourceIds);
         }
         datasourceQueryWrapper.eq("workspace_id", getCurrentWorkspaceId());
+        if (origin != null && !origin.isEmpty()) {
+            datasourceQueryWrapper.eq("origin", origin);
+        }
         if (searchVal != null
                 && !searchVal.isEmpty()
                 && pluginName != null

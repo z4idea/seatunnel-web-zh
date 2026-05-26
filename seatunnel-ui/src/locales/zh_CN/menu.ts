@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -23,7 +26,7 @@ export default {
   tasks: '任务',
   datasource: '数据源',
   virtual_tables: '虚拟表',
-  sync_task_definition: '同步任务定义',
-  sync_task_instance: '同步任务实例',
-  synchronization_instance: '同步任务实例',
+  sync_task_definition: '采集任务定义',
+  sync_task_instance: '采集任务历史',
+  synchronization_instance: '采集任务历史'
 }

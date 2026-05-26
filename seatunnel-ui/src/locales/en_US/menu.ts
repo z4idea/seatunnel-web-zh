@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -23,7 +26,7 @@ export default {
   tasks: 'Tasks',
   datasource: 'Datasource',
   virtual_tables: 'Virtual Tables',
-  sync_task_definition: 'Syncing Task Definition',
-  sync_task_instance: 'Syncing Task Instance',
-  synchronization_instance: 'Syncing Task Instance',
+  sync_task_definition: 'Collection Task Definition',
+  sync_task_instance: 'Collection Task History',
+  synchronization_instance: 'Collection Task History'
 }

@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -26,16 +27,18 @@ import {
 } from '@/service/sync-task-definition'
 import { useRoute, useRouter } from 'vue-router'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
-import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import _ from 'lodash'
-import { formatMessagePayload } from '@/utils/message'
+import {
+  formatMessagePayload,
+  usePersistentErrorMessage
+} from '@/utils/message'
 import type { InputPlugin, InputEdge } from './types'
 
 export const useDagDetail = () => {
   const route = useRoute()
   const router = useRouter()
-  const message = useMessage()
+  const message = usePersistentErrorMessage()
   const { t } = useI18n()
   const dagStore = useSynchronizationDefinitionStore()
   const state = reactive({

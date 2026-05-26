@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -21,6 +24,7 @@ import org.apache.seatunnel.api.configuration.util.OptionRule;
 import org.apache.seatunnel.app.domain.response.PageInfo;
 import org.apache.seatunnel.app.domain.response.datasource.DatasourceDetailRes;
 import org.apache.seatunnel.app.domain.response.datasource.DatasourceRes;
+import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.datasource.plugin.api.DataSourcePluginInfo;
 import org.apache.seatunnel.datasource.plugin.api.model.TableField;
 import org.apache.seatunnel.server.common.CodeGenerateUtils;
@@ -49,6 +53,24 @@ public interface IDatasourceService {
             throws CodeGenerateUtils.CodeGenerateException;
 
     /**
+     * create SLink datasource.
+     *
+     * @param datasourceName datasourceName
+     * @param pluginName pluginName
+     * @param pluginVersion pluginVersion
+     * @param description description
+     * @param datasourceConfig datasourceConfig
+     * @return datasource id
+     */
+    String createSlinkDatasource(
+            String datasourceName,
+            String pluginName,
+            String pluginVersion,
+            String description,
+            Map<String, String> datasourceConfig)
+            throws CodeGenerateUtils.CodeGenerateException;
+
+    /**
      * update datasource
      *
      * @param datasourceId datasource id
@@ -64,12 +86,39 @@ public interface IDatasourceService {
             Map<String, String> datasourceConfig);
 
     /**
+     * update SLink datasource.
+     *
+     * @param datasourceId datasource id
+     * @param datasourceName datasourceName
+     * @param pluginName pluginName
+     * @param pluginVersion pluginVersion
+     * @param description description
+     * @param datasourceConfig datasourceConfig
+     * @return boolean
+     */
+    boolean updateSlinkDatasource(
+            Long datasourceId,
+            String datasourceName,
+            String pluginName,
+            String pluginVersion,
+            String description,
+            Map<String, String> datasourceConfig);
+
+    /**
      * delete datasource
      *
      * @param datasourceId datasourceId
      * @return boolean
      */
     boolean deleteDatasource(Long datasourceId);
+
+    /**
+     * delete SLink datasource.
+     *
+     * @param datasourceId datasourceId
+     * @return boolean
+     */
+    boolean deleteSlinkDatasource(Long datasourceId);
 
     /**
      * test datasource is used
@@ -111,12 +160,32 @@ public interface IDatasourceService {
             String searchVal, String pluginName, Integer pageNo, Integer pageSize);
 
     /**
+     * query SLink datasource list.
+     *
+     * @param searchVal searchVal
+     * @param pluginName pluginName
+     * @param pageNo pageNo
+     * @param pageSize pageSize
+     * @return PageInfo DatasourceRes
+     */
+    PageInfo<DatasourceRes> querySlinkDatasourceList(
+            String searchVal, String pluginName, Integer pageNo, Integer pageSize);
+
+    /**
      * datasourceId query detail
      *
      * @param datasourceId datasourceId
      * @return DatasourceDetailRes
      */
     DatasourceDetailRes queryDatasourceDetailById(String datasourceId);
+
+    /**
+     * query SLink datasource detail.
+     *
+     * @param datasourceId datasource id
+     * @return DatasourceDetailRes
+     */
+    DatasourceDetailRes querySlinkDatasourceDetailById(String datasourceId);
 
     /**
      * datasourceName query detail
@@ -159,6 +228,15 @@ public interface IDatasourceService {
      * @return List String key: datasourceId value: datasourceName
      */
     Map<String, String> queryDatasourceNameByPluginName(String pluginName);
+
+    /**
+     * plugin name datasourceName and id by usage side.
+     *
+     * @param pluginName pluginName
+     * @param pluginType source or sink
+     * @return List String key: datasourceId value: datasourceName
+     */
+    Map<String, String> queryDatasourceNameByPluginName(String pluginName, PluginType pluginType);
 
     /**
      * plugin name query config

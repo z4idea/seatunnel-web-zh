@@ -1012,9 +1012,9 @@ export default {
   synchronization_definition: {
     node_prev_check_tips:
       'The current node is not connected to the previous node',
-    create_synchronization_task: 'Create Synchronization Task',
-    edit_synchronization_task: 'Edit Synchronization Task',
-    synchronization_task_name: 'Synchronization Task Name',
+    create_synchronization_task: 'Create Collection Task',
+    edit_synchronization_task: 'Edit Collection Task',
+    synchronization_task_name: 'Collection Task Name',
     task_describe: 'Task Describe',
     create_user: 'Create User',
     create_time: 'Create Time',
@@ -1313,7 +1313,7 @@ export default {
     operation: 'Operation',
     real_time_sync: 'Real Time Sync',
     offline_sync: 'Offline Sync',
-    sync_task_definition: 'Sync Task Definition',
+    sync_task_definition: 'Collection Task Definition',
     data_pipeline_running_instance: 'Data Pipeline Running Instance',
     task_name: 'Task Name',
     workflow_instance: 'Workflow Instance',

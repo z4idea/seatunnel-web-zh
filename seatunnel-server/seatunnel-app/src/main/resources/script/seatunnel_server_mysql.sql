@@ -1,3 +1,4 @@
+-- @author: zhjj
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -64,6 +65,11 @@ CREATE TABLE `t_st_datasource`  (
   `plugin_version` varchar(63) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT '1.0.0',
   `datasource_config` varchar(1023) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `description` varchar(63) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
+  `origin` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'USER',
+  `allow_source` tinyint(1) NOT NULL DEFAULT 1,
+  `allow_sink` tinyint(1) NOT NULL DEFAULT 0,
+  `editable` tinyint(1) NOT NULL DEFAULT 1,
+  `deletable` tinyint(1) NOT NULL DEFAULT 1,
   `create_user_id` int(11) NOT NULL,
   `update_user_id` int(11) NOT NULL,
   `create_time` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

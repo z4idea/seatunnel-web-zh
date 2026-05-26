@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -36,6 +39,16 @@ public class DatasourceRes extends BaseInfo {
     private String pluginVersion;
 
     private String description;
+
+    private String origin;
+
+    private Boolean allowSource;
+
+    private Boolean allowSink;
+
+    private Boolean editable;
+
+    private Boolean deletable;
 
     private String createUserName;
 

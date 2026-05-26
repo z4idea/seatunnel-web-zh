@@ -33,6 +33,7 @@ type IType = {
 }
 
 const DATASOURCE_PRIORITY_KEYWORDS = ['mysql', 'oracle', 'sqlserver', 'dm']
+const HIDDEN_DATASOURCE_TYPE_KEYS = ['storage', 'fake_connection']
 
 const getDatasourcePriority = (name: string): number => {
   const lowerName = name.toLowerCase()
@@ -77,25 +78,27 @@ export const useSource = (showVirtualDataSource = false) => {
         en_US: {} as { [key: string]: string }
       }
 
-      state.types = Object.entries(res).map(([key, value]) => {
-        const typeKey = TYPE_MAP[key as Key]
-        const options = (value as any).map((item: any) => {
-          locales.zh_CN[item.name] =
-            item.name === 'LocalFile' ? '本地文件' : item.chineseName
-          locales.en_US[item.name] = item.name
+      state.types = Object.entries(res)
+        .map(([key, value]) => {
+          const typeKey = TYPE_MAP[key as Key]
+          const options = (value as any).map((item: any) => {
+            locales.zh_CN[item.name] =
+              item.name === 'LocalFile' ? '本地文件' : item.chineseName
+            locales.en_US[item.name] = item.name
+            return {
+              label: item.name,
+              value: item.name
+            }
+          })
           return {
-            label: item.name,
-            value: item.name
+            type: 'group',
+            label: i18n.t(`datasource.${typeKey}`),
+            key: typeKey,
+            children:
+              typeKey === 'database' ? sortDatasourceOptions(options) : options
           }
         })
-        return {
-          type: 'group',
-          label: i18n.t(`datasource.${typeKey}`),
-          key: typeKey,
-          children:
-            typeKey === 'database' ? sortDatasourceOptions(options) : options
-        }
-      })
+        .filter((item) => !HIDDEN_DATASOURCE_TYPE_KEYS.includes(item.key))
 
       i18n.mergeLocaleMessage('zh_CN', locales.zh_CN)
       i18n.mergeLocaleMessage('en_US', locales.en_US)

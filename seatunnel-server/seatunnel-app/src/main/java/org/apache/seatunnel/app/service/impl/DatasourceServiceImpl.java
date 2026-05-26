@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -42,6 +45,7 @@ import org.apache.seatunnel.app.utils.ConfigShadeUtil;
 import org.apache.seatunnel.app.utils.ServletUtils;
 import org.apache.seatunnel.common.access.AccessType;
 import org.apache.seatunnel.common.access.ResourceType;
+import org.apache.seatunnel.common.constants.PluginType;
 import org.apache.seatunnel.common.utils.JsonUtils;
 import org.apache.seatunnel.datasource.plugin.api.DataSourcePluginInfo;
 import org.apache.seatunnel.datasource.plugin.api.DatasourcePluginTypeEnum;
@@ -98,6 +102,10 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
 
     protected static final String DEFAULT_DATASOURCE_PLUGIN_VERSION = "1.0.0";
 
+    private static final String USER_DATASOURCE_ORIGIN = "USER";
+
+    private static final String SLINK_DATASOURCE_ORIGIN = "SLINK";
+
     @Autowired private ConfigShadeUtil configShadeUtil;
 
     @Resource private WorkspaceService workspaceService;
@@ -109,6 +117,52 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
             String pluginVersion,
             String description,
             Map<String, String> datasourceConfig)
+            throws CodeGenerateUtils.CodeGenerateException {
+        return createDatasource(
+                datasourceName,
+                pluginName,
+                pluginVersion,
+                description,
+                datasourceConfig,
+                USER_DATASOURCE_ORIGIN,
+                true,
+                false,
+                true,
+                true);
+    }
+
+    @Override
+    public String createSlinkDatasource(
+            String datasourceName,
+            String pluginName,
+            String pluginVersion,
+            String description,
+            Map<String, String> datasourceConfig)
+            throws CodeGenerateUtils.CodeGenerateException {
+        return createDatasource(
+                datasourceName,
+                pluginName,
+                pluginVersion,
+                description,
+                datasourceConfig,
+                SLINK_DATASOURCE_ORIGIN,
+                false,
+                true,
+                false,
+                false);
+    }
+
+    private String createDatasource(
+            String datasourceName,
+            String pluginName,
+            String pluginVersion,
+            String description,
+            Map<String, String> datasourceConfig,
+            String origin,
+            Boolean allowSource,
+            Boolean allowSink,
+            Boolean editable,
+            Boolean deletable)
             throws CodeGenerateUtils.CodeGenerateException {
         Integer userId = ServletUtils.getCurrentUserId();
         permCheck(datasourceName, AccessType.CREATE);
@@ -131,9 +185,16 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
                         .updateUserId(userId)
                         .datasourceName(datasourceName)
                         .pluginName(pluginName)
-                        .pluginVersion(pluginVersion)
+                        .pluginVersion(
+                                StringUtils.defaultIfBlank(
+                                        pluginVersion, DEFAULT_DATASOURCE_PLUGIN_VERSION))
                         .description(description)
                         .datasourceConfig(datasourceConfigStr)
+                        .origin(origin)
+                        .allowSource(allowSource)
+                        .allowSink(allowSink)
+                        .editable(editable)
+                        .deletable(deletable)
                         .createTime(new Date())
                         .updateTime(new Date())
                         .workspaceId(ServletUtils.getCurrentWorkspaceId())
@@ -160,6 +221,10 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
             throw new SeatunnelException(
                     SeatunnelErrorEnum.DATASOURCE_NOT_FOUND, datasourceId.toString());
         }
+        if (!BooleanUtils.isNotFalse(datasource.getEditable())) {
+            throw new SeatunnelException(
+                    SeatunnelErrorEnum.UNSUPPORTED_OPERATION, "update readonly datasource");
+        }
         if (StringUtils.isNotBlank(datasourceName)) {
             datasource.setDatasourceName(datasourceName);
             boolean unique = datasourceDao.checkDatasourceNameUnique(datasourceName, datasourceId);
@@ -181,7 +246,81 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
     }
 
     @Override
+    public boolean updateSlinkDatasource(
+            Long datasourceId,
+            String datasourceName,
+            String pluginName,
+            String pluginVersion,
+            String description,
+            Map<String, String> datasourceConfig) {
+        if (datasourceId == null) {
+            throw new SeatunnelException(
+                    SeatunnelErrorEnum.DATASOURCE_PRAM_NOT_ALLOWED_NULL, "datasourceId");
+        }
+        Datasource datasource = datasourceDao.selectDatasourceById(datasourceId);
+        if (datasource == null) {
+            throw new SeatunnelException(
+                    SeatunnelErrorEnum.DATASOURCE_NOT_FOUND, datasourceId.toString());
+        }
+        ensureSlinkDatasource(datasource);
+        if (StringUtils.isNotBlank(datasourceName)) {
+            datasource.setDatasourceName(datasourceName);
+            boolean unique = datasourceDao.checkDatasourceNameUnique(datasourceName, datasourceId);
+            if (!unique) {
+                throw new SeatunnelException(
+                        SeatunnelErrorEnum.DATASOURCE_NAME_ALREADY_EXISTS, datasourceName);
+            }
+        }
+        permCheck(datasource.getDatasourceName(), AccessType.UPDATE);
+        datasource.setUpdateUserId(ServletUtils.getCurrentUserId());
+        datasource.setUpdateTime(new Date());
+        datasource.setDescription(description);
+        if (StringUtils.isNotBlank(pluginName)) {
+            datasource.setPluginName(pluginName);
+        }
+        if (StringUtils.isNotBlank(pluginVersion)) {
+            datasource.setPluginVersion(pluginVersion);
+        }
+        if (MapUtils.isNotEmpty(datasourceConfig)) {
+            configShadeUtil.encryptData(datasourceConfig);
+            datasource.setDatasourceConfig(JsonUtils.toJsonString(datasourceConfig));
+        }
+        datasource.setOrigin(SLINK_DATASOURCE_ORIGIN);
+        datasource.setAllowSource(false);
+        datasource.setAllowSink(true);
+        datasource.setEditable(false);
+        datasource.setDeletable(false);
+        return datasourceDao.updateDatasourceById(datasource);
+    }
+
+    @Override
     public boolean deleteDatasource(Long datasourceId) {
+        checkDatasourceNotUsed(datasourceId);
+        Datasource datasource = datasourceDao.selectDatasourceById(datasourceId);
+        if (datasource == null) {
+            return true;
+        }
+        if (!BooleanUtils.isNotFalse(datasource.getDeletable())) {
+            throw new SeatunnelException(
+                    SeatunnelErrorEnum.UNSUPPORTED_OPERATION, "delete readonly datasource");
+        }
+        permCheck(datasource.getDatasourceName(), AccessType.DELETE);
+        return datasourceDao.deleteDatasourceById(datasourceId);
+    }
+
+    @Override
+    public boolean deleteSlinkDatasource(Long datasourceId) {
+        checkDatasourceNotUsed(datasourceId);
+        Datasource datasource = datasourceDao.selectDatasourceById(datasourceId);
+        if (datasource == null) {
+            return true;
+        }
+        ensureSlinkDatasource(datasource);
+        permCheck(datasource.getDatasourceName(), AccessType.DELETE);
+        return datasourceDao.deleteDatasourceById(datasourceId);
+    }
+
+    private void checkDatasourceNotUsed(Long datasourceId) {
         // check has job task has used this datasource
         List<JobTask> jobTaskList = jobTaskDao.getJobTaskByDataSourceId(datasourceId);
         if (!CollectionUtils.isEmpty(jobTaskList)) {
@@ -195,12 +334,6 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
         if (!jobDefinitionService.getJobVersionByDataSourceId(datasourceId).isEmpty()) {
             throw new SeatunnelException(SeatunnelErrorEnum.DATASOURCE_CAN_NOT_DELETE);
         }
-        Datasource datasource = datasourceDao.selectDatasourceById(datasourceId);
-        if (datasource == null) {
-            return true;
-        }
-        permCheck(datasource.getDatasourceName(), AccessType.DELETE);
-        return datasourceDao.deleteDatasourceById(datasourceId);
     }
 
     @Override
@@ -388,10 +521,22 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
     @Override
     public PageInfo<DatasourceRes> queryDatasourceList(
             String searchVal, String pluginName, Integer pageNo, Integer pageSize) {
+        return queryDatasourceList(searchVal, pluginName, pageNo, pageSize, null);
+    }
+
+    @Override
+    public PageInfo<DatasourceRes> querySlinkDatasourceList(
+            String searchVal, String pluginName, Integer pageNo, Integer pageSize) {
+        return queryDatasourceList(
+                searchVal, pluginName, pageNo, pageSize, SLINK_DATASOURCE_ORIGIN);
+    }
+
+    private PageInfo<DatasourceRes> queryDatasourceList(
+            String searchVal, String pluginName, Integer pageNo, Integer pageSize, String origin) {
         Page<Datasource> page = new Page<>(pageNo, pageSize);
         PageInfo<DatasourceRes> pageInfo = new PageInfo<>();
         IPage<Datasource> datasourceWithoutAuthorization =
-                datasourceDao.selectDatasourceByParam(page, null, searchVal, pluginName);
+                datasourceDao.selectDatasourceByParam(page, null, searchVal, pluginName, origin);
 
         List<Long> filteredIds =
                 datasourceWithoutAuthorization.getRecords().stream()
@@ -403,7 +548,8 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
             return pageInfo;
         }
         IPage<Datasource> datasourcePage =
-                datasourceDao.selectDatasourceByParam(page, filteredIds, searchVal, pluginName);
+                datasourceDao.selectDatasourceByParam(
+                        page, filteredIds, searchVal, pluginName, origin);
         pageInfo = new PageInfo<>();
         pageInfo.setPageNo((int) datasourcePage.getPages());
         pageInfo.setPageSize((int) datasourcePage.getSize());
@@ -422,6 +568,11 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
                                     datasourceRes.setPluginName(datasource.getPluginName());
                                     datasourceRes.setPluginVersion(datasource.getPluginVersion());
                                     datasourceRes.setDescription(datasource.getDescription());
+                                    datasourceRes.setOrigin(datasource.getOrigin());
+                                    datasourceRes.setAllowSource(datasource.getAllowSource());
+                                    datasourceRes.setAllowSink(datasource.getAllowSink());
+                                    datasourceRes.setEditable(datasource.getEditable());
+                                    datasourceRes.setDeletable(datasource.getDeletable());
                                     datasourceRes.setCreateTime(datasource.getCreateTime());
                                     datasourceRes.setUpdateTime(datasource.getUpdateTime());
                                     Map<String, String> datasourceConfig =
@@ -507,15 +658,37 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
 
     @Override
     public Map<String, String> queryDatasourceNameByPluginName(String pluginName) {
+        return queryDatasourceNameByPluginName(pluginName, null);
+    }
+
+    @Override
+    public Map<String, String> queryDatasourceNameByPluginName(
+            String pluginName, PluginType pluginType) {
         Map<String, String> datasourceNameMap = new HashMap<>();
         List<Datasource> datasourceList =
                 datasourceDao.selectDatasourceByPluginName(
                         pluginName, DEFAULT_DATASOURCE_PLUGIN_VERSION);
-        datasourceList.forEach(
-                datasource ->
-                        datasourceNameMap.put(
-                                datasource.getId().toString(), datasource.getDatasourceName()));
+        datasourceList.stream()
+                .filter(datasource -> matchDatasourceUsage(datasource, pluginType))
+                .forEach(
+                        datasource ->
+                                datasourceNameMap.put(
+                                        datasource.getId().toString(),
+                                        datasource.getDatasourceName()));
         return datasourceNameMap;
+    }
+
+    private boolean matchDatasourceUsage(Datasource datasource, PluginType pluginType) {
+        if (pluginType == null) {
+            return true;
+        }
+        if (PluginType.SOURCE == pluginType) {
+            return BooleanUtils.isNotFalse(datasource.getAllowSource());
+        }
+        if (PluginType.SINK == pluginType) {
+            return BooleanUtils.isTrue(datasource.getAllowSink());
+        }
+        return true;
     }
 
     @Override
@@ -583,6 +756,11 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
         datasourceDetailRes.setPluginName(datasource.getPluginName());
         datasourceDetailRes.setPluginVersion(datasource.getPluginVersion());
         datasourceDetailRes.setDescription(datasource.getDescription());
+        datasourceDetailRes.setOrigin(datasource.getOrigin());
+        datasourceDetailRes.setAllowSource(datasource.getAllowSource());
+        datasourceDetailRes.setAllowSink(datasource.getAllowSink());
+        datasourceDetailRes.setEditable(datasource.getEditable());
+        datasourceDetailRes.setDeletable(datasource.getDeletable());
         datasourceDetailRes.setCreateTime(datasource.getCreateTime());
         datasourceDetailRes.setUpdateTime(datasource.getUpdateTime());
 
@@ -603,6 +781,25 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
         }
         permCheck(datasource.getDatasourceName(), AccessType.READ);
         return getDatasourceDetailRes(datasource);
+    }
+
+    @Override
+    public DatasourceDetailRes querySlinkDatasourceDetailById(String datasourceId) {
+        long datasourceIdLong = Long.parseLong(datasourceId);
+        Datasource datasource = datasourceDao.selectDatasourceById(datasourceIdLong);
+        if (null == datasource) {
+            throw new SeatunnelException(SeatunnelErrorEnum.DATASOURCE_NOT_FOUND, datasourceId);
+        }
+        ensureSlinkDatasource(datasource);
+        permCheck(datasource.getDatasourceName(), AccessType.READ);
+        return getDatasourceDetailRes(datasource);
+    }
+
+    private void ensureSlinkDatasource(Datasource datasource) {
+        if (!StringUtils.equalsIgnoreCase(datasource.getOrigin(), SLINK_DATASOURCE_ORIGIN)) {
+            throw new SeatunnelException(
+                    SeatunnelErrorEnum.UNSUPPORTED_OPERATION, "operate non-slink datasource");
+        }
     }
 
     @Override

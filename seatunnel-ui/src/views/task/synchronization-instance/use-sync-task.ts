@@ -40,7 +40,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { ITaskState } from '@/common/types'
 import { tasksState } from '@/common/common'
 import { NEllipsis, NIcon, NSpin, NTooltip } from 'naive-ui'
-import { useMessage } from 'naive-ui'
 import {
   querySyncTaskInstancePaging,
   hanldlePauseJob,
@@ -56,12 +55,13 @@ import {
 } from '@/service/sync-task-instance'
 import { getRemainTime } from '@/utils/time'
 import { renderSyncTaskStatusTag } from './status-display'
+import { usePersistentErrorMessage } from '@/utils/message'
 
 export function useSyncTask(syncTaskType = 'BATCH') {
   const { t } = useI18n()
   const router: Router = useRouter()
   const route = useRoute()
-  const message = useMessage()
+  const message = usePersistentErrorMessage()
 
   const variables = reactive({
     tableWidth: DefaultTableWidth,
@@ -199,7 +199,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
                 t('tasks.view')
               )
             : '--'
-          }
+        }
       },
       {
         title: t('project.synchronization_instance.start_time'),
@@ -217,38 +217,36 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         render: (row: any) => getRemainTime(row.runningTime),
         ...COLUMN_WIDTH_CONFIG['duration']
       },
-      useTableOperation(
-        {
-          title: t('project.synchronization_instance.operation'),
-          key: 'operation',
-          itemNum: 4,
-          buttons: [
-            {
-              text: t('project.workflow.recovery_suspend'),
-              icon: h(PlayCircleOutlined),
-              onClick: (row) => void handleRecover(row.id)
-            },
-            {
-              text: t('project.workflow.pause'),
-              icon: h(PauseCircleOutlined),
-              onClick: (row) => void handlePause(row.id)
-            },
-            {
-              text: t('project.synchronization_instance.view_logs'),
-              icon: h(AlignLeftOutlined),
-              onClick: (row) => void handleViewLogs(row)
-            },
-            {
-              isDelete: true,
-              text: t('project.synchronization_instance.delete'),
-              icon: h(DeleteOutlined),
-              onPositiveClick: (row) => void handleDel(row.id),
-              positiveText: t('project.synchronization_instance.confirm'),
-              popTips: t('project.synchronization_instance.delete_confirm')
-            }
-          ]
-        }
-      )
+      useTableOperation({
+        title: t('project.synchronization_instance.operation'),
+        key: 'operation',
+        itemNum: 4,
+        buttons: [
+          {
+            text: t('project.workflow.recovery_suspend'),
+            icon: h(PlayCircleOutlined),
+            onClick: (row) => void handleRecover(row.id)
+          },
+          {
+            text: t('project.workflow.pause'),
+            icon: h(PauseCircleOutlined),
+            onClick: (row) => void handlePause(row.id)
+          },
+          {
+            text: t('project.synchronization_instance.view_logs'),
+            icon: h(AlignLeftOutlined),
+            onClick: (row) => void handleViewLogs(row)
+          },
+          {
+            isDelete: true,
+            text: t('project.synchronization_instance.delete'),
+            icon: h(DeleteOutlined),
+            onPositiveClick: (row) => void handleDel(row.id),
+            positiveText: t('project.synchronization_instance.confirm'),
+            popTips: t('project.synchronization_instance.delete_confirm')
+          }
+        ]
+      })
     ]
 
     if (variables.tableWidth) {
@@ -297,7 +295,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     variables.errorMessage = errorMessage
     variables.showErrorMessageModal = true
   }
-  
+
   const handleViewLogs = async (row: any) => {
     variables.currentJobName = row.jobDefineName
     variables.currentJobId = row.jobEngineId || ''

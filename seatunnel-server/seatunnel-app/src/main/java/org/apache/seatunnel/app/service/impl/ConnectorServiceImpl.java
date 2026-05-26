@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -102,7 +105,9 @@ public class ConnectorServiceImpl extends SeatunnelBaseServiceImpl implements IC
         return filterImplementDataSource(
                         listSources(status), businessMode, sceneMode, PluginType.SOURCE)
                 .stream()
-                .flatMap(dataSourceInfo -> getDataSourcesInstance(dataSourceInfo).stream())
+                .flatMap(
+                        dataSourceInfo ->
+                                getDataSourcesInstance(dataSourceInfo, PluginType.SOURCE).stream())
                 .collect(Collectors.toList());
     }
 
@@ -173,7 +178,9 @@ public class ConnectorServiceImpl extends SeatunnelBaseServiceImpl implements IC
 
         return filterImplementDataSource(listSinks(status), businessMode, null, PluginType.SINK)
                 .stream()
-                .flatMap(dataSourceInfo -> getDataSourcesInstance(dataSourceInfo).stream())
+                .flatMap(
+                        dataSourceInfo ->
+                                getDataSourcesInstance(dataSourceInfo, PluginType.SINK).stream())
                 .collect(Collectors.toList());
     }
 
@@ -300,10 +307,12 @@ public class ConnectorServiceImpl extends SeatunnelBaseServiceImpl implements IC
     }
 
     /** Get an instance from a data source */
-    private List<DataSourceInstance> getDataSourcesInstance(DataSourceInfo dataSourceInfo) {
+    private List<DataSourceInstance> getDataSourcesInstance(
+            DataSourceInfo dataSourceInfo, PluginType pluginType) {
 
         // dataSourceName DataSourceInstance
-        return datasourceService.queryDatasourceNameByPluginName(dataSourceInfo.getDatasourceName())
+        return datasourceService
+                .queryDatasourceNameByPluginName(dataSourceInfo.getDatasourceName(), pluginType)
                 .entrySet().stream()
                 .map(
                         en -> {

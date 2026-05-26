@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -25,15 +26,15 @@ import {
   NInput,
   NButton,
   NCheckbox,
-  NSelect,
-  useMessage
+  NSelect
 } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useForm } from './use-form'
+import { usePersistentErrorMessage } from '@/utils/message'
 
 const Login = defineComponent({
   setup() {
-    window.$message = useMessage()
+    window.$message = usePersistentErrorMessage()
     const { t } = useI18n()
     const { state, handleLogin } = useForm()
     const trim = getCurrentInstance()?.appContext.config.globalProperties.trim
@@ -89,25 +90,37 @@ const Login = defineComponent({
                   />
                 </NFormItem>
                 <NFormItem
-                    label={this.t('login.select_workspace')}
-                    label-style={{ color: 'black' }}
-                    path='selectedWorkspace'
+                  label={this.t('login.select_workspace')}
+                  label-style={{ color: 'black' }}
+                  path='selectedWorkspace'
                 >
                   <NSelect
-                      options={this.workspaces.map(workspace => ({ label: workspace, value: workspace }))}
-                      v-model={[this.loginForm.selectedWorkspace, 'value']}
-                      placeholder={this.t('login.select_workspace_tips')}
+                    options={this.workspaces.map((workspace) => ({
+                      label: workspace,
+                      value: workspace
+                    }))}
+                    v-model={[this.loginForm.selectedWorkspace, 'value']}
+                    placeholder={this.t('login.select_workspace_tips')}
                   />
                 </NFormItem>
                 <NFormItem>
-                  <NCheckbox v-model={this.loginForm.useLdap} onUpdateChecked={(value) => this.loginForm.useLdap = value} >
+                  <NCheckbox
+                    v-model={this.loginForm.useLdap}
+                    onUpdateChecked={(value) =>
+                      (this.loginForm.useLdap = value)
+                    }
+                  >
                     {this.t('login.use_ldap')}
                   </NCheckbox>
                 </NFormItem>
               </NForm>
               <NButton
                 type='info'
-                disabled={!this.loginForm.username || !this.loginForm.password || !this.loginForm.selectedWorkspace}
+                disabled={
+                  !this.loginForm.username ||
+                  !this.loginForm.password ||
+                  !this.loginForm.selectedWorkspace
+                }
                 style={{ width: '100%' }}
                 onClick={this.handleLogin}
               >

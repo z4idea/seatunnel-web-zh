@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -15,17 +18,23 @@
  * limitations under the License.
  */
 
-import { defineComponent, ref } from 'vue'
+import { defineComponent, PropType, ref } from 'vue'
 import { NLayoutSider, NMenu } from 'naive-ui'
 import { useThemeStore } from '@/store/theme'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 const Sidebar = defineComponent({
   name: 'Sidebar',
-  props: ['sideKey'],
+  props: {
+    sideKey: {
+      type: String as PropType<string>,
+      default: ''
+    }
+  },
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const collapsedRef = ref(false)
     const defaultExpandedKeys = ['']
     const { t } = useI18n()
@@ -44,11 +53,13 @@ const Sidebar = defineComponent({
     ])
 
     const handleUpdateValue = (key: string) => {
+      const isDevTaskRoute = route.path.startsWith('/dev/task/')
+      const taskBasePath = isDevTaskRoute ? '/dev/task' : '/task'
       router.push({
         path:
           key === 'synchronization-instance'
-            ? '/task/synchronization-instance'
-            : '/task/synchronization-definition'
+            ? `${taskBasePath}/synchronization-instance`
+            : `${taskBasePath}/synchronization-definition`
       })
     }
 

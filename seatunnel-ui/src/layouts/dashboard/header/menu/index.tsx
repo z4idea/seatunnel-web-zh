@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -27,7 +30,17 @@ const Menu = defineComponent({
     const route = useRoute()
 
     const handleMenuClick = (key: string) => {
-      router.push({ path: `/${key}` })
+      const isDevRoute = route.path.startsWith('/dev/')
+      const menuRouteMap: Record<string, string> = {
+        tasks: '/task/synchronization-definition',
+        datasource: '/datasource/list',
+        'virtual-tables': '/virtual-tables/list',
+        'user-manage': '/user-manage/list'
+      }
+      const nextPath = menuRouteMap[key] || `/${key}`
+      router.push({
+        path: isDevRoute ? `/dev${nextPath}` : nextPath
+      })
     }
 
     const menuKey = ref(route.meta.activeMenu as string)

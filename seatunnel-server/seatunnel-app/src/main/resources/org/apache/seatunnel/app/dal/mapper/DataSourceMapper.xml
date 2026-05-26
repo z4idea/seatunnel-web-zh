@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- @author: zhjj -->
 <!--
     Licensed to the Apache Software Foundation (ASF) under one or more
     contributor license agreements.  See the NOTICE file distributed with
@@ -22,6 +23,11 @@
         <result column="plugin_version" jdbcType="VARCHAR" property="pluginVersion"/>
         <result column="datasource_config" jdbcType="VARCHAR" property="datasourceConfig"/>
         <result column="description" jdbcType="VARCHAR" property="description"/>
+        <result column="origin" jdbcType="VARCHAR" property="origin"/>
+        <result column="allow_source" jdbcType="BOOLEAN" property="allowSource"/>
+        <result column="allow_sink" jdbcType="BOOLEAN" property="allowSink"/>
+        <result column="editable" jdbcType="BOOLEAN" property="editable"/>
+        <result column="deletable" jdbcType="BOOLEAN" property="deletable"/>
         <result column="create_user_id" jdbcType="INTEGER" property="createUserId"/>
         <result column="update_user_id" jdbcType="INTEGER" property="updateUserId"/>
         <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
@@ -31,7 +37,7 @@
 
     <sql id="Base_Column_List">
         id
-        , `datasource_name`, `plugin_name`, `plugin_version`, `datasource_config`, `description`, `create_user_id`, `update_user_id`, `create_time`, `update_time`
+        , `datasource_name`, `plugin_name`, `plugin_version`, `datasource_config`, `description`, `origin`, `allow_source`, `allow_sink`, `editable`, `deletable`, `create_user_id`, `update_user_id`, `create_time`, `update_time`
     </sql>
 
     <update id="updateByPrimaryKeySelective" parameterType="org.apache.seatunnel.app.dal.entity.Datasource">
@@ -51,6 +57,21 @@
             </if>
             <if test="description != null">
                 `description` = #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="origin != null">
+                `origin` = #{origin,jdbcType=VARCHAR},
+            </if>
+            <if test="allowSource != null">
+                `allow_source` = #{allowSource,jdbcType=BOOLEAN},
+            </if>
+            <if test="allowSink != null">
+                `allow_sink` = #{allowSink,jdbcType=BOOLEAN},
+            </if>
+            <if test="editable != null">
+                `editable` = #{editable,jdbcType=BOOLEAN},
+            </if>
+            <if test="deletable != null">
+                `deletable` = #{deletable,jdbcType=BOOLEAN},
             </if>
             <if test="updateUserId != null">
                 `update_user_id` = #{updateUserId,jdbcType=INTEGER},

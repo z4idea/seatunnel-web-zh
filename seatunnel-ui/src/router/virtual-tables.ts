@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -32,29 +35,32 @@ export default {
   children: [
     {
       path: '/virtual-tables/list',
+      alias: ['/dev/virtual-tables/list'],
       name: 'virtual-tables-list',
       component: components['virtual-tables-list'],
       meta: {
         title: 'virtual-tables-list',
-        activeMenu: 'virtual-tables',
+        activeMenu: 'virtual-tables'
       }
     },
     {
       path: '/virtual-tables/creation',
+      alias: ['/dev/virtual-tables/creation'],
       name: 'virtual-tables-create',
       component: components['virtual-tables-detail'],
       meta: {
         title: 'virtual-tables-create',
-        activeMenu: 'virtual-tables',
+        activeMenu: 'virtual-tables'
       }
     },
     {
       path: '/virtual-tables/:id',
+      alias: ['/dev/virtual-tables/:id'],
       name: 'virtual-tables-editor',
       component: components['virtual-tables-detail'],
       meta: {
         title: 'virtual-tables-editor',
-        activeMenu: 'virtual-tables',
+        activeMenu: 'virtual-tables'
       }
     }
   ]

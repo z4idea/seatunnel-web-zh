@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -32,6 +35,7 @@ export default {
   children: [
     {
       path: '/task/synchronization-definition',
+      alias: ['/dev/task/synchronization-definition'],
       name: 'synchronization-definition',
       component: components['task-synchronization-definition'],
       meta: {
@@ -43,17 +47,19 @@ export default {
     },
     {
       path: '/task/synchronization-definition/:jobDefinitionCode',
+      alias: ['/dev/task/synchronization-definition/:jobDefinitionCode'],
       name: 'synchronization-definition-dag',
       component: components['task-synchronization-definition-dag'],
       meta: {
         title: 'synchronization-definition-dag',
         activeMenu: 'tasks',
         activeSide: 'synchronization-definition',
-        showSide: true,
+        showSide: true
       }
     },
     {
       path: '/task/synchronization-instance',
+      alias: ['/dev/task/synchronization-instance'],
       name: 'synchronization-instance',
       component: components['task-synchronization-instance'],
       meta: {
@@ -65,13 +71,14 @@ export default {
     },
     {
       path: '/task/synchronization-instance/:taskCode',
+      alias: ['/dev/task/synchronization-instance/:taskCode'],
       name: 'synchronization-instance-detail',
       component: components['task-synchronization-instance-detail'],
       meta: {
         title: 'synchronization-instance-detail',
         activeMenu: 'tasks',
         activeSide: 'synchronization-instance',
-        showSide: true,
+        showSide: true
       }
     }
   ]

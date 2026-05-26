@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -15,30 +18,38 @@
  * limitations under the License.
  */
 
-import { defineComponent, watch, watchEffect, ref, Ref, onMounted } from 'vue'
-import { useRoute, useRouter, RouteLocationMatched } from 'vue-router'
-import {
-  NLayout,
-  NLayoutHeader,
-  NLayoutContent,
-  useMessage,
-  NSpace
-} from 'naive-ui'
+import { defineComponent, watch, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { NLayout, NLayoutHeader, NLayoutContent, NSpace } from 'naive-ui'
 import Header from './header'
 import Sidebar from './sidebar'
+import { usePersistentErrorMessage } from '@/utils/message'
 
 const Dashboard = defineComponent({
   setup() {
-    window.$message = useMessage()
+    window.$message = usePersistentErrorMessage()
     const route = useRoute()
-    let showSide = ref(false)
+    const showSide = ref(false)
+    const showHeader = ref(true)
+    const embeddedRoutePrefixes = [
+      '/task/',
+      '/datasource/',
+      '/virtual-tables/',
+      '/user-manage/'
+    ]
 
     const menuKey = ref(route.meta.activeMenu as string)
 
     watch(
       () => route,
       () => {
-        showSide.value = route?.meta?.showSide as boolean
+        const isDefaultEmbeddedView =
+          embeddedRoutePrefixes.some((prefix) =>
+            route.path.startsWith(prefix)
+          ) && !route.path.startsWith('/dev/')
+        showHeader.value = !isDefaultEmbeddedView
+        showSide.value =
+          !isDefaultEmbeddedView && (route?.meta?.showSide as boolean)
         menuKey.value = route.meta.activeSide as string
       },
       {
@@ -47,6 +58,7 @@ const Dashboard = defineComponent({
       }
     )
     return {
+      showHeader,
       showSide,
       menuKey
     }
@@ -54,12 +66,18 @@ const Dashboard = defineComponent({
   render() {
     return (
       <NLayout>
-        <NLayoutHeader bordered>
-          <Header />
-        </NLayoutHeader>
-        <NLayoutContent style={{ height: 'calc(100vh - 65px)' }}>
+        {this.showHeader && (
+          <NLayoutHeader bordered>
+            <Header />
+          </NLayoutHeader>
+        )}
+        <NLayoutContent
+          style={{
+            height: this.showHeader ? 'calc(100vh - 65px)' : '100vh'
+          }}
+        >
           <NLayout has-sider position='absolute'>
-            { this.showSide && <Sidebar sideKey={this.menuKey} />}
+            {this.showSide && <Sidebar sideKey={this.menuKey} />}
             <NLayoutContent
               native-scrollbar={false}
               style='padding: 16px 22px 0px 22px'
@@ -72,7 +90,10 @@ const Dashboard = defineComponent({
                 style={'height: 100%'}
                 size='small'
               >
-                <router-view key={this['$route'].fullPath} class={!this.showSide && 'px-32 py-12'} />
+                <router-view
+                  key={this['$route'].fullPath}
+                  class={!this.showSide && 'px-32 py-12'}
+                />
               </NSpace>
             </NLayoutContent>
           </NLayout>

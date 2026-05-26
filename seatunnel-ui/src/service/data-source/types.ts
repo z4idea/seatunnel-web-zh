@@ -25,6 +25,11 @@ export interface DataSourceDetail {
   pluginName: string
   description?: string
   datasourceConfig?: DatasourceConfig
+  origin?: string
+  allowSource?: boolean
+  allowSink?: boolean
+  editable?: boolean
+  deletable?: boolean
 }
 
 export interface DatasourceListParameters {
@@ -53,6 +58,11 @@ export interface DatasourceRecord {
   pluginName: string
   pluginVersion: string
   description: string
+  origin?: string
+  allowSource?: boolean
+  allowSink?: boolean
+  editable?: boolean
+  deletable?: boolean
   createUserName: string
   createTime: number
   updateTime: number
@@ -69,6 +79,11 @@ export interface DatasourceList {
   pluginVersion: string
   description: string
   datasourceConfig: DatasourceConfig
+  origin?: string
+  allowSource?: boolean
+  allowSink?: boolean
+  editable?: boolean
+  deletable?: boolean
   createUserId: number
   updateUserId: number
 }

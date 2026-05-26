@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -32,6 +35,7 @@ export default {
   children: [
     {
       path: '/datasource/list',
+      alias: ['/dev/datasource/list'],
       name: 'datasource-list',
       component: components['datasource-list'],
       meta: {
@@ -41,6 +45,7 @@ export default {
     },
     {
       path: '/datasource/create',
+      alias: ['/dev/datasource/create'],
       name: 'datasource-create',
       component: components['datasource-create'],
       meta: {
@@ -50,6 +55,7 @@ export default {
     },
     {
       path: '/datasource/:id',
+      alias: ['/dev/datasource/:id'],
       name: 'datasource-edit',
       component: components['datasource-create'],
       meta: {

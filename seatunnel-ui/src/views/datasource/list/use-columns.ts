@@ -107,11 +107,13 @@ export function useColumns(onCallback: Function) {
           {
             text: t('datasource.edit'),
             icon: h(EditOutlined),
+            isHidden: (rowData) => rowData.editable === false,
             onClick: (rowData) => void onCallback(rowData.id, 'edit')
           },
           {
             isDelete: true,
             text: t('datasource.delete'),
+            isHidden: (rowData) => rowData.deletable === false,
             onPositiveClick: (rowData) => void onCallback(rowData.id, 'delete'),
             negativeText: t('datasource.cancel'),
             positiveText: t('datasource.confirm'),

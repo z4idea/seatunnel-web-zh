@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -14,6 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import { useMessage } from 'naive-ui'
+
+type MessageApi = ReturnType<typeof useMessage>
+type MessageContent = Parameters<MessageApi['error']>[0]
+type MessageOptions = Parameters<MessageApi['error']>[1]
+
+const PERSISTENT_ERROR_OPTIONS = {
+  closable: true,
+  duration: 0
+} satisfies NonNullable<MessageOptions>
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return Object.prototype.toString.call(value) === '[object Object]'
@@ -45,7 +57,14 @@ const flattenMessage = (value: unknown): string[] => {
   }
 
   if (isPlainObject(value)) {
-    const preferredKeys = ['message', 'msg', 'error', 'detail', 'details', 'reason']
+    const preferredKeys = [
+      'message',
+      'msg',
+      'error',
+      'detail',
+      'details',
+      'reason'
+    ]
     const preferredValues = preferredKeys
       .filter((key) => key in value)
       .flatMap((key) => flattenMessage(value[key]))
@@ -73,4 +92,25 @@ export const formatMessagePayload = (payload: unknown) => {
 
 export const translateMessage = (payload: unknown) => {
   return formatMessagePayload(payload)
+}
+
+export const createPersistentErrorMessage = (messageApi: MessageApi) => {
+  return new Proxy(messageApi, {
+    get(target, property, receiver) {
+      if (property === 'error') {
+        return (content: MessageContent, options?: MessageOptions) =>
+          target.error(content, {
+            ...PERSISTENT_ERROR_OPTIONS,
+            ...(options || {})
+          })
+      }
+
+      const value = Reflect.get(target, property, receiver)
+      return typeof value === 'function' ? value.bind(target) : value
+    }
+  }) as MessageApi
+}
+
+export const usePersistentErrorMessage = () => {
+  return createPersistentErrorMessage(useMessage())
 }

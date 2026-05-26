@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -32,11 +35,12 @@ export default {
   children: [
     {
       path: '/user-manage/list',
+      alias: ['/dev/user-manage/list'],
       name: 'user-manage-list',
       component: components['user-manage-list'],
       meta: {
         title: 'user-manage-list',
-        activeMenu: 'user-manage',
+        activeMenu: 'user-manage'
       }
     }
   ]

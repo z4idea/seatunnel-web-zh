@@ -1,3 +1,4 @@
+-- @author: zhjj
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -66,6 +67,11 @@ CREATE TABLE t_st_datasource (
                                  plugin_version VARCHAR(63) DEFAULT '1.0.0',
                                  datasource_config VARCHAR(1023) NOT NULL,
                                  description VARCHAR(63) DEFAULT NULL,
+                                 origin VARCHAR(32) NOT NULL DEFAULT 'USER',
+                                 allow_source BOOLEAN NOT NULL DEFAULT TRUE,
+                                 allow_sink BOOLEAN NOT NULL DEFAULT FALSE,
+                                 editable BOOLEAN NOT NULL DEFAULT TRUE,
+                                 deletable BOOLEAN NOT NULL DEFAULT TRUE,
                                  create_user_id INT NOT NULL,
                                  update_user_id INT NOT NULL,
                                  create_time TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

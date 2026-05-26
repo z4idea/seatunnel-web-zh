@@ -38,8 +38,8 @@ import {
   COLUMN_WIDTH_CONFIG,
   calculateTableWidth
 } from '@/common/column-width-config'
-import { useMessage } from 'naive-ui'
 import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
+import { usePersistentErrorMessage } from '@/utils/message'
 import './use-table.css'
 
 export function useTable() {
@@ -66,7 +66,7 @@ export function useTable() {
     DATA_INTEGRATION: 'data_integration'
   } as { [key in JobType]: string }
 
-  const message = useMessage()
+  const message = usePersistentErrorMessage()
 
   const loadingStates = ref(new Map<number | string, boolean>())
 
