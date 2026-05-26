@@ -51,6 +51,26 @@ import java.util.Map;
 @RequestMapping("/seatunnel/api/v1/slink/datasource")
 public class SlinkDatasourceController extends BaseController {
 
+    private static final String JDBC_MYSQL_PLUGIN_NAME = "JDBC-Mysql";
+    private static final String JDBC_ORACLE_PLUGIN_NAME = "JDBC-Oracle";
+    private static final String JDBC_DM_PLUGIN_NAME = "JDBC-DM";
+    private static final String JDBC_POSTGRES_PLUGIN_NAME = "JDBC-Postgres";
+    private static final String JDBC_SQLSERVER_PLUGIN_NAME = "JDBC-SQLServer";
+    private static final String JDBC_DB2_PLUGIN_NAME = "JDBC-Db2";
+    private static final String URL_KEY = "url";
+    private static final String HOST_KEY = "host";
+    private static final String PORT_KEY = "port";
+    private static final String DATABASE_KEY = "database";
+    private static final String SCHEMA_KEY = "schema";
+    private static final String DRIVER_KEY = "driver";
+    private static final String MYSQL_JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
+    private static final String ORACLE_JDBC_DRIVER = "oracle.jdbc.driver.OracleDriver";
+    private static final String DM_JDBC_DRIVER = "dm.jdbc.driver.DmDriver";
+    private static final String POSTGRES_JDBC_DRIVER = "org.postgresql.Driver";
+    private static final String SQLSERVER_JDBC_DRIVER =
+            "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+    private static final String DB2_JDBC_DRIVER = "com.ibm.db2.jcc.DB2Driver";
+
     @Resource private IDatasourceService datasourceService;
 
     @PostMapping
@@ -111,6 +131,95 @@ public class SlinkDatasourceController extends BaseController {
         if (req == null || StringUtils.isBlank(req.getDatasourceConfig())) {
             return new HashMap<>();
         }
-        return JsonUtils.toMap(req.getDatasourceConfig(), String.class, String.class);
+        Map<String, String> datasourceConfig =
+                JsonUtils.toMap(req.getDatasourceConfig(), String.class, String.class);
+        applyDatasourceConfigDefaults(req.getPluginName(), datasourceConfig);
+        return datasourceConfig;
+    }
+
+    private void applyDatasourceConfigDefaults(
+            String pluginName, Map<String, String> datasourceConfig) {
+        if (StringUtils.isBlank(pluginName) || datasourceConfig == null || datasourceConfig.isEmpty()) {
+            return;
+        }
+
+        String url = buildJdbcUrl(pluginName, datasourceConfig);
+        if (StringUtils.isNotBlank(url)) {
+            datasourceConfig.putIfAbsent(URL_KEY, url);
+        }
+
+        String driver = defaultDriver(pluginName);
+        if (StringUtils.isNotBlank(driver)) {
+            datasourceConfig.putIfAbsent(DRIVER_KEY, driver);
+        }
+
+        if (StringUtils.equals(pluginName, JDBC_DM_PLUGIN_NAME)
+                && StringUtils.isBlank(datasourceConfig.get(SCHEMA_KEY))
+                && StringUtils.isNotBlank(datasourceConfig.get(DATABASE_KEY))) {
+            datasourceConfig.put(SCHEMA_KEY, datasourceConfig.get(DATABASE_KEY));
+        }
+    }
+
+    private String buildJdbcUrl(String pluginName, Map<String, String> datasourceConfig) {
+        if (StringUtils.isNotBlank(datasourceConfig.get(URL_KEY))) {
+            return null;
+        }
+        String host = StringUtils.trimToEmpty(datasourceConfig.get(HOST_KEY));
+        String port = StringUtils.trimToEmpty(datasourceConfig.get(PORT_KEY));
+        String database = StringUtils.trimToEmpty(datasourceConfig.get(DATABASE_KEY));
+        if (StringUtils.isBlank(host) || StringUtils.isBlank(port)) {
+            return null;
+        }
+
+        if (StringUtils.equals(pluginName, JDBC_MYSQL_PLUGIN_NAME)
+                && StringUtils.isNotBlank(database)) {
+            return String.format(
+                    "jdbc:mysql://%s:%s/%s?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8",
+                    host, port, database);
+        }
+        if (StringUtils.equals(pluginName, JDBC_ORACLE_PLUGIN_NAME)
+                && StringUtils.isNotBlank(database)) {
+            return String.format("jdbc:oracle:thin:@%s:%s:%s", host, port, database);
+        }
+        if (StringUtils.equals(pluginName, JDBC_DM_PLUGIN_NAME)) {
+            return String.format("jdbc:dm:@%s:%s", host, port);
+        }
+        if (StringUtils.equals(pluginName, JDBC_POSTGRES_PLUGIN_NAME)
+                && StringUtils.isNotBlank(database)) {
+            return String.format(
+                    "jdbc:postgresql://%s:%s/%s?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=utf-8",
+                    host, port, database);
+        }
+        if (StringUtils.equals(pluginName, JDBC_SQLSERVER_PLUGIN_NAME)
+                && StringUtils.isNotBlank(database)) {
+            return String.format("jdbc:sqlserver://%s:%s;database=%s", host, port, database);
+        }
+        if (StringUtils.equals(pluginName, JDBC_DB2_PLUGIN_NAME)
+                && StringUtils.isNotBlank(database)) {
+            return String.format("jdbc:db2://%s:%s/%s", host, port, database);
+        }
+        return null;
+    }
+
+    private String defaultDriver(String pluginName) {
+        if (StringUtils.equals(pluginName, JDBC_MYSQL_PLUGIN_NAME)) {
+            return MYSQL_JDBC_DRIVER;
+        }
+        if (StringUtils.equals(pluginName, JDBC_ORACLE_PLUGIN_NAME)) {
+            return ORACLE_JDBC_DRIVER;
+        }
+        if (StringUtils.equals(pluginName, JDBC_DM_PLUGIN_NAME)) {
+            return DM_JDBC_DRIVER;
+        }
+        if (StringUtils.equals(pluginName, JDBC_POSTGRES_PLUGIN_NAME)) {
+            return POSTGRES_JDBC_DRIVER;
+        }
+        if (StringUtils.equals(pluginName, JDBC_SQLSERVER_PLUGIN_NAME)) {
+            return SQLSERVER_JDBC_DRIVER;
+        }
+        if (StringUtils.equals(pluginName, JDBC_DB2_PLUGIN_NAME)) {
+            return DB2_JDBC_DRIVER;
+        }
+        return null;
     }
 }
