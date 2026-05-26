@@ -22,7 +22,6 @@ import org.apache.seatunnel.app.dal.dao.IJobInstanceDao;
 import org.apache.seatunnel.app.dal.dao.IJobMetricsDao;
 import org.apache.seatunnel.app.dal.dao.IJobScheduleHistoryDao;
 import org.apache.seatunnel.app.dal.entity.JobInstance;
-import org.apache.seatunnel.app.dal.entity.JobMetrics;
 import org.apache.seatunnel.app.dal.entity.JobScheduleHistory;
 import org.apache.seatunnel.app.dal.mapper.JobScheduleHistoryMapper;
 import org.apache.seatunnel.app.domain.response.PageInfo;
@@ -84,7 +83,8 @@ public class JobScheduleHistoryDaoImpl implements IJobScheduleHistoryDao {
                                 Collectors.toMap(
                                         jobInstanceId -> jobInstanceId,
                                         jobInstanceId ->
-                                                jobMetricsDao.getByInstanceId(jobInstanceId).stream()
+                                                jobMetricsDao.getByInstanceId(jobInstanceId)
+                                                        .stream()
                                                         .mapToLong(
                                                                 metrics ->
                                                                         metrics.getWriteRowCount())
@@ -97,27 +97,28 @@ public class JobScheduleHistoryDaoImpl implements IJobScheduleHistoryDao {
                                     JobInstance jobInstance =
                                             history.getJobInstanceId() == null
                                                     ? null
-                                                    : jobInstanceMap.get(history.getJobInstanceId());
+                                                    : jobInstanceMap.get(
+                                                            history.getJobInstanceId());
                                     Long writeRowCount =
                                             history.getJobInstanceId() == null
                                                     ? null
-                                                    : writeRowCountMap.get(history.getJobInstanceId());
-                                    return
-                                        JobScheduleHistoryRes.builder()
-                                                .id(history.getId())
-                                                .scheduleConfigId(history.getScheduleConfigId())
-                                                .jobDefineId(history.getJobDefineId())
-                                                .triggerTime(history.getTriggerTime())
-                                                .status(history.getStatus())
-                                                .message(history.getMessage())
-                                                .jobInstanceId(history.getJobInstanceId())
-                                                .writeRowCount(writeRowCount)
-                                                .errorMessage(
-                                                        jobInstance == null
-                                                                ? null
-                                                                : jobInstance.getErrorMessage())
-                                                .createTime(history.getCreateTime())
-                                                .build();
+                                                    : writeRowCountMap.get(
+                                                            history.getJobInstanceId());
+                                    return JobScheduleHistoryRes.builder()
+                                            .id(history.getId())
+                                            .scheduleConfigId(history.getScheduleConfigId())
+                                            .jobDefineId(history.getJobDefineId())
+                                            .triggerTime(history.getTriggerTime())
+                                            .status(history.getStatus())
+                                            .message(history.getMessage())
+                                            .jobInstanceId(history.getJobInstanceId())
+                                            .writeRowCount(writeRowCount)
+                                            .errorMessage(
+                                                    jobInstance == null
+                                                            ? null
+                                                            : jobInstance.getErrorMessage())
+                                            .createTime(history.getCreateTime())
+                                            .build();
                                 })
                         .collect(Collectors.toList()));
         pageInfo.setPageNo(pageNo);

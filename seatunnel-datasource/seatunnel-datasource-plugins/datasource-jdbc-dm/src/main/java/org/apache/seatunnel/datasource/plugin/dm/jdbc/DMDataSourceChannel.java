@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -121,7 +124,10 @@ public class DMDataSourceChannel implements DataSourceChannel {
                 while (resultSet.next()) {
                     String schemaName = resultSet.getString("OWNER");
                     String tableName = resultSet.getString("TABLE_NAME");
-                    tableNames.add(schemaName + "." + tableName);
+                    tableNames.add(
+                            StringUtils.isNotBlank(normalizedDatabase)
+                                    ? tableName
+                                    : schemaName + "." + tableName);
                 }
                 end = System.currentTimeMillis();
                 log.info("while result set, cost {}ms for dm", end - start);
@@ -169,7 +175,7 @@ public class DMDataSourceChannel implements DataSourceChannel {
             @NonNull Map<String, String> requestParams,
             @NonNull String database,
             @NonNull String table) {
-        String[] split = splitTableName(table);
+        String[] split = resolveSchemaAndTable(database, table);
         String schemaName = normalizeIdentifier(split[0]);
         String tableName = normalizeIdentifier(split[1]);
 
@@ -227,6 +233,16 @@ public class DMDataSourceChannel implements DataSourceChannel {
                                                 pluginName, requestParams, database, tableName)));
     }
 
+    @Override
+    public Connection getConnection(
+            @NonNull String pluginName, @NonNull Map<String, String> requestParams) {
+        try {
+            return getConnection(requestParams);
+        } catch (ClassNotFoundException | SQLException e) {
+            throw new DataSourcePluginException("get dm connection failed", e);
+        }
+    }
+
     private Set<String> getPrimaryKeys(
             DatabaseMetaData metaData, String schemaName, String tableName) throws SQLException {
         Set<String> primaryKeys = new HashSet<>();
@@ -240,8 +256,14 @@ public class DMDataSourceChannel implements DataSourceChannel {
         return primaryKeys;
     }
 
-    private String[] splitTableName(String table) {
-        String[] split = table.split("\\.");
+    private String[] resolveSchemaAndTable(String database, String table) {
+        String[] split = table.split("\\.", 2);
+        if (split.length == 2) {
+            return split;
+        }
+        if (StringUtils.isNotBlank(database)) {
+            return new String[] {database, table};
+        }
         if (split.length != 2) {
             throw new SeaTunnelException(
                     "The tableName for dm must be schemaName.tableName, but tableName is " + table);

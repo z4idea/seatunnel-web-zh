@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -203,17 +206,11 @@ public class TableSchemaServiceImpl extends SeatunnelBaseServiceImpl
                     .getTables()
                     .forEach(
                             tableStr -> {
-                                String database;
-                                String table;
-                                //                                if (tableStr.contains(".")) {
-                                //                                    String[] split =
-                                // tableStr.split("\\.");
-                                //                                    database = split[0];
-                                //                                    table = split[1];
-                                //                                } else {
-                                database = dataSourceOption.getDatabases().get(0);
-                                table = tableStr;
-                                //                                }
+                                String[] databaseAndTable =
+                                        resolveDatabaseAndTable(
+                                                dataSourceOption.getDatabases().get(0), tableStr);
+                                String database = databaseAndTable[0];
+                                String table = databaseAndTable[1];
                                 if (!tables.containsKey(database)) {
                                     if (notExistDatabases.contains(database)) {
                                         notExistTables.add(tableStr);
@@ -233,5 +230,13 @@ public class TableSchemaServiceImpl extends SeatunnelBaseServiceImpl
             return new DataSourceOption(notExistDatabases, notExistTables);
         }
         return new DataSourceOption(notExistDatabases, new ArrayList<>());
+    }
+
+    private String[] resolveDatabaseAndTable(String defaultDatabase, String tableStr) {
+        String[] split = tableStr.split("\\.", 2);
+        if (split.length == 2) {
+            return split;
+        }
+        return new String[] {defaultDatabase, tableStr};
     }
 }

@@ -424,7 +424,9 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
                         SeatunnelErrorEnum.ERROR_CONFIG,
                         String.format(
                                 "Plugin Type: %s, Connector Type: %s, Error Info: %s",
-                                pluginType, task.getConnectorType(), ExceptionUtils.getMessage(e)));
+                                pluginType,
+                                task.getConnectorType(),
+                                JobUtils.resolveJobExecutionErrorMessage(e)));
             }
         }
         String sources = "";

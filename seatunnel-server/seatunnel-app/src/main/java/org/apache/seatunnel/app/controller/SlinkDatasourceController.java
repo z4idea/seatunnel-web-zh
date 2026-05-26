@@ -118,8 +118,7 @@ public class SlinkDatasourceController extends BaseController {
                     String searchVal,
             @RequestParam(value = "pluginName", required = false, defaultValue = "")
                     String pluginName,
-            @RequestParam(value = "pageNo", required = false, defaultValue = "1")
-                    Integer pageNo,
+            @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(value = "pageSize", required = false, defaultValue = "10")
                     Integer pageSize) {
         return Result.success(
@@ -139,7 +138,9 @@ public class SlinkDatasourceController extends BaseController {
 
     private void applyDatasourceConfigDefaults(
             String pluginName, Map<String, String> datasourceConfig) {
-        if (StringUtils.isBlank(pluginName) || datasourceConfig == null || datasourceConfig.isEmpty()) {
+        if (StringUtils.isBlank(pluginName)
+                || datasourceConfig == null
+                || datasourceConfig.isEmpty()) {
             return;
         }
 
@@ -182,7 +183,7 @@ public class SlinkDatasourceController extends BaseController {
             return String.format("jdbc:oracle:thin:@%s:%s:%s", host, port, database);
         }
         if (StringUtils.equals(pluginName, JDBC_DM_PLUGIN_NAME)) {
-            return String.format("jdbc:dm:@%s:%s", host, port);
+            return String.format("jdbc:dm://%s:%s", host, port);
         }
         if (StringUtils.equals(pluginName, JDBC_POSTGRES_PLUGIN_NAME)
                 && StringUtils.isNotBlank(database)) {

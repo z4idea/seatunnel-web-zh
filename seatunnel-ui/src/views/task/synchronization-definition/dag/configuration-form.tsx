@@ -482,7 +482,6 @@ const ConfigurationForm = defineComponent({
     const onSinkCustomTableNameChange = (value: string) => {
       sinkCustomTableName.value = value
       state.model.tableName = value
-      emit('tableNameChange', state.model)
     }
 
     const onSinkTableModeChange = (mode: 'existing' | 'custom') => {
@@ -491,7 +490,6 @@ const ConfigurationForm = defineComponent({
         const currentTableName = String(state.model.tableName || '').trim()
         sinkCustomTableName.value = currentTableName
         state.model.tableName = currentTableName || sinkCustomTableName.value
-        emit('tableNameChange', state.model)
         return
       }
 
