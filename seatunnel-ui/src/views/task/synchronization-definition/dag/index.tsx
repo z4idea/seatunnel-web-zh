@@ -30,6 +30,13 @@ const SynchronizationDefinitionDag = defineComponent({
   name: 'SynchronizationDefinitionDag',
   setup() {
     const dagRef = ref()
+<<<<<<< HEAD
+=======
+    const dialog = useDialog()
+    const persistedEdges = ref<InputEdge[]>([])
+    let destroyed = false
+    let leaveResolver: ((value: boolean) => void) | null = null
+>>>>>>> 3697ed0dbb0d04788611b3abb72e6361ed28e0fe
 
     const tempNode = {
       type: '',
@@ -85,18 +92,43 @@ const SynchronizationDefinitionDag = defineComponent({
 
     onMounted(async () => {
       const result = await detailInit()
-      if (result?.nodesAndEdges) {
+      if (!destroyed && result?.nodesAndEdges && dagRef.value) {
         dagRef.value.addNodesAndEdges(
           result.nodesAndEdges.plugins,
           result.nodesAndEdges.edges
         )
       }
+<<<<<<< HEAD
       document.documentElement.style.setProperty(
         '--node-config-hint',
         `"${t('dag.nodeConfigHint')}"`
       )
     })
 
+=======
+      if (!destroyed) {
+        syncPersistedEdges()
+        document.documentElement.style.setProperty(
+          '--node-config-hint',
+          `"${t('dag.nodeConfigHint')}"`
+        )
+      }
+    })
+
+    onBeforeUnmount(() => {
+      destroyed = true
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    })
+
+    onBeforeRouteLeave(async () => {
+      const shouldLeave = await confirmLeave()
+      if (!shouldLeave) {
+        return false
+      }
+      return true
+    })
+
+>>>>>>> 3697ed0dbb0d04788611b3abb72e6361ed28e0fe
     watch(
       () => locale.value,
       () => {

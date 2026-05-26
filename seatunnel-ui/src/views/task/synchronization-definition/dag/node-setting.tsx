@@ -95,8 +95,33 @@ const NodeSetting = defineComponent({
     )
 
     return () => (
+<<<<<<< HEAD
       <NDrawer show={props.show} width={state.width} zIndex={1000}>
         <NDrawerContent>
+=======
+      <NModal
+        show={props.show}
+        zIndex={1000}
+        maskClosable={false}
+        closeOnEsc={false}
+        onUpdateShow={(show) => {
+          if (!show) {
+            cancelModal()
+          }
+        }}
+      >
+        <NCard
+          bordered={false}
+          style={{
+            width: state.width,
+            maxWidth: '92vw'
+          }}
+          contentStyle={{
+            maxHeight: '72vh',
+            overflowY: 'auto'
+          }}
+        >
+>>>>>>> 3697ed0dbb0d04788611b3abb72e6361ed28e0fe
           {{
             default: () => (
               <NTabs onUpdateValue={handleTab} value={state.tab}>
