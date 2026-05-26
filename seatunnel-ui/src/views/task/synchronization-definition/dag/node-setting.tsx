@@ -160,7 +160,6 @@ const NodeSetting = defineComponent({
         }}
       >
         <NCard
-          title={t('project.node.current_node_settings')}
           bordered={false}
           style={{
             width: state.width,
