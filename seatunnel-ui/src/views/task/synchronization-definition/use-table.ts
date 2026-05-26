@@ -25,12 +25,11 @@ import {
   PlayCircleOutlined,
   ReloadOutlined
 } from '@vicons/antd'
-import { NButton, NTag } from 'naive-ui'
+import { NTag, NSwitch, NSpace, NIcon } from 'naive-ui'
 import {
   querySyncTaskDefinitionPaging,
   deleteSyncTaskDefinition,
-  executeJob,
-  getDefinitionNodesAndEdges
+  executeJob
 } from '@/service/sync-task-definition'
 import { useRouter } from 'vue-router'
 import type { Router } from 'vue-router'
@@ -39,13 +38,27 @@ import {
   COLUMN_WIDTH_CONFIG,
   calculateTableWidth
 } from '@/common/column-width-config'
+import { useMessage } from 'naive-ui'
 import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
-import { usePersistentErrorMessage } from '@/utils/message'
 import './use-table.css'
 
 export function useTable() {
   const { t } = useI18n()
   const router: Router = useRouter()
+
+  // 自定义 Iconify 图标组件
+  const IconifyIcon = (iconName: string) => {
+    return h('span', {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      },
+      class: 'iconify',
+      'data-icon': iconName,
+      'aria-hidden': 'true'
+    })
+  }
   const variables = reactive({
     columns: [],
     tableData: [],
@@ -55,7 +68,6 @@ export function useTable() {
     totalPage: ref(1),
     tableWidth: ref(0),
     showModalRef: ref(false),
-    showDetailModalRef: ref(false),
     showScheduleModalRef: ref(false),
     statusRef: ref(0),
     row: {},
@@ -68,59 +80,12 @@ export function useTable() {
     DATA_INTEGRATION: 'data_integration'
   } as { [key in JobType]: string }
 
-  const message = usePersistentErrorMessage()
+  const message = useMessage()
 
   const loadingStates = ref(new Map<number | string, boolean>())
 
-  const getSourceDatabaseTable = (plugins: any[] = []) => {
-    const sourcePlugin = plugins.find(
-      (plugin: any) => plugin?.type === 'SOURCE' && plugin?.dataSourceId
-    )
-
-    if (!sourcePlugin) {
-      return '-'
-    }
-
-    const database = sourcePlugin.tableOption?.databases?.find(
-      (item: string) => !!item
-    )
-    let table = sourcePlugin.tableOption?.tables?.find((item: string) => !!item)
-
-    if ((!database || !table) && table?.includes('.')) {
-      const [parsedDatabase, ...rest] = table.split('.')
-      if (!database && parsedDatabase && rest.length > 0) {
-        return `${parsedDatabase}-${rest.join('.')}`
-      }
-    }
-
-    if (!database || !table) {
-      return '-'
-    }
-
-    return `${database}-${table}`
-  }
-
-  const enrichTableData = async (rows: any[] = []) =>
-    Promise.all(
-      rows.map(async (row: any) => {
-        try {
-          const nodesAndEdges = await getDefinitionNodesAndEdges(String(row.id))
-          return {
-            ...row,
-            sourceDatabaseTable: getSourceDatabaseTable(nodesAndEdges?.plugins)
-          }
-        } catch {
-          return {
-            ...row,
-            sourceDatabaseTable: '-'
-          }
-        }
-      })
-    )
-
   const createColumns = (
     variables: any,
-    onOpenDetailModal?: (row: any) => void,
     onOpenScheduleModal?: (row: any) => void
   ) => {
     variables.columns = [
@@ -129,19 +94,7 @@ export function useTable() {
           'project.synchronization_definition.synchronization_task_name'
         ),
         key: 'name',
-        ...COLUMN_WIDTH_CONFIG['name'],
-        render: (row: any) =>
-          h(
-            NButton,
-            {
-              text: true,
-              type: 'primary',
-              onClick: () => onOpenDetailModal && onOpenDetailModal(row)
-            },
-            {
-              default: () => row.name || '-'
-            }
-          )
+        ...COLUMN_WIDTH_CONFIG['name']
       },
       {
         title: t('project.synchronization_definition.business_model'),
@@ -156,52 +109,39 @@ export function useTable() {
         ...COLUMN_WIDTH_CONFIG['description']
       },
       {
-        title: t('project.synchronization_definition.source_database_table'),
-        key: 'sourceDatabaseTable',
-        ...COLUMN_WIDTH_CONFIG['description']
+        title: t('project.synchronization_definition.create_user'),
+        key: 'createUserName',
+        ...COLUMN_WIDTH_CONFIG['userName']
       },
       {
+        title: t('project.synchronization_definition.create_time'),
+        key: 'createTime',
+        ...COLUMN_WIDTH_CONFIG['time']
+      },
+      {
+        title: t('project.synchronization_definition.update_user'),
+        key: 'updateUserName',
+        ...COLUMN_WIDTH_CONFIG['userName']
+      },
+      {
+        title: t('project.synchronization_definition.update_time'),
+        key: 'updateTime',
+        ...COLUMN_WIDTH_CONFIG['time']
+      },
+      // ====================== 【状态列改成开关样式】 ======================
+      {
         title: t('project.synchronization_definition.schedule_status'),
-        key: 'scheduleLastStatus',
+        key: 'scheduleEnabled',
         width: 120,
         render: (row: any) => {
-          if (
-            row.scheduleEnabled === null ||
-            row.scheduleEnabled === undefined
-          ) {
-            return '-'
-          }
-
-          if (!row.scheduleEnabled) {
-            return h(
-              NTag,
-              {
-                bordered: false,
-                size: 'small'
-              },
-              {
-                default: () =>
-                  t('project.synchronization_definition.schedule_disabled')
-              }
-            )
-          }
-
-          if (!row.scheduleLastStatus) {
-            return h(
-              NTag,
-              {
-                type: 'info',
-                bordered: false,
-                size: 'small'
-              },
-              {
-                default: () =>
-                  t('project.synchronization_definition.schedule_enabled')
-              }
-            )
-          }
-
-          return renderSyncTaskStatusTag(row.scheduleLastStatus, t)
+          const enabled = row.scheduleEnabled === true
+          return h(NSwitch, {
+            class: 'sync-status-switch',
+            value: enabled,
+            disabled: true,
+            checkedChildren: t('common.enabled'),
+            uncheckedChildren: t('common.disabled')
+          })
         }
       },
       {
@@ -210,56 +150,55 @@ export function useTable() {
         ...COLUMN_WIDTH_CONFIG['time'],
         render: (row: any) => row.scheduleNextTriggerTime || '-'
       },
-      useTableOperation({
+      // ====================== 【操作列改成纯文字按钮】 ======================
+      {
         title: t('project.synchronization_definition.operation'),
         key: 'operation',
-        width: 220,
-        buttons: [
-          {
-            text: t('project.synchronization_definition.edit'),
-            onClick: (row: any) => {
-              router.push({
-                path: `/task/synchronization-definition/${row.id}`
-              })
-            },
-            icon: h(EditOutlined)
-          },
-          {
-            text: t('project.synchronization_definition.schedule'),
-            onClick: (row: any) => {
-              onOpenScheduleModal && onOpenScheduleModal(row)
-            },
-            icon: h(ClockCircleOutlined)
-          },
-          {
-            text: (row: any) =>
-              loadingStates.value.get(row.id)
-                ? `${t('project.synchronization_definition.start')}...`
-                : t('project.synchronization_definition.start'),
-            onClick: (row: any) => {
-              if (loadingStates.value.get(row.id)) return
-              handleRun(row)
-            },
-            icon: (row: any) =>
-              h(
-                loadingStates.value.get(row.id)
-                  ? ReloadOutlined
-                  : PlayCircleOutlined
-              ),
-            class: (row: any) =>
-              loadingStates.value.get(row.id)
-                ? 'sync-task-run-action is-loading'
-                : 'sync-task-run-action',
-            disabled: (row: any) => !!loadingStates.value.get(row.id)
-          },
-          {
-            isDelete: true,
-            text: t('project.synchronization_definition.delete'),
-            onPositiveClick: (row: any) => void handleDelete(row),
-            popTips: t('security.token.delete_confirm')
-          }
-        ]
-      })
+        fixed: 'right',
+        width: 320,
+        render: (row: any) => {
+          return h(NSpace, { size: 'small' }, [
+            // 修改按钮
+            h('a', {
+              class: 'sync-operation-btn',
+              onClick: () => {
+                router.push({ path: `/task/synchronization-definition/${row.id}` })
+              },
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px',color:'#7598c4' }
+            }, [IconifyIcon('line-md:edit'), t('project.synchronization_definition.edit')]),
+            
+            // 定时按钮
+            h('a', {
+              class: 'sync-operation-btn',
+              onClick: () => { onOpenScheduleModal && onOpenScheduleModal(row) },
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+            },[IconifyIcon('material-symbols-light:timer-outline'),t('project.synchronization_definition.schedule')]) ,
+
+            // 启动按钮
+            h('a', {
+              class: 'sync-operation-btn',
+              onClick: () => {
+                if (!loadingStates.value.get(row.id)) handleRun(row)
+              },
+              disabled: !!loadingStates.value.get(row.id),
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+            }, loadingStates.value.get(row.id)
+              ? [IconifyIcon('material-symbols:play-arrow'), `${t('project.synchronization_definition.start')}...`]
+              : [IconifyIcon('material-symbols:play-arrow'), t('project.synchronization_definition.start')]),
+
+            // 删除按钮
+            h('a', {
+              class: 'sync-operation-btn sync-delete-btn',
+              onClick: async () => {
+                if (confirm(t('security.token.delete_confirm'))) {
+                  await handleDelete(row)
+                }
+              },
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+            }, [IconifyIcon('material-symbols:delete-outline'), t('project.synchronization_definition.delete')])
+          ])
+        }
+      }
     ]
 
     variables.tableWidth = calculateTableWidth(variables.columns)
@@ -270,8 +209,8 @@ export function useTable() {
     variables.loadingRef = true
 
     querySyncTaskDefinitionPaging(params)
-      .then(async (res: any) => {
-        variables.tableData = await enrichTableData(res.data)
+      .then((res: any) => {
+        variables.tableData = res.data
         variables.totalPage = res.totalPage
         variables.loadingRef = false
       })
@@ -281,7 +220,6 @@ export function useTable() {
   }
 
   const handleRun = (row: any) => {
-    // Prevent duplicate task submissions
     loadingStates.value.set(row.id, true)
 
     executeJob(row.id)
@@ -289,10 +227,7 @@ export function useTable() {
         message.success(t('project.synchronization_definition.start_success'))
         router.push({
           path: `/task/synchronization-instance/${row.id}`,
-          query: {
-            jobInstanceId: res,
-            taskName: row.name
-          }
+          query: { jobInstanceId: res, taskName: row.name }
         })
       })
       .catch(() => {
@@ -303,20 +238,20 @@ export function useTable() {
       })
   }
 
-  const handleDelete = (row: any) => {
+  const handleDelete = async (row: any) => {
     if (variables.tableData.length === 1 && variables.page > 1) {
       --variables.page
     }
 
-    deleteSyncTaskDefinition({
+    await deleteSyncTaskDefinition({
       projectCode: row.projectCode,
       id: row.id
-    }).then(() => {
-      getTableData({
-        pageSize: variables.pageSize,
-        pageNo: variables.page,
-        searchName: variables.searchName
-      })
+    })
+
+    getTableData({
+      pageSize: variables.pageSize,
+      pageNo: variables.page,
+      searchName: variables.searchName
     })
   }
 

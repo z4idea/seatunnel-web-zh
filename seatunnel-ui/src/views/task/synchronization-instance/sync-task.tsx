@@ -295,9 +295,9 @@ const SyncTask = defineComponent({
                 onKeyup={this.handleKeyup}
               />
             </div>
-            <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
+            <div style={{ flex: '1 1 220px', minWidth: '220px' }} class="select_options">
               <NSelect
-                style={{ width: '100%' }}
+                style={{ width: '100%',height:'32px' }}
                 v-model={[this.stateType, 'value']}
                 options={getSyncTaskStatusOptions(this.t)}
                 placeholder={this.t('project.synchronization_instance.state')}
@@ -329,20 +329,24 @@ const SyncTask = defineComponent({
               }}
             >
               <NSpace justify='end'>
-                <NButton onClick={this.handleReset}>
-                  <NIcon>
-                    <ReloadOutlined />
-                  </NIcon>
+                <NButton onClick={this.handleReset} class="create-btn1">
+                  <span
+                style={{ fontSize: '16px' }}
+                class="iconify"
+                data-icon='system-uicons:reset'
+                aria-hidden="true"
+              />
+            重置
                 </NButton>
-                <NButton onClick={this.handleRefresh}>
-                  <NIcon>
-                    <SyncOutlined />
-                  </NIcon>
-                </NButton>
-                <NButton type='primary' onClick={this.handleSearch}>
-                  <NIcon>
-                    <SearchOutlined />
-                  </NIcon>
+              
+                <NButton  class="create-btn" onClick={this.handleSearch}>
+                  <span
+                style={{ fontSize: '16px' }}
+                class="iconify"
+                data-icon='system-uicons:reset'
+                aria-hidden="true"
+              />
+           <span style={{paddingLeft:'5px'}}>{this.t('project.node.sql_type_query')}</span>
                 </NButton>
               </NSpace>
             </div>
@@ -375,6 +379,7 @@ const SyncTask = defineComponent({
             default: () => (
               <NSpace vertical>
                 <NDataTable
+                  class='sync-flat-table'
                   loading={this.loadingRef}
                   columns={this.tableColumn}
                   data={this.tableData}
@@ -382,7 +387,8 @@ const SyncTask = defineComponent({
                   scrollX={this.tableWidth}
                   v-model:checked-row-keys={this.checkedRowKeys}
                 />
-                <NSpace justify='center'>
+                  <div class="sync-pagination-bar">
+<NSpace justify='center'>
                   <NPagination
                     v-model:page={this.page}
                     v-model:page-size={this.pageSize}
@@ -394,6 +400,8 @@ const SyncTask = defineComponent({
                     onUpdatePageSize={this.onUpdatePageSize}
                   />
                 </NSpace>
+                  </div>
+                
               </NSpace>
             )
           }}

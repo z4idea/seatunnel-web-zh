@@ -39,7 +39,8 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { ITaskState } from '@/common/types'
 import { tasksState } from '@/common/common'
-import { NEllipsis, NIcon, NSpin, NTooltip } from 'naive-ui'
+import { NEllipsis, NIcon, NSpin, NTooltip, NSpace } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import {
   querySyncTaskInstancePaging,
   hanldlePauseJob,
@@ -55,13 +56,27 @@ import {
 } from '@/service/sync-task-instance'
 import { getRemainTime } from '@/utils/time'
 import { renderSyncTaskStatusTag } from './status-display'
-import { usePersistentErrorMessage } from '@/utils/message'
+import '../synchronization-definition/index.css'
 
 export function useSyncTask(syncTaskType = 'BATCH') {
   const { t } = useI18n()
   const router: Router = useRouter()
   const route = useRoute()
-  const message = usePersistentErrorMessage()
+  const message = useMessage()
+
+  // 自定义 Iconify 图标组件
+  const IconifyIcon = (iconName: string) => {
+    return h('span', {
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      },
+      class: 'iconify',
+      'data-icon': iconName,
+      'aria-hidden': 'true'
+    })
+  }
 
   const variables = reactive({
     tableWidth: DefaultTableWidth,
@@ -171,6 +186,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
       {
         title: t('project.synchronization_instance.execute_user'),
         key: 'username',
+        width:150,
         ...COLUMN_WIDTH_CONFIG['state']
       },
       {
@@ -182,6 +198,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
       {
         title: t('project.synchronization_instance.error_message'),
         key: 'parameter',
+        width:150,
         ...COLUMN_WIDTH_CONFIG['state'],
         render: (row: any) => {
           return row.errorMessage
@@ -199,7 +216,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
                 t('tasks.view')
               )
             : '--'
-        }
+          }
       },
       {
         title: t('project.synchronization_instance.start_time'),
@@ -217,36 +234,47 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         render: (row: any) => getRemainTime(row.runningTime),
         ...COLUMN_WIDTH_CONFIG['duration']
       },
-      useTableOperation({
+      {
         title: t('project.synchronization_instance.operation'),
         key: 'operation',
-        itemNum: 4,
-        buttons: [
-          {
-            text: t('project.workflow.recovery_suspend'),
-            icon: h(PlayCircleOutlined),
-            onClick: (row) => void handleRecover(row.id)
-          },
-          {
-            text: t('project.workflow.pause'),
-            icon: h(PauseCircleOutlined),
-            onClick: (row) => void handlePause(row.id)
-          },
-          {
-            text: t('project.synchronization_instance.view_logs'),
-            icon: h(AlignLeftOutlined),
-            onClick: (row) => void handleViewLogs(row)
-          },
-          {
-            isDelete: true,
-            text: t('project.synchronization_instance.delete'),
-            icon: h(DeleteOutlined),
-            onPositiveClick: (row) => void handleDel(row.id),
-            positiveText: t('project.synchronization_instance.confirm'),
-            popTips: t('project.synchronization_instance.delete_confirm')
-          }
-        ]
-      })
+        ...COLUMN_WIDTH_CONFIG['operation'](4),
+        width: 320,
+        render: (row: any) => {
+          return h(NSpace, { size: 'small' }, [
+            // 恢复按钮
+            h('a', {
+              class: 'sync-operation-btn',
+              onClick: () => handleRecover(row.id),
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+            }, [IconifyIcon('material-symbols:play-arrow'), t('project.workflow.recovery_suspend')]),
+
+            // 暂停按钮
+            h('a', {
+              class: 'sync-operation-btn',
+              onClick: () => handlePause(row.id),
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+            }, [IconifyIcon('material-symbols:pause'), t('project.workflow.pause')]),
+
+            // 查看日志按钮
+            h('a', {
+              class: 'sync-operation-btn',
+              onClick: () => handleViewLogs(row),
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+            }, [IconifyIcon('material-symbols:description'), t('project.synchronization_instance.view_logs')]),
+
+            // 删除按钮
+            h('a', {
+              class: 'sync-operation-btn sync-delete-btn',
+              onClick: async () => {
+                if (confirm(t('project.synchronization_instance.delete_confirm'))) {
+                  await handleDel(row.id)
+                }
+              },
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+            }, [IconifyIcon('material-symbols:delete-outline'), t('project.synchronization_instance.delete')])
+          ])
+        }
+      }
     ]
 
     if (variables.tableWidth) {
@@ -295,7 +323,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
     variables.errorMessage = errorMessage
     variables.showErrorMessageModal = true
   }
-
+  
   const handleViewLogs = async (row: any) => {
     variables.currentJobName = row.jobDefineName
     variables.currentJobId = row.jobEngineId || ''

@@ -1,4 +1,3 @@
-/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -31,9 +30,9 @@ import { SearchOutlined } from '@vicons/antd'
 import { useTable } from './use-table'
 import { TaskModal } from './task-modal'
 import { ScheduleModal } from './schedule-modal'
-import { TaskDetailModal } from './detail-modal'
 import { useRoute, useRouter } from 'vue-router'
 import _ from 'lodash'
+import './index.css'
 
 const SynchronizationDefinition = defineComponent({
   name: 'SynchronizationDefinition',
@@ -71,16 +70,6 @@ const SynchronizationDefinition = defineComponent({
     const handleScheduleModalChange = (row: any) => {
       variables.scheduleRow = row
       variables.showScheduleModalRef = true
-    }
-
-    const handleDetailModalChange = (row: any) => {
-      variables.row = row
-      variables.showDetailModalRef = true
-    }
-
-    const onCancelDetailModal = () => {
-      variables.showDetailModalRef = false
-      variables.row = {}
     }
 
     const onCancelScheduleModal = () => {
@@ -128,12 +117,12 @@ const SynchronizationDefinition = defineComponent({
 
     onMounted(() => {
       initSearch()
-      createColumns(variables, handleDetailModalChange, handleScheduleModalChange)
+      createColumns(variables, handleScheduleModalChange)
       requestData()
     })
 
     watch(useI18n().locale, () => {
-      createColumns(variables, handleDetailModalChange, handleScheduleModalChange)
+      createColumns(variables, handleScheduleModalChange)
     })
 
     return {
@@ -144,75 +133,86 @@ const SynchronizationDefinition = defineComponent({
       onCancelModal,
       onConfirmModal,
       handleModalChange,
-      handleDetailModalChange,
       handleScheduleModalChange,
-      onCancelDetailModal,
       onCancelScheduleModal,
       onSavedScheduleModal,
       onSearch,
       handleKeyup
     }
   },
-  render() {
+ render() {
     return (
-      <NSpace vertical>
-        <NCard>
-          <NSpace justify='space-between' itemStyle={{ flexGrow: 1 }}>
-            <NButton type='info' onClick={this.handleModalChange}>
-              {this.t(
-                'project.synchronization_definition.create_synchronization_task'
-              )}
-            </NButton>
-            <NSpace justify='end'>
-              <NInput
-                clearable
-                v-model={[this.searchName, 'value']}
-                placeholder={this.t(
-                  'project.synchronization_definition.task_name'
-                )}
-                onKeyup={this.handleKeyup}
+      <div class="sync-definition-wrapper">
+        {/* 顶部操作栏 - 无卡片、平铺 */}
+        <div class="sync-top-bar">
+          <NButton class="create-btn" onClick={this.handleModalChange}>
+            <NIcon size={14} style={{ marginRight: 6 }}>
+              <span
+                style={{ fontSize: '16px' }}
+                class="iconify"
+                data-icon="icon-park-outline:add"
+                aria-hidden="true"
               />
-
-              <NButton type='primary' onClick={this.onSearch}>
-                <NIcon>
-                  <SearchOutlined />
-                </NIcon>
-              </NButton>
-            </NSpace>
-          </NSpace>
-        </NCard>
-        <NCard>
-          <NSpace vertical>
-            <NDataTable
-              class='sync-definition-table'
-              loading={this.loadingRef}
-              columns={this.columns}
-              data={this.tableData}
-              scrollX={this.tableWidth}
+            </NIcon>
+            <span style={{paddingLeft:'5px'}}>{this.t('project.synchronization_definition.create_synchronization_task')}</span>
+          </NButton>
+          <NSpace>
+            <NInput
+              clearable
+              size="small"
+              style={{ width: 240,height:36+'px' }}
+              v-model={[this.searchName, 'value']}
+              placeholder={this.t('project.synchronization_definition.task_name')}
+              onKeyup={this.handleKeyup}
             />
-            <NSpace justify='center'>
-              <NPagination
-                v-model:page={this.page}
-                v-model:page-size={this.pageSize}
-                page-count={this.totalPage}
-                show-size-picker
-                page-sizes={[10, 30, 50]}
-                show-quick-jumper
-                onUpdatePage={this.requestData}
-                onUpdatePageSize={this.onUpdatePageSize}
+            <NButton class="create-btn"  onClick={this.onSearch}>
+               <span
+                style={{ fontSize: '16px' }}
+                class="iconify"
+                data-icon='icon-park-outline:find'
+                aria-hidden="true"
               />
-            </NSpace>
+              <span style={{paddingLeft:'5px'}}>{this.t('project.node.sql_type_query')}</span>
+            </NButton>
           </NSpace>
-        </NCard>
+        </div>
+
+        {/* 列表容器 - 纯扁平化 */}
+        <div class="sync-list-container">
+          {/* 表格 - 完全匹配目标样式 */}
+            <NDataTable
+            class="sync-flat-table"
+            loading={this.loadingRef}
+            columns={this.columns}
+            data={this.tableData}
+            scrollX={this.tableWidth}
+            bordered={false} // 去掉表格边框
+            size="medium"
+            align="center"
+            pagination={false} // 关闭内置分页，自定义
+          />
+
+          {/* 分页栏 - 靠右、分隔线 */}
+          <div class="sync-pagination-bar">
+            <NPagination
+              v-model:page={this.page}
+              v-model:page-size={this.pageSize}
+              page-count={this.totalPage}
+              show-size-picker
+              page-sizes={[10, 30, 50]}
+              show-quick-jumper
+              onUpdatePage={this.requestData}
+              onUpdatePageSize={this.onUpdatePageSize}
+              size="small"
+            />
+          </div>
+        </div>
+
+        {/* 模态框保持不变 */}
         <TaskModal
           showModalRef={this.showModalRef}
           onCancelModal={this.onCancelModal}
           onConfirmModal={this.onConfirmModal}
-        />
-        <TaskDetailModal
-          show={this.showDetailModalRef}
-          row={this.row}
-          onClose={this.onCancelDetailModal}
         />
         <ScheduleModal
           show={this.showScheduleModalRef}
@@ -220,7 +220,7 @@ const SynchronizationDefinition = defineComponent({
           onCancel={this.onCancelScheduleModal}
           onSaved={this.onSavedScheduleModal}
         />
-      </NSpace>
+      </div>
     )
   }
 })

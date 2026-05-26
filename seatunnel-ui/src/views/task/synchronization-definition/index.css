@@ -1,0 +1,212 @@
+/* 同步定义页面 - 完全匹配目标列表样式 */
+.sync-definition-wrapper {
+  width: 100%;
+  background-color: #f8f9fa; /* 页面背景色匹配目标图 */
+  padding: 8px 16px;
+  /* 设置 Naive UI 按钮主题色 */
+  --n-primary-color: #1960bc;
+  --n-primary-color-hover: #2a72d3;
+  --n-primary-color-pressed: #15509b;
+  --n-primary-color-suppl: #1960bc;
+}
+
+/* 按钮样式 - 去除圆角 */
+.sync-definition-wrapper :deep(.n-button) {
+  border-radius: 0 !important;
+}
+
+/* 主要按钮颜色 */
+.sync-definition-wrapper :deep(.n-button--primary-type) {
+  background-color: #1960bc !important;
+  border-color: #1960bc !important;
+}
+
+.sync-definition-wrapper :deep(.n-button--primary-type:hover) {
+  background-color: #2a72d3 !important;
+  border-color: #2a72d3 !important;
+}
+
+.sync-definition-wrapper :deep(.n-button--primary-type:active) {
+  background-color: #15509b !important;
+  border-color: #15509b !important;
+}
+
+/* 顶部操作栏 - 无卡片、平铺样式 */
+.sync-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+
+/* 列表容器 - 纯白色背景、无边框、扁平化 */
+.sync-list-container {
+  /* background-color: #f8f9fa; */
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* 表格整体样式 - 完全扁平化 */
+.sync-flat-table {
+  --n-border-color: transparent; /* 去掉所有边框 */
+  --n-header-text-color: #333;
+  --n-text-color: #666;
+  --n-th-color: #cccccc; /* 表头背景色 */
+  --n-th-color-modal: #cccccc;
+  --n-th-color-popover: #cccccc;
+}
+
+/* 表头样式 - 灰色背景、无下边框 */
+.sync-flat-table :deep(.n-data-table-th),
+.sync-flat-table :deep(.n-data-table-thead) th {
+  background-color: #cccccc !important;
+}
+
+/* 表头单元格 - 左对齐、加粗 */
+.sync-flat-table :deep(.n-data-table-th) {
+  text-align: left;
+  font-weight: 600;
+  padding: 12px 16px !important;
+  color: #333;
+}
+
+/* 表格行 - 高度统一、下分隔线 */
+.sync-flat-table :deep(.n-data-table-tr) {
+  height: 56px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+/* 单元格 - 左对齐、内边距统一 */
+.sync-flat-table :deep(.n-data-table-td) {
+  text-align: center;
+  padding: 12px 16px !important;
+  color: #666;
+}
+
+/* 操作按钮 - 文字链接样式（无背景、无边框） */
+.sync-operation-btn {
+  font-weight: 400;
+  background: transparent !important;
+  border: none !important;
+  color: #7598c4 !important;
+  cursor: pointer;
+  font-size: 16px !important;
+}
+.sync-operation-btn:hover {
+  color: #40a9ff !important;
+  background: transparent !important;
+}
+
+/* 分页容器 - 靠右、浅灰分隔线 */
+.sync-pagination-bar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+ 
+}
+
+/* 开关样式 - 匹配目标图的蓝色开关 */
+.sync-status-switch :deep(.n-switch__rail) {
+  background-color: #d9d9d9;
+}
+.sync-status-switch :deep(.n-switch__rail--active) {
+  background-color: #1890ff !important;
+}
+
+/* Iconify 图标样式 */
+.sync-operation-btn span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+.sync-operation-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.n-data-table-th{
+  font-family: SourceHanSansCN !important;
+  text-align: center !important;
+   height: 58px;
+  font-weight: 400;
+  color: #000;
+  font-size: 16px;
+  background-color: #f3f7fb !important;
+}
+.n-data-table-td{
+  font-family: SourceHanSansCN !important;
+  text-align: center !important;
+  height: 60px;
+  font-weight: 400;
+  color: #4a5567 !important;
+  font-size: 16px;
+  background-color: #ffffff !important;
+}
+.n-pagination-item{
+  height: 40px !important;
+  width: 32px !important;
+  border-radius: 4px !important;
+}
+.n-pagination-item--active{
+  background-color: #1960bc !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+.n-base-selection-label{
+  height: 40px !important;
+  border-radius:4px !important;
+  font-size: 14px !important;
+}
+.n-pagination .n-pagination-item.n-pagination-item--disabled.n-pagination-item--active, .n-pagination .n-pagination-item.n-pagination-item--disabled.n-pagination-item--button{
+  background-color: #f5f7fa !important;
+  border:none !important;
+}
+.n-base-selection .n-base-selection__border, .n-base-selection .n-base-selection__state-border{
+  border-radius: 4px !important;
+}
+.sync-pagination-bar .n-input-wrapper{
+  display: flex;
+  font-size: 16px !important;
+  align-items: center;
+  text-align: center !important;
+  height: 40px !important;
+ 
+}
+.n-input__input-el{
+font-size: 16px !important;
+}
+.n-input .n-input__border, .n-input .n-input__state-border{
+  
+  border-radius: 4px !important;
+}
+.n-pagination{
+  height: 40px !important;
+}
+.create-btn{
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  border-radius: 4px !important;
+  background-color: #1960bc !important;
+  color: #ffffff !important;
+}
+.n-input__input-el{
+  /* text-align: left !important; */
+}
+.n-input__placeholder{
+  /* text-align: left !important; */
+  font-size: 14px !important;
+}
+.select_options .n-base-selection{
+  height:32px;
+}
+.create-btn1{
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  background-color: #f3f7fb !important;
+  color: #1960bc !important;
+  border:none !important;
+}

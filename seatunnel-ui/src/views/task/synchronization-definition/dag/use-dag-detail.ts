@@ -1,4 +1,3 @@
-/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -27,18 +26,16 @@ import {
 } from '@/service/sync-task-definition'
 import { useRoute, useRouter } from 'vue-router'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
+import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import _ from 'lodash'
-import {
-  formatMessagePayload,
-  usePersistentErrorMessage
-} from '@/utils/message'
+import { formatMessagePayload } from '@/utils/message'
 import type { InputPlugin, InputEdge } from './types'
 
 export const useDagDetail = () => {
   const route = useRoute()
   const router = useRouter()
-  const message = usePersistentErrorMessage()
+  const message = useMessage()
   const { t } = useI18n()
   const dagStore = useSynchronizationDefinitionStore()
   const state = reactive({
@@ -128,8 +125,7 @@ export const useDagDetail = () => {
       plugins: InputPlugin[]
       edges: InputEdge[]
     },
-    graph: any,
-    onSaved?: () => void
+    graph: any
   ): Promise<boolean> => {
     if (state.loading) return false
     state.loading = true
@@ -150,7 +146,6 @@ export const useDagDetail = () => {
           duration: 0
         })
       } else {
-        onSaved?.()
         router.push({
           name: 'synchronization-definition',
           query: {

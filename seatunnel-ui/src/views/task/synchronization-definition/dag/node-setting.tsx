@@ -21,13 +21,12 @@
 import { defineComponent, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  NModal,
-  NCard,
+  NDrawer,
+  NDrawerContent,
   NSpace,
   NButton,
   NTabs,
-  NTabPane,
-  useDialog
+  NTabPane
 } from 'naive-ui'
 import { useNodeSettingModal } from './use-node-setting'
 import NodeModeModal from './node-model'
@@ -53,67 +52,19 @@ const NodeSetting = defineComponent({
   emits: ['cancelModal', 'confirmModal'],
   setup(props, ctx) {
     const { t } = useI18n()
-    const dialog = useDialog()
     const {
       state,
       configurationFormRef,
       modelRef,
       onSave,
-      initModelData,
       handleTab,
       handleChangeTable
     } = useNodeSettingModal(props, ctx)
 
-    const normalizeSnapshotValue = (value: any): any => {
-      if (Array.isArray(value)) {
-        return value.map((item) => normalizeSnapshotValue(item))
-      }
-      if (value && typeof value === 'object') {
-        return Object.keys(value)
-          .sort()
-          .reduce((result: Record<string, any>, key: string) => {
-            result[key] = normalizeSnapshotValue(value[key])
-            return result
-          }, {})
-      }
-      return value ?? null
-    }
-
-    const buildSnapshot = () =>
-      JSON.stringify(
-        normalizeSnapshotValue({
-          formValues: configurationFormRef.value?.getValues?.() || {},
-          selectFields: modelRef.value?.getSelectFields?.() || null
-        })
-      )
-
-    const emitCancelModal = () => {
-      state.tab = 'configuration'
-      state.width = '80vw'
-      ctx.emit('cancelModal', props.show)
-    }
-
     const cancelModal = () => {
-      const hasUnsavedModalChanges =
-        state.initialSnapshot &&
-        buildSnapshot() !== state.initialSnapshot
-
-      if (!hasUnsavedModalChanges) {
-        emitCancelModal()
-        return
-      }
-
-      dialog.warning({
-        title: t('project.synchronization_definition.cancel_edit_tip'),
-        content: t('project.synchronization_definition.cancel_edit_content_tip'),
-        positiveText: t('project.synchronization_definition.discard_changes'),
-        negativeText: t('project.synchronization_definition.continue_edit'),
-        maskClosable: false,
-        closable: false,
-        onPositiveClick: () => {
-          emitCancelModal()
-        }
-      })
+      state.tab = 'configuration'
+      state.width = '60%'
+      ctx.emit('cancelModal', props.show)
     }
 
     const isLocalFileSource = () =>
@@ -139,38 +90,13 @@ const NodeSetting = defineComponent({
           modelRef.value.setSelectFields(
             props.nodeInfo.selectTableFields?.tableFields || []
           )
-          initModelData(props.nodeInfo)
-        }
-        if (props.show) {
-          state.initialSnapshot = buildSnapshot()
         }
       }
     )
 
     return () => (
-      <NModal
-        show={props.show}
-        zIndex={1000}
-        maskClosable={false}
-        closeOnEsc={false}
-        onUpdateShow={(show) => {
-          if (!show) {
-            cancelModal()
-          }
-        }}
-      >
-        <NCard
-          title={t('project.node.current_node_settings')}
-          bordered={false}
-          style={{
-            width: state.width,
-            maxWidth: '92vw'
-          }}
-          contentStyle={{
-            maxHeight: '72vh',
-            overflowY: 'auto'
-          }}
-        >
+      <NDrawer show={props.show} width={state.width} zIndex={1000}>
+        <NDrawerContent>
           {{
             default: () => (
               <NTabs onUpdateValue={handleTab} value={state.tab}>
@@ -230,7 +156,7 @@ const NodeSetting = defineComponent({
               </NTabs>
             ),
             footer: () => (
-              <NSpace justify='end'>
+              <NSpace>
                 <NButton onClick={cancelModal}>
                   {t('project.synchronization_definition.cancel')}
                 </NButton>
@@ -240,8 +166,8 @@ const NodeSetting = defineComponent({
               </NSpace>
             )
           }}
-        </NCard>
-      </NModal>
+        </NDrawerContent>
+      </NDrawer>
     )
   }
 })

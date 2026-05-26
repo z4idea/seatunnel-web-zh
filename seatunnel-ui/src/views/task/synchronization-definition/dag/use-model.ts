@@ -71,11 +71,6 @@ export function useNodeModel(
 
   const isHttpSource = () => type === 'source' && state.datasourceName === 'Http'
 
-  const getFieldMapperDefaultName = (field: ModelRecord) => {
-    const comment = String(field.comment || '').trim()
-    return comment || field.name
-  }
-
   const getModelData = () => {
     // The sink or transform model does not have an output table structure, and
     // the input table structure will be rendered according to the upstream node
@@ -196,11 +191,8 @@ export function useNodeModel(
             // When the transform is empty, the data of the input model is directly copied to the output model.
             if (!state.secondTransformOptions && !state.transformOptions) {
               state.outputTableData = state.inputTableData.map((i: any) => {
-                return {
-                  ...i,
-                  name: getFieldMapperDefaultName(i),
-                  original_field: i.name
-                }
+                i.original_field = i.name
+                return i
               })
               return false
             }
@@ -211,7 +203,6 @@ export function useNodeModel(
               t.fields.map((f: any, i: number) => {
                 return {
                   ...f,
-                  name: getFieldMapperDefaultName(f),
                   original_field: (transformOptions && Object.keys(transformOptions).length > 0) ?
                     transformOptions.changeOrders[i].sourceFieldName :
                     f.name

@@ -1,7 +1,4 @@
 /*
- * @author: zhjj
- */
-/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -182,13 +179,6 @@ const DagCanvas = defineComponent({
         addNode(graph.value as Graph, nextCell)
       },
       getGraph: () => graph.value,
-      getEdgeState: () =>
-        (graph.value?.getEdges() || []).map((edge) => ({
-          inputPluginId: edge.getSourceCell()?.getData().pluginId,
-          targetPluginId: edge.getTargetCell()?.getData().pluginId
-        })),
-      hasUnsavedNodes: () =>
-        (graph.value?.getNodes() || []).some((node) => node.getData().unsaved),
       addNodesAndEdges: (cells: Cell.Metadata[], edges: InputEdge[]) => {
         initNodesAndEdges(graph.value as Graph, cells, edges)
         nextTick(() => {
