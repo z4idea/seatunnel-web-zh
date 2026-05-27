@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,7 +18,7 @@
 
 import { useI18n } from 'vue-i18n'
 import { reactive, ref, SetupContext } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { createSyncTaskDefinition } from '@/service/sync-task-definition'
 import type { FormItemRule } from 'naive-ui'
 import type { Router } from 'vue-router'
@@ -28,7 +29,6 @@ export function useTaskModal(
 ) {
   const { t } = useI18n()
   const router: Router = useRouter()
-  const route = useRoute()
 
   const variables = reactive({
     taskModalFormRef: ref(),
@@ -36,7 +36,7 @@ export function useTaskModal(
     model: {
       name: ref(''),
       description: ref(''),
-      jobType: ref('DATA_REPLICA')
+      jobType: ref('DATA_INTEGRATION')
     },
     rules: {
       name: {
@@ -79,11 +79,12 @@ export function useTaskModal(
     }).then((res: any) => {
       variables.model.description = ''
       variables.model.name = ''
+      variables.model.jobType = 'DATA_INTEGRATION'
 
       ctx.emit('confirmModal', props.showModalRef)
 
       router.push({
-        path: `/task/synchronization-definition/${res}`,
+        path: `/task/synchronization-definition/${res}`
       })
     })
   }

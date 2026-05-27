@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -96,15 +99,18 @@ export function useTaskSettingModal(ctx: SetupContext<'cancelModal'[]>) {
       state.formLocales = res.locales || {}
       const forms = config.env
         ? res.forms.map((f: any) => {
-            f.defaultValue = config.env[f.field]
+            f.defaultValue =
+              f.field === 'job.mode'
+                ? config.env[f.field] || 'BATCH'
+                : config.env[f.field]
             return f
           })
         : res.forms.map((item: any) => {
-          if(item.field === "job.mode") {
-            item.defaultValue = ''
-          }
-          return item
-        })
+            if (item.field === 'job.mode') {
+              item.defaultValue = 'BATCH'
+            }
+            return item
+          })
       state.formName = res.name
       Object.assign(state.model, useFormField(forms))
       Object.assign(state.rules, useFormValidate(forms, state.model, t))

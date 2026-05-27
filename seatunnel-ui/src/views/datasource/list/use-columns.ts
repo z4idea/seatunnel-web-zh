@@ -71,7 +71,7 @@ export function useColumns(onCallback: Function) {
                   trigger: () =>
                     h(
                       NButton,
-                      { text: true },
+                      { text: true, type: 'primary' },
                       {
                         default: () => t('datasource.click_to_view')
                       }
@@ -103,46 +103,77 @@ export function useColumns(onCallback: Function) {
         key: 'operation',
         fixed: 'right',
         width: 150,
-        render: (row: any) =>
-          h(NSpace, { size: 'small' }, [
-            h('a', {
-              class: 'sync-operation-btn',
-              onClick: () => void onCallback(row.id, 'edit'),
-              style: { display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#7598c4' }
-            }, [
-              h('i', {
-                class: 'iconify',
-                'data-icon': 'line-md:edit',
-                'data-inline': 'false',
-                style: { fontSize: '14px' }
-              }),
-              t('datasource.edit')
-            ]),
-            h(
-              NPopconfirm,
-              {
-                negativeText: t('datasource.cancel'),
-                positiveText: t('datasource.confirm'),
-                onPositiveClick: () => void onCallback(row.id, 'delete')
-              },
-              {
-                trigger: () =>
-                  h('a', {
-                    class: 'sync-operation-btn',
-                    style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
-                  }, [
-                    h('i', {
-                      class: 'iconify',
-                      'data-icon': 'material-symbols:delete-outline',
-                      'data-inline': 'false',
-                      style: { fontSize: '14px' }
-                    }),
-                    t('datasource.delete')
-                  ]),
-                default: () => t('datasource.delete_confirm')
-              }
+        render: (row: any) => {
+          const operationNodes = []
+
+          if (row.editable !== false) {
+            operationNodes.push(
+              h(
+                'a',
+                {
+                  class: 'sync-operation-btn',
+                  onClick: () => void onCallback(row.id, 'edit'),
+                  style: {
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: '#7598c4'
+                  }
+                },
+                [
+                  h('i', {
+                    class: 'iconify',
+                    'data-icon': 'line-md:edit',
+                    'data-inline': 'false',
+                    style: { fontSize: '14px' }
+                  }),
+                  t('datasource.edit')
+                ]
+              )
             )
-          ])
+          }
+
+          if (row.deletable !== false) {
+            operationNodes.push(
+              h(
+                NPopconfirm,
+                {
+                  negativeText: t('datasource.cancel'),
+                  positiveText: t('datasource.confirm'),
+                  onPositiveClick: () => void onCallback(row.id, 'delete')
+                },
+                {
+                  trigger: () =>
+                    h(
+                      'a',
+                      {
+                        class: 'sync-operation-btn',
+                        style: {
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }
+                      },
+                      [
+                        h('i', {
+                          class: 'iconify',
+                          'data-icon': 'material-symbols:delete-outline',
+                          'data-inline': 'false',
+                          style: { fontSize: '14px' }
+                        }),
+                        t('datasource.delete')
+                      ]
+                    ),
+                  default: () => t('datasource.delete_confirm')
+                }
+              )
+            )
+          }
+
+          return operationNodes.length
+            ? h(NSpace, { size: 'small' }, operationNodes)
+            : '-'
+        }
       }
     ]
   }

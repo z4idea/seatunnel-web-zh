@@ -69,6 +69,7 @@ export const useConfigurationForm = (
     name: '',
     datasourceInstanceId: null,
     datasourceInstanceName: null,
+    datasourceOrigin: '',
     sceneMode: null,
     database: null as null | string | string[],
     tableName: null as null | string | string[],
@@ -245,7 +246,10 @@ export const useConfigurationForm = (
       transformType === 'Http')
 
   const getLocalFileTableName = (path: string) => {
-    const fileName = String(path || '').split(/[\\/]/).pop() || 'local_file'
+    const fileName =
+      String(path || '')
+        .split(/[\\/]/)
+        .pop() || 'local_file'
     const dotIndex = fileName.lastIndexOf('.')
     const baseName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName
     return baseName.replace(/[^A-Za-z0-9_]/g, '_') || 'local_file'
@@ -294,6 +298,43 @@ export const useConfigurationForm = (
         form.hidden = true
       }
     })
+
+    return forms
+  }
+
+  const normalizeConnectorFieldKey = (value: string) =>
+    String(value || '')
+      .trim()
+      .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase()
+
+  const hideFieldsFrom = (forms: Array<any>, fieldKeys: string[]) => {
+    const normalizedFieldKeys = fieldKeys.map(normalizeConnectorFieldKey)
+    const hiddenStartIndex = forms.findIndex((form) => {
+      const normalizedField = normalizeConnectorFieldKey(form.field)
+      const normalizedLabel = normalizeConnectorFieldKey(form.label)
+      return (
+        normalizedFieldKeys.includes(normalizedField) ||
+        normalizedFieldKeys.includes(normalizedLabel)
+      )
+    })
+
+    return hiddenStartIndex >= 0 ? forms.slice(0, hiddenStartIndex) : forms
+  }
+
+  const applyConnectorFieldVisibility = (forms: Array<any>) => {
+    if (nodeType === 'source' && !isLocalFileSource() && !isHttpSource()) {
+      return hideFieldsFrom(forms, ['user', 'username', 'jdbc_username'])
+    }
+
+    if (
+      nodeType === 'sink' &&
+      String(state.model.datasourceOrigin || '').toUpperCase() === 'SLINK'
+    ) {
+      return hideFieldsFrom(forms, ['create_index'])
+    }
 
     return forms
   }
@@ -371,7 +412,8 @@ export const useConfigurationForm = (
   }
 
   const refreshIncrementalColumnOptions = async () => {
-    if (nodeType !== 'source' || !hasIncrementalFields() || isHttpSource()) return
+    if (nodeType !== 'source' || !hasIncrementalFields() || isHttpSource())
+      return
 
     const datasourceInstanceId = state.model.datasourceInstanceId
     const database = getSingleValue(state.model.database)
@@ -474,6 +516,10 @@ export const useConfigurationForm = (
     option?: any
   ) => {
     if (option?.label) state.model.datasourceInstanceName = option.label
+    const datasourceDetail = datasourceInstanceId
+      ? await getDatasourceDetail(datasourceInstanceId)
+      : null
+    state.model.datasourceOrigin = datasourceDetail?.origin || ''
     if (option?.datasourceName) {
       state.model.datasourceName = option.datasourceName
       if (!['LocalFile', 'Http'].includes(option.datasourceName)) {
@@ -485,11 +531,11 @@ export const useConfigurationForm = (
       clearHttpSourceState()
     }
     if (option?.datasourceName === 'LocalFile') {
-      const datasourceDetail = await getDatasourceDetail(datasourceInstanceId)
-      const datasourceConfig = datasourceDetail.datasourceConfig || {}
+      const datasourceConfig = datasourceDetail?.datasourceConfig || {}
       state.model.localFilePath = datasourceConfig.path || ''
-      state.model.localFileFormat =
-        (datasourceConfig.file_format_type || '').toLowerCase()
+      state.model.localFileFormat = (
+        datasourceConfig.file_format_type || ''
+      ).toLowerCase()
       state.model.encoding = datasourceConfig.encoding || 'UTF-8'
       state.model.sceneMode = 'SINGLE_TABLE'
       state.model.columnSelectable = false
@@ -499,8 +545,7 @@ export const useConfigurationForm = (
       return
     }
     if (option?.datasourceName === 'Http') {
-      const datasourceDetail = await getDatasourceDetail(datasourceInstanceId)
-      const datasourceConfig = datasourceDetail.datasourceConfig || {}
+      const datasourceConfig = datasourceDetail?.datasourceConfig || {}
       state.model.httpDatasourceConfig = datasourceConfig
       state.model.sceneMode = 'SINGLE_TABLE'
       state.model.columnSelectable = false
@@ -602,6 +647,7 @@ export const useConfigurationForm = (
           !['exclude_kinds', 'include_kinds'].includes(form.field)
       )
       res.forms = decorateIncrementalFormFields(res.forms)
+      res.forms = applyConnectorFieldVisibility(res.forms)
       state.formFieldNames = res.forms.map(
         (form: { field: string }) => form.field
       )
@@ -787,7 +833,8 @@ export const useConfigurationForm = (
         isComponentDefaultName(values.name) && localizedDefaultName
           ? localizedDefaultName
           : values.name
-      state.model.sceneMode = values.sceneMode
+      state.model.sceneMode =
+        values.sceneMode || (nodeType === 'source' ? 'SINGLE_TABLE' : null)
       if (state.model.sourceKind === 'LOCAL_FILE' && !state.model.sceneMode) {
         state.model.sceneMode = 'SINGLE_TABLE'
       }
@@ -862,7 +909,8 @@ export const useConfigurationForm = (
         state.model.httpSchemaFields = normalizeSchemaFields(
           values.outputSchema[0].fields || []
         )
-        state.model.httpSchemaCustomized = state.model.httpSchemaFields.length > 0
+        state.model.httpSchemaCustomized =
+          state.model.httpSchemaFields.length > 0
         syncHttpTableOptions(
           values.tableOption?.tables?.length
             ? values.tableOption.tables[0]

@@ -80,7 +80,6 @@ const WEEK_DAY_OPTIONS = [
 ]
 const WEEK_DAY_ORDER = WEEK_DAY_OPTIONS.map((item) => item.value)
 const CRON_TEMPLATE_OPTIONS = [
-  { label: '手动输入', value: 'CUSTOM' },
   { label: '每天固定时间', value: 'DAILY_AT' },
   { label: '每周指定星期', value: 'WEEKLY_DAYS_AT' },
   { label: '工作日固定时间', value: 'WEEKDAYS_AT' },
@@ -88,10 +87,13 @@ const CRON_TEMPLATE_OPTIONS = [
   { label: '每月第一天固定时间', value: 'MONTH_FIRST_AT' },
   { label: '每月最后一天固定时间', value: 'MONTH_LAST_AT' },
   { label: '每季度第一天固定时间', value: 'QUARTER_FIRST_AT' },
+  { label: '每季度最后一天固定时间', value: 'QUARTER_LAST_AT' },
   { label: '每年第一天固定时间', value: 'YEAR_FIRST_AT' },
+  { label: '每年最后一天固定时间', value: 'YEAR_LAST_AT' },
   { label: '每隔几小时', value: 'EVERY_N_HOURS' },
   { label: '每隔几分钟', value: 'EVERY_N_MINUTES' },
-  { label: '每隔几秒', value: 'EVERY_N_SECONDS' }
+  { label: '每隔几秒', value: 'EVERY_N_SECONDS' },
+  { label: '手动输入', value: 'CUSTOM' }
 ]
 const CRON_FIELD_LABEL_STYLE = {
   width: '30px',
@@ -128,7 +130,7 @@ const ScheduleModal = defineComponent({
     const historyData = ref<any[]>([])
     const advancedExpandedNames = ref<string[]>([])
     const cronTemplate = reactive({
-      type: 'CUSTOM',
+      type: 'DAILY_AT',
       hour: 0,
       minute: 0,
       second: 0,
@@ -172,6 +174,19 @@ const ScheduleModal = defineComponent({
         title: t('project.synchronization_definition.schedule_status'),
         key: 'status',
         render: (row: any) => renderSyncTaskStatusTag(row.status, t)
+      },
+      {
+        title: t('project.synchronization_definition.schedule_write_row_count'),
+        key: 'writeRowCount',
+        render: (row: any) =>
+          row.writeRowCount === null || row.writeRowCount === undefined
+            ? '-'
+            : row.writeRowCount
+      },
+      {
+        title: t('project.synchronization_definition.schedule_error_message'),
+        key: 'errorMessage',
+        render: (row: any) => row.errorMessage || '-'
       },
       {
         title: t('project.synchronization_definition.schedule_instance_id'),
@@ -225,8 +240,12 @@ const ScheduleModal = defineComponent({
           return `${second} ${minute} ${hour} L * ?`
         case 'QUARTER_FIRST_AT':
           return `${second} ${minute} ${hour} 1 1/3 ?`
+        case 'QUARTER_LAST_AT':
+          return `${second} ${minute} ${hour} L 3,6,9,12 ?`
         case 'YEAR_FIRST_AT':
           return `${second} ${minute} ${hour} 1 1 ?`
+        case 'YEAR_LAST_AT':
+          return `${second} ${minute} ${hour} L 12 ?`
         case 'EVERY_N_HOURS':
           return `${second} ${minute} 0/${interval} * * ?`
         case 'EVERY_N_MINUTES':
@@ -340,10 +359,34 @@ const ScheduleModal = defineComponent({
         return
       }
 
+      match = cronExpression.match(
+        /^(\d{1,2}) (\d{1,2}) (\d{1,2}) L 3,6,9,12 \?$/
+      )
+      if (match) {
+        Object.assign(cronTemplate, {
+          type: 'QUARTER_LAST_AT',
+          second: Number(match[1]),
+          minute: Number(match[2]),
+          hour: Number(match[3])
+        })
+        return
+      }
+
       match = cronExpression.match(/^(\d{1,2}) (\d{1,2}) (\d{1,2}) 1 1 \?$/)
       if (match) {
         Object.assign(cronTemplate, {
           type: 'YEAR_FIRST_AT',
+          second: Number(match[1]),
+          minute: Number(match[2]),
+          hour: Number(match[3])
+        })
+        return
+      }
+
+      match = cronExpression.match(/^(\d{1,2}) (\d{1,2}) (\d{1,2}) L 12 \?$/)
+      if (match) {
+        Object.assign(cronTemplate, {
+          type: 'YEAR_LAST_AT',
           second: Number(match[1]),
           minute: Number(match[2]),
           hour: Number(match[3])
@@ -421,8 +464,12 @@ const ScheduleModal = defineComponent({
           return `每月最后一天 ${hour}:${minute}:${second} 执行`
         case 'QUARTER_FIRST_AT':
           return `每季度第一天 ${hour}:${minute}:${second} 执行`
+        case 'QUARTER_LAST_AT':
+          return `每季度最后一天 ${hour}:${minute}:${second} 执行`
         case 'YEAR_FIRST_AT':
           return `每年第一天 ${hour}:${minute}:${second} 执行`
+        case 'YEAR_LAST_AT':
+          return `每年最后一天 ${hour}:${minute}:${second} 执行`
         case 'EVERY_N_HOURS':
           return `每隔 ${interval} 小时，在第 ${minute} 分 ${second} 秒执行`
         case 'EVERY_N_MINUTES':
@@ -454,7 +501,7 @@ const ScheduleModal = defineComponent({
       historyData.value = []
       advancedExpandedNames.value = []
       Object.assign(cronTemplate, {
-        type: 'CUSTOM',
+        type: 'DAILY_AT',
         hour: 0,
         minute: 0,
         second: 0,
@@ -465,7 +512,7 @@ const ScheduleModal = defineComponent({
         id: null,
         jobDefineId: props.row?.id || null,
         cronExpression: '',
-        enabled: false,
+        enabled: true,
         activeStartTime: null,
         activeEndTime: null,
         nextTriggerTime: '',
@@ -473,6 +520,7 @@ const ScheduleModal = defineComponent({
         lastScheduleStatus: '',
         lastScheduleMessage: ''
       })
+      applyCronTemplate()
     }
 
     const loadSchedule = async () => {
@@ -484,7 +532,7 @@ const ScheduleModal = defineComponent({
           id: res?.id || null,
           jobDefineId: props.row.id,
           cronExpression: res?.cronExpression || '',
-          enabled: !!res?.enabled,
+          enabled: res?.id ? !!res?.enabled : true,
           activeStartTime: res?.activeStartTime || null,
           activeEndTime: res?.activeEndTime || null,
           nextTriggerTime: res?.nextTriggerTime || '',
@@ -492,7 +540,11 @@ const ScheduleModal = defineComponent({
           lastScheduleStatus: res?.lastScheduleStatus || '',
           lastScheduleMessage: res?.lastScheduleMessage || ''
         })
-        syncCronTemplateFromExpression(res?.cronExpression || '')
+        if (res?.cronExpression?.trim()) {
+          syncCronTemplateFromExpression(res.cronExpression)
+        } else {
+          applyCronTemplate()
+        }
       } finally {
         loading.value = false
       }
@@ -637,6 +689,7 @@ const ScheduleModal = defineComponent({
       advancedExpandedNames,
       cronTemplate,
       buildCronDescription,
+      normalizeWeekDays,
       formModel,
       rules,
       scheduleColumns,
@@ -717,6 +770,8 @@ const ScheduleModal = defineComponent({
                                   'MONTH_FIRST_AT',
                                   'MONTH_LAST_AT',
                                   'QUARTER_FIRST_AT',
+                                  'QUARTER_LAST_AT',
+                                  'YEAR_LAST_AT',
                                   'YEAR_FIRST_AT'
                                 ].includes(this.cronTemplate.type) && (
                                   <NSpace
@@ -785,7 +840,9 @@ const ScheduleModal = defineComponent({
                                     value={this.cronTemplate.weekDays}
                                     onUpdateValue={(value) =>
                                       (this.cronTemplate.weekDays =
-                                        normalizeWeekDays(value as string[]))
+                                        this.normalizeWeekDays(
+                                          value as string[]
+                                        ))
                                     }
                                   >
                                     <NSpace>

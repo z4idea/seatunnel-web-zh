@@ -63,6 +63,8 @@ export function useSyncTask(syncTaskType = 'BATCH') {
   const router: Router = useRouter()
   const route = useRoute()
   const message = useMessage()
+  const runningJobStatuses = new Set(['RUNNING', 'EXECUTING'])
+  const recoverableJobStatuses = new Set(['PAUSED', 'PAUSE'])
 
   // 自定义 Iconify 图标组件
   const IconifyIcon = (iconName: string) => {
@@ -137,11 +139,31 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         : 180
     const linkStyle =
       'display: inline-flex; align-items: center; gap: 8px; max-width: 100%; color: var(--n-color-target); text-decoration: none; cursor: pointer;'
+    const errorMessageLinkStyle =
+      'color: #2d6cdf; text-decoration: none; cursor: pointer;'
 
     const getExecutionModeLabel = (executionMode?: string) =>
       executionMode === 'SCHEDULE'
         ? t('project.synchronization_instance.execution_mode_schedule')
         : t('project.synchronization_instance.execution_mode_manual')
+
+    const normalizeJobStatus = (jobStatus?: string) =>
+      String(jobStatus || '').trim().toUpperCase()
+
+    const isPauseEnabled = (jobStatus?: string) =>
+      runningJobStatuses.has(normalizeJobStatus(jobStatus))
+
+    const isRecoverEnabled = (jobStatus?: string) =>
+      recoverableJobStatuses.has(normalizeJobStatus(jobStatus))
+
+    const getOperationStyle = (enabled: boolean) => ({
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      cursor: enabled ? 'pointer' : 'not-allowed',
+      opacity: enabled ? 1 : 0.45,
+      pointerEvents: enabled ? 'auto' : 'none'
+    })
 
     variables.columns = [
       {
@@ -229,7 +251,7 @@ export function useSyncTask(syncTaskType = 'BATCH') {
                 {
                   href: '#',
                   title: t('tasks.view'),
-                  style: linkStyle,
+                  style: errorMessageLinkStyle,
                   onClick: (event: MouseEvent) => {
                     event.preventDefault()
                     handleViewErrorMessage(row.errorMessage)
@@ -262,19 +284,22 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         ...COLUMN_WIDTH_CONFIG['operation'](4),
         width: 320,
         render: (row: any) => {
+          const pauseEnabled = isPauseEnabled(row.jobStatus)
+          const recoverEnabled = isRecoverEnabled(row.jobStatus)
+
           return h(NSpace, { size: 'small' }, [
             // 恢复按钮
             h('a', {
               class: 'sync-operation-btn',
-              onClick: () => handleRecover(row.id),
-              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+              onClick: () => recoverEnabled && handleRecover(row),
+              style: getOperationStyle(recoverEnabled)
             }, [IconifyIcon('material-symbols:play-arrow'), t('project.workflow.recovery_suspend')]),
 
             // 暂停按钮
             h('a', {
               class: 'sync-operation-btn',
-              onClick: () => handlePause(row.id),
-              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+              onClick: () => pauseEnabled && handlePause(row),
+              style: getOperationStyle(pauseEnabled)
             }, [IconifyIcon('material-symbols:pause'), t('project.workflow.pause')]),
 
             // 查看日志按钮
@@ -328,13 +353,15 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         variables.loadingRef = false
       })
   }
-  const handleRecover = (id: number) => {
-    hanldleRecoverJob(id).then(() => {
+  const handlePause = (row: any) => {
+    hanldlePauseJob(row.id).then(() => {
+      row.jobStatus = 'PAUSED'
       message.success(t('common.success_tips'))
     })
   }
-  const handlePause = (id: number) => {
-    hanldlePauseJob(id).then(() => {
+  const handleRecover = (row: any) => {
+    hanldleRecoverJob(row.id).then(() => {
+      row.jobStatus = 'RUNNING'
       message.success(t('common.success_tips'))
     })
   }
