@@ -1297,6 +1297,8 @@ export default {
     sync_task_definition: '采集任务定义',
     data_pipeline_running_instance: '数据管道运行实例',
     task_name: '任务名称',
+    execution_mode_manual: '手动执行',
+    execution_mode_schedule: '定期执行',
     workflow_instance: '工作流实例',
     execute_user: '执行用户',
     host: '主机',

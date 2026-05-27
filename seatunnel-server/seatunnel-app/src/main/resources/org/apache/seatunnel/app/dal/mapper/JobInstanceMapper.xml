@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- @author: zhjj -->
 <!--
     Licensed to the Apache Software Foundation (ASF) under one or more
     contributor license agreements.  See the NOTICE file distributed with
@@ -33,7 +34,18 @@
     </sql>
 
     <select id="queryJobInstanceListPaging" resultType="org.apache.seatunnel.app.domain.dto.job.SeaTunnelJobInstanceDto">
-        SELECT ji.*, jd.name AS jobDefineName, cu.username AS username
+        SELECT ji.*,
+               jd.name AS jobDefineName,
+               cu.username AS username,
+               CASE
+                   WHEN EXISTS (
+                       SELECT 1
+                       FROM t_st_job_schedule_history jsh
+                       WHERE jsh.job_instance_id = ji.id
+                         AND jsh.workspace_id = ji.workspace_id
+                   ) THEN 'SCHEDULE'
+                   ELSE 'MANUAL'
+               END AS executionMode
         FROM t_st_job_instance ji
         LEFT JOIN t_st_job_definition jd ON ji.job_define_id = jd.id
         LEFT JOIN `user` cu ON ji.create_user_id = cu.id

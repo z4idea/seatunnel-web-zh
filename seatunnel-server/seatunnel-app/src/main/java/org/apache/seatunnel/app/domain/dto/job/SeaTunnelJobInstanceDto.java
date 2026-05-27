@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -24,6 +25,8 @@ import lombok.Data;
 @Data
 public class SeaTunnelJobInstanceDto extends JobInstance {
     private String jobDefineName;
+
+    private String executionMode;
 
     private long readRowCount;
 
