@@ -1330,6 +1330,8 @@ export default {
     sync_task_definition: 'Collection Task Definition',
     data_pipeline_running_instance: 'Data Pipeline Running Instance',
     task_name: 'Task Name',
+    execution_mode_manual: 'Manual',
+    execution_mode_schedule: 'Scheduled',
     workflow_instance: 'Workflow Instance',
     execute_user: 'Execute User',
     host: 'Host',

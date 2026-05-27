@@ -39,7 +39,7 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { ITaskState } from '@/common/types'
 import { tasksState } from '@/common/common'
-import { NEllipsis, NIcon, NSpin, NTooltip, NSpace, NPopconfirm } from 'naive-ui'
+import { NEllipsis, NIcon, NSpin, NTag, NTooltip, NSpace, NPopconfirm } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import {
   querySyncTaskInstancePaging,
@@ -136,7 +136,12 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         ? COLUMN_WIDTH_CONFIG.link_name.width
         : 180
     const linkStyle =
-      'display: inline-block; max-width: 100%; color: var(--n-color-target); text-decoration: none; cursor: pointer;'
+      'display: inline-flex; align-items: center; gap: 8px; max-width: 100%; color: var(--n-color-target); text-decoration: none; cursor: pointer;'
+
+    const getExecutionModeLabel = (executionMode?: string) =>
+      executionMode === 'SCHEDULE'
+        ? t('project.synchronization_instance.execution_mode_schedule')
+        : t('project.synchronization_instance.execution_mode_manual')
 
     variables.columns = [
       {
@@ -144,6 +149,8 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         key: 'jobDefineName',
         ...COLUMN_WIDTH_CONFIG['link_name'],
         render: (row: any) => {
+          const executionModeLabel = getExecutionModeLabel(row.executionMode)
+          const taskNameMaxWidth = Math.max(taskNameColumnWidth - 92, 72)
           const targetRoute = {
             path: `/task/synchronization-instance/${row.jobDefineId}`,
             query: {
@@ -163,13 +170,26 @@ export function useSyncTask(syncTaskType = 'BATCH') {
                 router.push(targetRoute)
               }
             },
-            h(
-              NEllipsis,
-              {
-                style: `max-width: ${taskNameColumnWidth - 24}px`
-              },
-              () => row.jobDefineName || '-'
-            )
+            [
+              h(
+                NEllipsis,
+                {
+                  style: `max-width: ${taskNameMaxWidth}px`
+                },
+                () => row.jobDefineName || '-'
+              ),
+              h(
+                NTag,
+                {
+                  size: 'small',
+                  round: true,
+                  bordered: false,
+                  type: row.executionMode === 'SCHEDULE' ? 'info' : 'default',
+                  style: { flexShrink: 0 }
+                },
+                () => executionModeLabel
+              )
+            ]
           )
         }
       },
