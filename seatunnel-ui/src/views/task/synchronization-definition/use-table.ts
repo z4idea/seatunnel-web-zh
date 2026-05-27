@@ -89,6 +89,7 @@ export function useTable() {
           'project.synchronization_definition.synchronization_task_name'
         ),
         key: 'name',
+        bordered: true,
         ...COLUMN_WIDTH_CONFIG['name']
       },
       {

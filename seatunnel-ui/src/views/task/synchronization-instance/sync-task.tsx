@@ -365,7 +365,9 @@ const SyncTask = defineComponent({
           </div>
           <NSpace vertical>
             <NDataTable
-              class='sync-flat-table'
+              bordered={true}
+             
+            
               loading={this.loadingRef}
               columns={this.tableColumn}
               data={this.tableData}

@@ -20,7 +20,7 @@
 
 export default {
   id: 'Id',
-  datasource: '数据源',
+  datasource: '数据源管理',
   create_datasource: '创建源',
   choose_datasource_type: '选择源类型',
   search:'搜索',

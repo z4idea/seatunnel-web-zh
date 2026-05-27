@@ -218,11 +218,13 @@ export function useSyncTask(syncTaskType = 'BATCH') {
       {
         title: t('project.synchronization_instance.amount_of_data_read'),
         key: 'readRowCount',
+        bordered: true,
         ...COLUMN_WIDTH_CONFIG['tag']
       },
       {
         title: t('project.synchronization_instance.amount_of_data_written'),
         key: 'writeRowCount',
+         bordered: true,
         ...COLUMN_WIDTH_CONFIG['tag']
       },
       {

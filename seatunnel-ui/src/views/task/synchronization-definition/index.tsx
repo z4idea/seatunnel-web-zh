@@ -145,7 +145,7 @@ const SynchronizationDefinition = defineComponent({
     return (
       <div class="sync-definition-wrapper" style={{ backgroundColor: '#ffffff', borderRadius: '4px', paddingTop: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center',marginBottom:'16px' }}>
-            <span class="title-text">同步任务实例</span>
+            <span class="title-text">采集任务设计</span>
           </div>
         {/* 顶部操作栏 - 无卡片、平铺 */}
         <div class="sync-top-bar">

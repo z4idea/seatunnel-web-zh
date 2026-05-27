@@ -35,7 +35,7 @@ const SynchronizationInstance = defineComponent({
     return (
        <div style={{ backgroundColor: '#ffffff', borderRadius: '4px', padding: '16px' }}>
            <div style={{ display: 'flex', alignItems: 'center',marginBottom:'16px' }}>
-            <span class="title-text">同步任务定义</span>
+            <span class="title-text">采集执行历史</span>
           </div>
           <NTabs type='segment' v-model:value={this.syncTaskType} animated>
             <NTabPane
