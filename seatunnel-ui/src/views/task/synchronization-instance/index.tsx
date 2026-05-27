@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, KeepAlive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NSpace, NTabs, NTabPane } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
@@ -33,22 +33,29 @@ const SynchronizationInstance = defineComponent({
   },
   render() {
     return (
-      <NSpace vertical>
-        <NTabs type='segment' v-model:value={this.syncTaskType}>
-          <NTabPane
-            name='BATCH'
-            tab={this.t('project.synchronization_instance.offline_sync')}
-          >
-            <SyncTask syncTaskType='BATCH' />
-          </NTabPane>
-          <NTabPane
-            name='STREAMING'
-            tab={this.t('project.synchronization_instance.real_time_sync')}
-          >
-            <SyncTask syncTaskType='STREAMING' />
-          </NTabPane>
-        </NTabs>
-      </NSpace>
+       <div style={{ backgroundColor: '#ffffff', borderRadius: '4px', padding: '16px' }}>
+           <div style={{ display: 'flex', alignItems: 'center',marginBottom:'16px' }}>
+            <span class="title-text">同步任务定义</span>
+          </div>
+          <NTabs type='segment' v-model:value={this.syncTaskType} animated>
+            <NTabPane
+              name='BATCH'
+              tab={this.t('project.synchronization_instance.offline_sync')}
+            >
+              <KeepAlive>
+                <SyncTask syncTaskType='BATCH' />
+              </KeepAlive>
+            </NTabPane>
+            <NTabPane
+              name='STREAMING'
+              tab={this.t('project.synchronization_instance.real_time_sync')}
+            >
+              <KeepAlive>
+                <SyncTask syncTaskType='STREAMING' />
+              </KeepAlive>
+            </NTabPane>
+          </NTabs>
+        </div>
     )
   }
 })

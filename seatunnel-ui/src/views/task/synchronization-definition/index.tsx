@@ -25,8 +25,8 @@ import {
   NDataTable,
   NPagination
 } from 'naive-ui'
+import '@iconify/iconify'
 import { useI18n } from 'vue-i18n'
-import { SearchOutlined } from '@vicons/antd'
 import { useTable } from './use-table'
 import { TaskModal } from './task-modal'
 import { ScheduleModal } from './schedule-modal'
@@ -116,6 +116,7 @@ const SynchronizationDefinition = defineComponent({
     }
 
     onMounted(() => {
+      variables.searchName = ''
       initSearch()
       createColumns(variables, handleScheduleModalChange)
       requestData()
@@ -142,7 +143,10 @@ const SynchronizationDefinition = defineComponent({
   },
  render() {
     return (
-      <div class="sync-definition-wrapper">
+      <div class="sync-definition-wrapper" style={{ backgroundColor: '#ffffff', borderRadius: '4px', paddingTop: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center',marginBottom:'16px' }}>
+            <span class="title-text">同步任务实例</span>
+          </div>
         {/* 顶部操作栏 - 无卡片、平铺 */}
         <div class="sync-top-bar">
           <NButton class="create-btn" onClick={this.handleModalChange}>

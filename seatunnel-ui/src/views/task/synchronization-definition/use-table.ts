@@ -16,16 +16,11 @@
  * limitations under the License.
  */
 
+import '@iconify/iconify'
 import { useI18n } from 'vue-i18n'
 import { h, reactive, ref } from 'vue'
 import { useTableOperation } from '@/hooks'
-import {
-  ClockCircleOutlined,
-  EditOutlined,
-  PlayCircleOutlined,
-  ReloadOutlined
-} from '@vicons/antd'
-import { NTag, NSwitch, NSpace, NIcon } from 'naive-ui'
+import { NTag, NSwitch, NSpace, NIcon, NPopconfirm } from 'naive-ui'
 import {
   querySyncTaskDefinitionPaging,
   deleteSyncTaskDefinition,
@@ -187,15 +182,24 @@ export function useTable() {
               : [IconifyIcon('material-symbols:play-arrow'), t('project.synchronization_definition.start')]),
 
             // 删除按钮
-            h('a', {
-              class: 'sync-operation-btn sync-delete-btn',
-              onClick: async () => {
-                if (confirm(t('security.token.delete_confirm'))) {
+            h(
+              NPopconfirm,
+              {
+                negativeText: t('datasource.cancel') || t('common.cancel'),
+                positiveText: t('datasource.confirm') || t('common.confirm'),
+                onPositiveClick: async () => {
                   await handleDelete(row)
                 }
               },
-              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
-            }, [IconifyIcon('material-symbols:delete-outline'), t('project.synchronization_definition.delete')])
+              {
+                trigger: () =>
+                  h('a', {
+                    class: 'sync-operation-btn sync-delete-btn',
+                    style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+                  }, [IconifyIcon('material-symbols:delete-outline'), t('project.synchronization_definition.delete')]),
+                default: () => t('security.token.delete_confirm')
+              }
+            )
           ])
         }
       }

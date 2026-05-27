@@ -16,17 +16,8 @@
  */
 
 import { defineComponent, reactive } from 'vue'
-import { NSpace, NCard, NButton, NIcon, NTooltip } from 'naive-ui'
-import {
-  CopyOutlined,
-  CloseCircleOutlined,
-  SaveOutlined,
-  DeleteRowOutlined,
-  FullscreenOutlined,
-  FormatPainterOutlined,
-  FullscreenExitOutlined,
-  SettingOutlined
-} from '@vicons/antd'
+import '@iconify/iconify'
+import { NSpace, NButton, NIcon, NTooltip } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useTextCopy } from '@/hooks'
 import { useRoute, useRouter } from 'vue-router'
@@ -79,7 +70,7 @@ const DagToolbar = defineComponent({
 
     return () => (
       <>
-        <NCard>
+        <div>
           <NSpace justify='space-between'>
             <NSpace align='center'>
               <span>{dagStore.getDagInfo.name}</span>
@@ -94,7 +85,12 @@ const DagToolbar = defineComponent({
                       }}
                     >
                       <NIcon>
-                        <CopyOutlined />
+                        <span
+                          class='iconify'
+                          data-icon='icon-park-outline:copy'
+                          data-inline='false'
+                          style={{ fontSize: '16px' }}
+                        />
                       </NIcon>
                     </NButton>
                   ),
@@ -114,7 +110,12 @@ const DagToolbar = defineComponent({
                       onClick={() => void (state.showSettingModal = true)}
                     >
                       <NIcon>
-                        <SettingOutlined />
+                        <span
+                          class='iconify'
+                          data-icon='icon-park-outline:setting'
+                          data-inline='false'
+                          style={{ fontSize: '16px' }}
+                        />
                       </NIcon>
                     </NButton>
                   ),
@@ -132,7 +133,12 @@ const DagToolbar = defineComponent({
                       onClick={onDelete}
                     >
                       <NIcon>
-                        <DeleteRowOutlined />
+                        <span
+                          class='iconify'
+                          data-icon='icon-park-outline:delete'
+                          data-inline='false'
+                          style={{ fontSize: '16px' }}
+                        />
                       </NIcon>
                     </NButton>
                   ),
@@ -151,9 +157,19 @@ const DagToolbar = defineComponent({
                     >
                       <NIcon>
                         {isFullscreen.value ? (
-                          <FullscreenExitOutlined />
+                          <span
+                            class='iconify'
+                            data-icon='material-symbols:fullscreen-exit'
+                            data-inline='false'
+                            style={{ fontSize: '16px' }}
+                          />
                         ) : (
-                          <FullscreenOutlined />
+                          <span
+                            class='iconify'
+                            data-icon='material-symbols:fullscreen'
+                            data-inline='false'
+                            style={{ fontSize: '16px' }}
+                          />
                         )}
                       </NIcon>
                     </NButton>
@@ -171,13 +187,18 @@ const DagToolbar = defineComponent({
                   trigger: () => (
                     <NButton
                       strong
-                      secondary
+                      
                       circle
                       type='info'
                       onClick={() => void (state.showLayoutModal = true)}
                     >
                       <NIcon>
-                        <FormatPainterOutlined />
+                        <span
+                          class='iconify'
+                          data-icon='streamline:gif-format'
+                          data-inline='false'
+                          style={{ fontSize: '16px' }}
+                        />
                       </NIcon>
                     </NButton>
                   ),
@@ -195,7 +216,12 @@ const DagToolbar = defineComponent({
                       onClick={onSave}
                     >
                       <NIcon>
-                        <SaveOutlined />
+                        <span
+                          class='iconify'
+                          data-icon='material-symbols:save'
+                          data-inline='false'
+                          style={{ fontSize: '16px' }}
+                        />
                       </NIcon>
                     </NButton>
                   ),
@@ -213,7 +239,12 @@ const DagToolbar = defineComponent({
                       onClick={onClose}
                     >
                       <NIcon>
-                        <CloseCircleOutlined />
+                        <span
+                          class='iconify'
+                          data-icon='material-symbols:close'
+                          data-inline='false'
+                          style={{ fontSize: '16px' }}
+                        />
                       </NIcon>
                     </NButton>
                   ),
@@ -222,7 +253,7 @@ const DagToolbar = defineComponent({
               </NTooltip>
             </NSpace>
           </NSpace>
-        </NCard>
+        </div>
         <LayoutModal
           showModalRef={state.showLayoutModal}
           onCancelModal={() => void (state.showLayoutModal = false)}

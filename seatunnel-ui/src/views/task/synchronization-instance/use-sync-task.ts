@@ -39,7 +39,7 @@ import {
 import { useRoute, useRouter } from 'vue-router'
 import { ITaskState } from '@/common/types'
 import { tasksState } from '@/common/common'
-import { NEllipsis, NIcon, NSpin, NTooltip, NSpace } from 'naive-ui'
+import { NEllipsis, NIcon, NSpin, NTooltip, NSpace, NPopconfirm } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import {
   querySyncTaskInstancePaging,
@@ -186,20 +186,22 @@ export function useSyncTask(syncTaskType = 'BATCH') {
       {
         title: t('project.synchronization_instance.execute_user'),
         key: 'username',
-        width:150,
-        ...COLUMN_WIDTH_CONFIG['state']
+        ...COLUMN_WIDTH_CONFIG['state'],
+        width: 150
       },
       {
         title: t('project.synchronization_instance.state'),
         key: 'jobStatus',
         width: 120,
+        minWidth: 120,
         render: (row: any) => renderSyncTaskStatusTag(row.jobStatus, t)
       },
       {
         title: t('project.synchronization_instance.error_message'),
         key: 'parameter',
-        width:150,
         ...COLUMN_WIDTH_CONFIG['state'],
+        width: 150,
+        minWidth: 150,
         render: (row: any) => {
           return row.errorMessage
             ? h(
@@ -263,15 +265,24 @@ export function useSyncTask(syncTaskType = 'BATCH') {
             }, [IconifyIcon('material-symbols:description'), t('project.synchronization_instance.view_logs')]),
 
             // 删除按钮
-            h('a', {
-              class: 'sync-operation-btn sync-delete-btn',
-              onClick: async () => {
-                if (confirm(t('project.synchronization_instance.delete_confirm'))) {
+            h(
+              NPopconfirm,
+              {
+                negativeText: t('datasource.cancel') || t('project.task.cancel'),
+                positiveText: t('datasource.confirm') || t('project.task.confirm'),
+                onPositiveClick: async () => {
                   await handleDel(row.id)
                 }
               },
-              style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
-            }, [IconifyIcon('material-symbols:delete-outline'), t('project.synchronization_instance.delete')])
+              {
+                trigger: () =>
+                  h('a', {
+                    class: 'sync-operation-btn sync-delete-btn',
+                    style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+                  }, [IconifyIcon('material-symbols:delete-outline'), t('project.synchronization_instance.delete')]),
+                default: () => t('project.synchronization_instance.delete_confirm')
+              }
+            )
           ])
         }
       }

@@ -18,12 +18,10 @@
 
 import { h } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NPopover, NButton } from 'naive-ui'
+import { NPopover, NButton, NSpace, NPopconfirm } from 'naive-ui'
 import JsonHighlight from '../components/json-highlight'
 import { getTableColumn } from '@/common/table'
-
-import { useTableOperation } from '@/hooks'
-import { EditOutlined } from '@vicons/antd'
+import '@iconify/iconify'
 
 export function useColumns(onCallback: Function) {
   const { t } = useI18n()
@@ -100,27 +98,52 @@ export function useColumns(onCallback: Function) {
         title: t('datasource.update_time'),
         key: 'updateTime'
       },
-      useTableOperation({
+      {
         title: t('datasource.operation'),
         key: 'operation',
-        buttons: [
-          {
-            text: t('datasource.edit'),
-            icon: h(EditOutlined),
-            isHidden: (rowData) => rowData.editable === false,
-            onClick: (rowData) => void onCallback(rowData.id, 'edit')
-          },
-          {
-            isDelete: true,
-            text: t('datasource.delete'),
-            isHidden: (rowData) => rowData.deletable === false,
-            onPositiveClick: (rowData) => void onCallback(rowData.id, 'delete'),
-            negativeText: t('datasource.cancel'),
-            positiveText: t('datasource.confirm'),
-            popTips: t('datasource.delete_confirm')
-          }
-        ]
-      })
+        fixed: 'right',
+        width: 150,
+        render: (row: any) =>
+          h(NSpace, { size: 'small' }, [
+            h('a', {
+              class: 'sync-operation-btn',
+              onClick: () => void onCallback(row.id, 'edit'),
+              style: { display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#7598c4' }
+            }, [
+              h('i', {
+                class: 'iconify',
+                'data-icon': 'line-md:edit',
+                'data-inline': 'false',
+                style: { fontSize: '14px' }
+              }),
+              t('datasource.edit')
+            ]),
+            h(
+              NPopconfirm,
+              {
+                negativeText: t('datasource.cancel'),
+                positiveText: t('datasource.confirm'),
+                onPositiveClick: () => void onCallback(row.id, 'delete')
+              },
+              {
+                trigger: () =>
+                  h('a', {
+                    class: 'sync-operation-btn',
+                    style: { display: 'inline-flex', alignItems: 'center', gap: '4px' }
+                  }, [
+                    h('i', {
+                      class: 'iconify',
+                      'data-icon': 'material-symbols:delete-outline',
+                      'data-inline': 'false',
+                      style: { fontSize: '14px' }
+                    }),
+                    t('datasource.delete')
+                  ]),
+                default: () => t('datasource.delete_confirm')
+              }
+            )
+          ])
+      }
     ]
   }
 

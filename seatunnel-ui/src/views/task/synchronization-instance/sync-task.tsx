@@ -44,8 +44,7 @@ import Modal from '@/components/modal'
 import LogModal from '@/components/log-modal'
 import LogViewerModal from './log-viewer-modal'
 import ErrorMessageHighlight from './error-message-highlight'
-import { SearchOutlined, ReloadOutlined } from '@vicons/antd'
-import { SyncOutlined } from '@vicons/antd'
+import '@iconify/iconify'
 import { useAsyncState } from '@vueuse/core'
 import { queryLog } from '@/service/log'
 import { LogRes } from '@/service/log/types'
@@ -266,13 +265,15 @@ const SyncTask = defineComponent({
     const { t } = this
     return (
       <NSpace vertical>
-        <NCard>
+        <div style={{ backgroundColor: '#ffffff', height: '74px' }}>
           <div
             style={{
               display: 'flex',
               flexWrap: 'wrap',
               gap: '12px',
-              alignItems: 'center'
+              alignItems: 'center',
+              height: '100%',
+              padding: '12px'
             }}
           >
             <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
@@ -329,7 +330,7 @@ const SyncTask = defineComponent({
               }}
             >
               <NSpace justify='end'>
-                <NButton onClick={this.handleReset} class="create-btn1">
+                <NButton  secondary onClick={this.handleReset} class="create-btn1">
                   <span
                 style={{ fontSize: '16px' }}
                 class="iconify"
@@ -343,7 +344,7 @@ const SyncTask = defineComponent({
                   <span
                 style={{ fontSize: '16px' }}
                 class="iconify"
-                data-icon='system-uicons:reset'
+                data-icon='icon-park-outline:find'
                 aria-hidden="true"
               />
            <span style={{paddingLeft:'5px'}}>{this.t('project.node.sql_type_query')}</span>
@@ -351,61 +352,43 @@ const SyncTask = defineComponent({
               </NSpace>
             </div>
           </div>
-        </NCard>
-        <NCard title={t('project.synchronizing_task_instance')}>
-          {{
-            'header-extra': () => (
-              <NSpace justify='space-between'>
-                <ColumnSelector
-                  tableKey='taskInstance'
-                  tableColumns={this.columns}
-                  onChangeOptions={this.handleChangeColumn}
-                ></ColumnSelector>
-                {/* <NDropdown
-                  options={this.buttonList}
-                  trigger={'click'}
-                  onSelect={this.batchBtnListClick}
-                  width={150}
-                >
-                  <NButton>
-                    {t('project.workflow.operation')}
-                    <NIcon style={{ marginLeft: '5px' }}>
-                      <DownOutlined />
-                    </NIcon>
-                  </NButton>
-                </NDropdown> */}
-              </NSpace>
-            ),
-            default: () => (
-              <NSpace vertical>
-                <NDataTable
-                  class='sync-flat-table'
-                  loading={this.loadingRef}
-                  columns={this.tableColumn}
-                  data={this.tableData}
-                  rowKey={(row) => row.id}
-                  scrollX={this.tableWidth}
-                  v-model:checked-row-keys={this.checkedRowKeys}
+        </div>
+        {/* {t('project.synchronizing_task_instance')} */}
+        <div style={{ backgroundColor: '#ffffff', padding: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ fontWeight: 500, fontSize: '16px' }}>{t('project.synchronizing_task_instance')}</div>
+            <ColumnSelector
+              tableKey='taskInstance'
+              tableColumns={this.columns}
+              onChangeOptions={this.handleChangeColumn}
+            ></ColumnSelector>
+          </div>
+          <NSpace vertical>
+            <NDataTable
+              class='sync-flat-table'
+              loading={this.loadingRef}
+              columns={this.tableColumn}
+              data={this.tableData}
+              rowKey={(row) => row.id}
+              scrollX={this.tableWidth}
+              v-model:checked-row-keys={this.checkedRowKeys}
+            />
+            <div class="sync-pagination-bar">
+              <NSpace justify='center'>
+                <NPagination
+                  v-model:page={this.page}
+                  v-model:page-size={this.pageSize}
+                  page-count={this.totalPage}
+                  show-size-picker
+                  page-sizes={[10, 30, 50]}
+                  show-quick-jumper
+                  onUpdatePage={this.requestData}
+                  onUpdatePageSize={this.onUpdatePageSize}
                 />
-                  <div class="sync-pagination-bar">
-<NSpace justify='center'>
-                  <NPagination
-                    v-model:page={this.page}
-                    v-model:page-size={this.pageSize}
-                    page-count={this.totalPage}
-                    show-size-picker
-                    page-sizes={[10, 30, 50]}
-                    show-quick-jumper
-                    onUpdatePage={this.requestData}
-                    onUpdatePageSize={this.onUpdatePageSize}
-                  />
-                </NSpace>
-                  </div>
-                
               </NSpace>
-            )
-          }}
-        </NCard>
+            </div>
+          </NSpace>
+        </div>
         <LogModal
           showModalRef={this.showModalRef}
           logRef={this.logRef}

@@ -25,7 +25,6 @@ import {
   NSpace,
   NCard
 } from 'naive-ui'
-import { SearchOutlined, ReloadOutlined } from '@vicons/antd'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useColumns } from './use-columns'
@@ -34,7 +33,8 @@ import styles from '../index.module.scss'
 import SourceModal from '../components/source-modal'
 import type { Ref } from 'vue'
 import type { TableColumns } from 'naive-ui/es/data-table/src/interface'
-
+import '@iconify/iconify'
+import './list.css'
 const DatasourceList = defineComponent({
   setup: function() {
     const { t } = useI18n()
@@ -119,54 +119,65 @@ const DatasourceList = defineComponent({
     } = this
 
     return (
-      <NSpace vertical>
-        <NCard title={t('datasource.datasource')}>
-          {{
-            'header-extra': () => (
-              <NSpace>
-                <NInput
-                  v-model={[this.searchVal, 'value']}
-                  placeholder={t('datasource.search_input_tips')}
-                  style={{ width: '200px' }}
-                />
-                <NButton onClick={this.handleSearch} type='primary'>
-                  {this.t('datasource.search')}
-                </NButton>
-                <NButton
-                  onClick={onCreate}
-                  type='success'
-                >
-                  {t('datasource.create')}
-                </NButton>
-              </NSpace>
-            )
-          }}
-        </NCard>
-        <NCard>
+      <div class="sync-definition-wrapper" style={{ backgroundColor: '#ffffff', borderRadius: '4px', paddingTop: '16px' }}>
+        <div style={{ height: '50px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span class="title-text">{t('datasource.datasource')}</span>
+          </div>
+          <NSpace>
+            <NInput
+              v-model={[this.searchVal, 'value']}
+              placeholder={t('datasource.search_input_tips')}
+              style={{ width: '200px' }}
+            />
+            <NButton onClick={this.handleSearch}  class="create-btn">
+              <NIcon>
+                <i class='iconify' data-icon='icon-park-outline:find' data-inline='false' style={{ fontSize: '16px' }} />
+              </NIcon>
+              <span style={{paddingLeft:'5px'}}>{t('datasource.search')}</span>
+            </NButton>
+           
+          </NSpace>
+        </div>
+        {/* <NCard title={t('datasource.datasource')}>
+          
+        </NCard> */}
+        <div style={{ marginTop: '16px' }}>
+          <div style={{ marginBottom: '16px' }}>
+             <NButton onClick={onCreate}  class="create-btn">
+              <NIcon>
+                <i class='iconify' data-icon='icon-park-outline:add' data-inline='false' style={{ fontSize: '16px' }} />
+              </NIcon>
+              <span style={{paddingLeft:'5px'}}>{t('datasource.create')}</span>
+            </NButton>
+          </div>
           <NDataTable
             row-class-name='data-source-items'
             columns={columns}
             data={list}
             striped
           />
-          <NPagination
-            page={page}
-            page-size={pageSize}
-            item-count={itemCount}
-            show-quick-jumper
-            show-size-picker
-            page-sizes={[10, 30, 50]}
-            class={styles['pagination']}
-            on-update:page={changePage}
-            on-update:page-size={changePageSize}
-          />
-        </NCard>
+          <div class="sync-pagination-bar">
+            <NPagination
+              page={page}
+              page-size={pageSize}
+              item-count={itemCount}
+              show-quick-jumper
+              show-size-picker
+              page-sizes={[10, 30, 50]}
+              class={styles['pagination']}
+              on-update:page={changePage}
+              on-update:page-size={changePageSize}
+            />
+          </div>
+          
+        </div>
         <SourceModal
           show={showSourceModal}
           onChange={handleSelectSourceType}
           onCancel={closeSourceModal}
         />
-      </NSpace>
+      </div>
     )
   }
 })

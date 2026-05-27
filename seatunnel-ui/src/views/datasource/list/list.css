@@ -210,10 +210,6 @@ font-size: 16px !important;
   color: #1960bc !important;
   border:none !important;
 }
-
-.create-btn1 .n-button {
-    position: auto !important;
-}
 .n-data-table.n-data-table--bordered .n-data-table-wrapper{
   border-top-left-radius: 0px !important;
   border-top-right-radius: 0px !important;

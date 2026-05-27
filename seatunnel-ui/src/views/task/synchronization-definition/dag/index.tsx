@@ -25,6 +25,7 @@ import { NSpace, NSpin } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useDagDetail } from './use-dag-detail'
 import styles from './index.module.scss'
+import './index.css'
 
 const SynchronizationDefinitionDag = defineComponent({
   name: 'SynchronizationDefinitionDag',
@@ -108,8 +109,10 @@ const SynchronizationDefinitionDag = defineComponent({
     )
 
     return () => (
+       <div class="sync-definition-wrapper" style={{ backgroundColor: '#ffffff', borderRadius: '4px', paddingTop: '16px' }}>
       <NSpin show={state.loading}>
         <NSpace vertical>
+        
           <DagToolbar
             onDelete={handleDelete}
             onSave={handleSave}
@@ -121,6 +124,7 @@ const SynchronizationDefinitionDag = defineComponent({
           </div>
         </NSpace>
       </NSpin>
+      </div>
     )
   }
 })

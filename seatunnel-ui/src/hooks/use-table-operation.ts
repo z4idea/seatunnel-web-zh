@@ -26,8 +26,21 @@ import {
   ButtonProps,
   NSwitch
 } from 'naive-ui'
-import { DeleteOutlined } from '@vicons/antd'
+import '@iconify/iconify'
 import { COLUMN_WIDTH_CONFIG } from '@/common/column-width-config'
+
+const IconifyIcon = (iconName: string) =>
+  h('span', {
+    class: 'iconify',
+    'data-icon': iconName,
+    'aria-hidden': 'true',
+    style: {
+      fontSize: '16px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  })
 
 
 export const useTableOperation = (
@@ -121,9 +134,10 @@ export const useTableOperation = (
                       },
                       {
                         default: () =>
-                          h(NIcon, null, {
-                            default: () => button.icon || h(DeleteOutlined)
-                          })
+                          h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } }, [
+                            h(NIcon, null, { default: () => button.icon || h(DeleteOutlined) }),
+                            h('span', null, buttonText)
+                          ])
                       }
                     ),
                   default: () => button.popTips
@@ -172,7 +186,10 @@ export const useTableOperation = (
                 button.onClick ? void button.onClick(rowData) : () => {}
             },
             {
-              default: () => h(NIcon, null, { default: () => buttonIcon })
+              default: () => h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } }, [
+                h(NIcon, null, { default: () => buttonIcon }),
+                h('span', null, buttonText)
+              ])
             }
           ),
           default: () => buttonText
