@@ -1342,6 +1342,8 @@ export default {
     delete: '删除',
     delete_confirm: '确定删除吗?',
     error_message: '错误信息',
+    issue_detail: '异常详情',
+    completed_with_issue_tip: '任务状态已完成，但引擎返回了异常详情，请结合日志一起判断。',
     task_metrics: '任务监控'
   },
   menu: {
