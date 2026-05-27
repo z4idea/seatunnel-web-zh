@@ -51,7 +51,8 @@ import {
   updateJobScheduleEnabled
 } from '@/service/sync-task-definition'
 import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
-
+import TitleIcon from '@/assets/title-icon.png'
+import './index.css'
 type ScheduleRow = {
   id: number
   name: string
@@ -699,21 +700,34 @@ const ScheduleModal = defineComponent({
       handleCronExpressionChange,
       handleTemplateTypeChange,
       handleHistoryPageChange,
-      handleHistoryPageSizeChange
+      handleHistoryPageSizeChange,
+      TitleIcon
     }
   },
   render() {
     return (
       <NModal
         show={this.show}
+    
         mask-closable={false}
         style={{ width: '920px' }}
         onUpdateShow={(value) => !value && this.handleCancel()}
       >
         <NCard
-          title={`${this.t(
-            'project.synchronization_definition.schedule_title'
-          )}${this.row?.name ? ` - ${this.row.name}` : ''}`}
+          title={(
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2c3947', fontSize: '18px', fontWeight: 600 }}>
+                <img src={TitleIcon} style={{ width: '35px', height: '35px' }} />
+                <span>{`${this.t('project.synchronization_definition.schedule_title')}${this.row?.name ? ` - ${this.row.name}` : ''}`}</span>
+              </div>
+              <div 
+                onClick={this.handleCancel}
+                style={{ cursor: 'pointer', fontSize: '20px', color: '#666', lineHeight: 1 }}
+              >
+                ×
+              </div>
+            </div>
+          )}
           contentStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
         >
           {{
@@ -1110,7 +1124,7 @@ const ScheduleModal = defineComponent({
             ),
             footer: () => (
               <NSpace justify='end'>
-                <NButton quaternary size='small' onClick={this.handleCancel}>
+                <NButton quaternary size='small' style={{ borderRadius: '4px',backgroundColor:'#f3f7fb',color:'#1960bc',height:44+'px',padding:'0 15px' }} onClick={this.handleCancel}>
                   {this.t('project.synchronization_definition.cancel')}
                 </NButton>
                 {this.activeTab === 'config' && (
@@ -1119,6 +1133,7 @@ const ScheduleModal = defineComponent({
                     type='primary'
                     loading={this.saving}
                     onClick={this.handleSave}
+                    style={{ borderRadius: '4px',backgroundColor:'#134e9a',color:'#ffffff',height:44+'px',padding:'0 15px' }}
                   >
                     {this.t('project.synchronization_definition.save')}
                   </NButton>

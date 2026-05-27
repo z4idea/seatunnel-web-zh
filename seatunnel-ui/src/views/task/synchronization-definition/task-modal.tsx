@@ -21,6 +21,7 @@ import { useI18n } from 'vue-i18n'
 import { NForm, NFormItem, NInput, NRadioGroup, NRadio, NSpace } from 'naive-ui'
 import { useTaskModal } from './use-task-modal'
 import Modal from '@/components/modal'
+import './index.css'
 
 const props = {
   showModalRef: {
@@ -90,16 +91,26 @@ const TaskModal = defineComponent({
           title={this.t(
             'project.synchronization_definition.create_synchronization_task'
           )}
+          titleClassName="my-modal-title"
           show={showModalRef}
           onCancel={this.cancelModal}
           onConfirm={this.confirmModal}
           confirmLoading={this.saving}
+        
         >
-          <NForm model={this.model} rules={this.rules} ref='taskModalFormRef'>
+          <NForm
+            model={this.model}
+            rules={this.rules}
+            ref='taskModalFormRef'
+            labelPlacement='left'
+            labelWidth={140}
+            labelAlign='right'
+          >
             <NFormItem
               label={this.t(
                 'project.synchronization_definition.synchronization_task_name'
               )}
+              label-style={{ color: '#212b36', fontWeight: 400, fontSize: '16px' }}
               path='name'
             >
               <NInput
@@ -112,6 +123,7 @@ const TaskModal = defineComponent({
             </NFormItem>
             <NFormItem
               label={this.t('project.synchronization_definition.task_describe')}
+              label-style={{ color: '#212b36', fontWeight: 400, fontSize: '16px' }}
               path='description'
             >
               <NInput
@@ -127,6 +139,7 @@ const TaskModal = defineComponent({
               label={this.t(
                 'project.synchronization_definition.business_model'
               )}
+              label-style={{ color: '#212b36', fontWeight: 400, fontSize: '16px' }}
               path='businessModel'
             >
               <NRadioGroup v-model={[this.model.jobType, 'value']}>
@@ -145,6 +158,7 @@ const TaskModal = defineComponent({
               </NRadioGroup>
             </NFormItem>
           </NForm>
+          
         </Modal>
       </template>
     )
