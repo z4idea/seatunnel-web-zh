@@ -410,6 +410,7 @@ const SyncTask = defineComponent({
           show={this.showErrorMessageModal}
           cancelShow={false}
           confirmText={t('关闭')}
+          onCancel={() => (this.showErrorMessageModal = false)}
           onConfirm={() => (this.showErrorMessageModal = false)}
           style={{ width: 'min(960px, calc(100vw - 48px))' }}
         >
