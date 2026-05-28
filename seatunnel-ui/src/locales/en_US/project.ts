@@ -1375,6 +1375,9 @@ export default {
     delete: 'Delete',
     delete_confirm: 'Delete?',
     error_message: 'Error',
+    issue_detail: 'Issue Details',
+    completed_with_issue_tip:
+      'The job finished, but the engine still returned diagnostic details. Check logs together.',
     task_metrics: 'Task Monitor'
   },
   menu: {

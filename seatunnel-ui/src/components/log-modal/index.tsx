@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -174,6 +175,7 @@ export default defineComponent({
         title={t('project.task.view_log')}
         show={this.showModalRef}
         cancelShow={false}
+        onCancel={this.confirmModal}
         onConfirm={this.confirmModal}
         style={{ width: '60%' }}
         confirmText={t('关闭')}

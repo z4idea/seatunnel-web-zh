@@ -55,7 +55,11 @@ import {
   forcedSuccessByIds
 } from '@/service/sync-task-instance'
 import { getRemainTime } from '@/utils/time'
-import { renderSyncTaskStatusTag } from './status-display'
+import {
+  isSyncTaskFailureStatus,
+  isSyncTaskSuccessStatus,
+  renderSyncTaskStatusTag
+} from './status-display'
 import '../synchronization-definition/index.css'
 
 export function useSyncTask(syncTaskType = 'BATCH') {
@@ -141,6 +145,8 @@ export function useSyncTask(syncTaskType = 'BATCH') {
       'display: inline-flex; align-items: center; gap: 8px; max-width: 100%; color: var(--n-color-target); text-decoration: none; cursor: pointer;'
     const errorMessageLinkStyle =
       'color: #2d6cdf; text-decoration: none; cursor: pointer;'
+    const issueDetailLinkStyle =
+      'color: #d97706; text-decoration: none; cursor: pointer;'
 
     const getExecutionModeLabel = (executionMode?: string) =>
       executionMode === 'SCHEDULE'
@@ -247,22 +253,41 @@ export function useSyncTask(syncTaskType = 'BATCH') {
         width: 150,
         minWidth: 150,
         render: (row: any) => {
-          return row.errorMessage
-            ? h(
-                'a',
-                {
-                  href: '#',
-                  title: t('tasks.view'),
-                  style: errorMessageLinkStyle,
-                  onClick: (event: MouseEvent) => {
-                    event.preventDefault()
-                    handleViewErrorMessage(row.errorMessage)
-                  }
-                },
-                t('tasks.view')
-              )
-            : '--'
+          if (!row.errorMessage) {
+            return '--'
           }
+
+          const isCompletedWithIssue =
+            isSyncTaskSuccessStatus(row.jobStatus) &&
+            !isSyncTaskFailureStatus(row.jobStatus)
+          const detailText = isCompletedWithIssue
+            ? t('project.synchronization_instance.issue_detail')
+            : t('tasks.view')
+          const detailLink = h(
+            'a',
+            {
+              href: '#',
+              title: detailText,
+              style: isCompletedWithIssue
+                ? issueDetailLinkStyle
+                : errorMessageLinkStyle,
+              onClick: (event: MouseEvent) => {
+                event.preventDefault()
+                handleViewErrorMessage(row.errorMessage)
+              }
+            },
+            detailText
+          )
+
+          if (!isCompletedWithIssue) {
+            return detailLink
+          }
+
+          return h(NTooltip, null, {
+            trigger: () => detailLink,
+            default: () => t('project.synchronization_instance.completed_with_issue_tip')
+          })
+        }
       },
       {
         title: t('project.synchronization_instance.start_time'),

@@ -152,13 +152,32 @@ const normalizeStatus = (status?: string) => {
   return String(status || 'UNKNOWABLE').trim().toUpperCase()
 }
 
+export const normalizeSyncTaskStatusValue = (status?: string | null) => {
+  const normalizedStatus = normalizeStatus(status || undefined)
+  return syncTaskStatusAliases[normalizedStatus] || normalizedStatus
+}
+
+export const isSyncTaskFailureStatus = (status?: string | null) => {
+  const normalizedStatus = normalizeSyncTaskStatusValue(status)
+  return (
+    normalizedStatus === 'FAILED' ||
+    normalizedStatus === 'KILLED' ||
+    normalizedStatus === 'CANCELED' ||
+    normalizedStatus === 'STOPPED'
+  )
+}
+
+export const isSyncTaskSuccessStatus = (status?: string | null) => {
+  const normalizedStatus = normalizeSyncTaskStatusValue(status)
+  return normalizedStatus === 'FINISHED'
+}
+
 export const normalizeSyncTaskStatusFilterValue = (status?: string | null) => {
   if (status == null || String(status).trim() === '') {
     return null
   }
 
-  const normalizedStatus = normalizeStatus(status)
-  return syncTaskStatusAliases[normalizedStatus] || normalizedStatus
+  return normalizeSyncTaskStatusValue(status)
 }
 
 export const getSyncTaskStatusOptions = (t: Translate) =>
