@@ -1,0 +1,305 @@
+/* @author: zhjj */
+.sync-instance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sync-instance-page__title {
+  display: flex;
+  align-items: center;
+}
+
+.sync-instance-page__title-text {
+  color: #000000;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.sync-instance-page__title-text::before {
+  content: '';
+  display: inline-block;
+  width: 29px;
+  height: 29px;
+  margin-right: 8px;
+  background: url('@/assets/list-page-title.png') no-repeat center center;
+  background-size: 100% 100%;
+  vertical-align: middle;
+}
+
+.sync-instance-page__layout {
+  display: flex;
+  min-height: 500px;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 4px;
+}
+
+.sync-instance-page__nav {
+  width: 160px;
+  padding-top: 16px;
+  border-right: 1px dashed #dde1ed;
+  flex-shrink: 0;
+}
+
+.sync-instance-page__tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 16px 20px 16px 12px;
+  color: #4b5563;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: 'PingFang SC';
+}
+
+.sync-instance-page__tab--active {
+  color: #1960bc;
+  font-weight: 500;
+}
+
+.sync-instance-page__tab-indicator {
+  position: absolute;
+  left: 0;
+  width: 4px;
+  height: 20px;
+  background-color: #1960bc;
+  border-radius: 2px;
+}
+
+.sync-instance-page__content {
+  flex: 1;
+  min-width: 0;
+  padding-left: 16px;
+  overflow: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.sync-instance-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sync-instance-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #eef2f8;
+  border-radius: 4px;
+}
+
+.sync-instance-filter-item {
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.sync-instance-filter-item--select {
+  flex-basis: 180px;
+  max-width: 220px;
+}
+
+.sync-instance-filter-item--date {
+  flex: 2 1 420px;
+  min-width: 360px;
+}
+
+.sync-instance-filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.sync-instance-filter-item .n-input,
+.sync-instance-filter-item .n-base-selection {
+  width: 100%;
+}
+
+.sync-instance-filter-item .n-input-wrapper,
+.sync-instance-filter-item .n-base-selection-label {
+  min-height: 46px;
+  border-radius: 4px;
+}
+
+.sync-instance-filter-item .n-input__input-el,
+.sync-instance-filter-item .n-base-selection-input,
+.sync-instance-filter-item .n-base-selection-placeholder {
+  font-size: 14px;
+}
+
+.sync-instance-search-btn {
+  min-width: 116px;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 4px !important;
+  background-color: #1960bc !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+}
+
+.sync-instance-search-btn__icon {
+  font-size: 16px;
+}
+
+.sync-instance-search-btn__text {
+  padding-left: 5px;
+}
+
+.sync-instance-table-card {
+  padding: 16px;
+  background-color: #ffffff;
+}
+
+.sync-instance-table {
+  --n-th-color: #f5f7fe;
+  --n-th-color-modal: #f5f7fe;
+  --n-th-color-popover: #f5f7fe;
+}
+
+.sync-instance-table .n-data-table-th {
+  height: 58px;
+  font-family: 'SourceHanSansCN' !important;
+  font-size: 16px;
+  font-weight: 400;
+  color: #000000;
+  text-align: center;
+}
+
+.sync-instance-table .n-data-table-td {
+  height: 60px;
+  font-family: 'SourceHanSansCN' !important;
+  font-size: 16px;
+  font-weight: 400;
+  color: #4a5567 !important;
+  text-align: center;
+  background-color: #ffffff !important;
+}
+
+.sync-instance-pagination {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px;
+}
+
+.sync-instance-pagination .n-pagination {
+  height: 40px;
+}
+
+.sync-instance-pagination .n-pagination-item {
+  width: 32px !important;
+  height: 40px !important;
+  border-radius: 4px !important;
+}
+
+.sync-instance-pagination .n-pagination-item--active {
+  background-color: #1960bc !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+.sync-instance-pagination .n-pagination-item.n-pagination-item--disabled.n-pagination-item--active,
+.sync-instance-pagination .n-pagination-item.n-pagination-item--disabled.n-pagination-item--button {
+  background-color: #f5f7fa !important;
+  border: none !important;
+}
+
+.sync-instance-pagination .n-base-selection-label,
+.sync-instance-pagination .n-input-wrapper {
+  height: 40px !important;
+  border-radius: 4px !important;
+  font-size: 16px !important;
+}
+
+.sync-instance-pagination .n-input-wrapper {
+  display: flex;
+  align-items: center;
+  text-align: center !important;
+}
+
+.sync-instance-pagination .n-base-selection .n-base-selection__border,
+.sync-instance-pagination .n-base-selection .n-base-selection__state-border,
+.sync-instance-pagination .n-input .n-input__border,
+.sync-instance-pagination .n-input .n-input__state-border {
+  border-radius: 4px !important;
+}
+
+.sync-operation-btn {
+  font-size: 16px !important;
+  font-weight: 400;
+  color: #7598c4 !important;
+  background: transparent !important;
+  border: none !important;
+  white-space: nowrap;
+}
+
+.sync-operation-btn:hover {
+  color: #40a9ff !important;
+  background: transparent !important;
+}
+
+.sync-operation-btn span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.sync-operation-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 1440px) {
+  .sync-instance-filter-item--date {
+    min-width: 320px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .sync-instance-page__layout {
+    flex-direction: column;
+  }
+
+  .sync-instance-page__nav {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    padding-top: 0;
+    padding-bottom: 12px;
+    border-right: none;
+    border-bottom: 1px dashed #dde1ed;
+  }
+
+  .sync-instance-page__content {
+    padding-left: 0;
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 992px) {
+  .sync-instance-filter-item,
+  .sync-instance-filter-item--select,
+  .sync-instance-filter-item--date {
+    flex-basis: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .sync-instance-filter-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .sync-instance-search-btn {
+    width: 100%;
+  }
+}
