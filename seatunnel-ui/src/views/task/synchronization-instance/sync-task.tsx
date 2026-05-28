@@ -277,14 +277,15 @@ const SyncTask = defineComponent({
           <div
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
+              flexWrap: 'nowrap',
               gap: '12px',
               alignItems: 'center',
               height: '100%',
               padding: '12px'
+             
             }}
           >
-            <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
+            <div style={{ flex: '1 1 auto', minWidth: '160px', maxWidth: '280px' }}>
               <NInput
                 style={{ width: '100%' }}
                 v-model={[this.taskName, 'value']}
@@ -294,7 +295,7 @@ const SyncTask = defineComponent({
                 onKeyup={this.handleKeyup}
               />
             </div>
-            <div style={{ flex: '1 1 180px', minWidth: '180px' }}>
+            <div style={{ flex: '1 1 auto', minWidth: '140px', maxWidth: '220px' }}>
               <NInput
                 style={{ width: '100%' }}
                 v-model={[this.executeUser, 'value']}
@@ -304,7 +305,7 @@ const SyncTask = defineComponent({
                 onKeyup={this.handleKeyup}
               />
             </div>
-            <div style={{ flex: '1 1 220px', minWidth: '220px' }} class="select_options">
+            <div style={{ flex: '1 1 auto', minWidth: '140px', maxWidth: '220px' }} class="select_options">
               <NSelect
                 style={{ width: '100%',height:'32px' }}
                 v-model={[this.stateType, 'value']}
@@ -313,7 +314,7 @@ const SyncTask = defineComponent({
                 clearable
               />
             </div>
-            <div style={{ flex: '2 1 360px', minWidth: '360px' }}>
+            <div style={{ flex: '2 1 auto', minWidth: '280px', maxWidth: '450px' }}>
               <NDatePicker
                 style={{ width: '100%' }}
                 v-model={[this.datePickerRange, 'formattedValue']}
