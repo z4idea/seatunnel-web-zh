@@ -25,6 +25,15 @@ import {
 import { useI18n } from 'vue-i18n'
 import { omit } from 'lodash'
 import { useRouter } from 'vue-router'
+import {
+  buildJdbcUrlByPlugin,
+  isJdbcPlugin,
+  JDBC_DATABASE_FIELD,
+  JDBC_HOST_FIELD,
+  JDBC_PORT_FIELD,
+  JDBC_URL_PARAMS_FIELD,
+  parseJdbcUrlByPlugin
+} from './jdbc-url'
 
 export function useDetail(
   getFieldsValue: Function,
@@ -43,13 +52,27 @@ export function useDetail(
 
   const formatParams = () => {
     const values = getFieldsValue()
+    const datasourceConfig = {
+      ...omit(values, ['pluginName', 'datasourceName', 'description'])
+    } as Record<string, any>
+    if (isJdbcPlugin(values.pluginName)) {
+      datasourceConfig.url = buildJdbcUrlByPlugin(
+        values.pluginName,
+        values[JDBC_HOST_FIELD],
+        values[JDBC_PORT_FIELD],
+        values[JDBC_DATABASE_FIELD],
+        values[JDBC_URL_PARAMS_FIELD]
+      )
+      delete datasourceConfig[JDBC_HOST_FIELD]
+      delete datasourceConfig[JDBC_PORT_FIELD]
+      delete datasourceConfig[JDBC_DATABASE_FIELD]
+      delete datasourceConfig[JDBC_URL_PARAMS_FIELD]
+    }
     return {
       datasourceName: values.datasourceName,
       pluginName: values.pluginName,
       description: values.description,
-      datasourceConfig: JSON.stringify(
-        omit(values, ['pluginName', 'datasourceName', 'description'])
-      )
+      datasourceConfig: JSON.stringify(datasourceConfig)
     }
   }
 
@@ -57,11 +80,15 @@ export function useDetail(
     try {
       const result = await datasourceDetail(id)
       await getFormItems(result.pluginName)
+      const jdbcFields = isJdbcPlugin(result.pluginName)
+        ? parseJdbcUrlByPlugin(result.pluginName, result.datasourceConfig?.url || '')
+        : {}
       setFieldsValue({
         datasourceName: result.datasourceName,
         pluginName: result.pluginName,
         description: result.description,
-        ...result.datasourceConfig
+        ...result.datasourceConfig,
+        ...jdbcFields
       })
     } finally {}
   }
@@ -71,10 +98,26 @@ export function useDetail(
     if (status.testing) return
     status.testing = true
     const values = getFieldsValue()
+    const datasourceConfig = {
+      ...omit(values, ['pluginName', 'datasourceName', 'description'])
+    } as Record<string, any>
+    if (isJdbcPlugin(values.pluginName)) {
+      datasourceConfig.url = buildJdbcUrlByPlugin(
+        values.pluginName,
+        values[JDBC_HOST_FIELD],
+        values[JDBC_PORT_FIELD],
+        values[JDBC_DATABASE_FIELD],
+        values[JDBC_URL_PARAMS_FIELD]
+      )
+      delete datasourceConfig[JDBC_HOST_FIELD]
+      delete datasourceConfig[JDBC_PORT_FIELD]
+      delete datasourceConfig[JDBC_DATABASE_FIELD]
+      delete datasourceConfig[JDBC_URL_PARAMS_FIELD]
+    }
     try {
       const result = await checkConnect({
         pluginName: values.pluginName,
-        datasourceConfig: omit(values, ['pluginName', 'datasourceName', 'description'])
+        datasourceConfig
       })
       window.$message.success(
         result.msg ? result.msg : `${t('datasource.test_connect_success')}`

@@ -32,6 +32,14 @@ import { useFormValidate } from '@/components/dynamic-form/use-form-validate'
 import { useFormStructure } from '@/components/dynamic-form/use-form-structure'
 import type { FormRules } from 'naive-ui'
 import type { ResponseBasic } from '@/service/types'
+import {
+  JDBC_DATABASE_FIELD,
+  JDBC_HOST_FIELD,
+  JDBC_PORT_FIELD,
+  JDBC_URL_PARAMS_FIELD,
+  getJdbcFieldHintByPlugin,
+  isJdbcPlugin
+} from './jdbc-url'
 
 export function useForm(type: string) {
   const { t } = useI18n()
@@ -61,10 +69,97 @@ export function useForm(type: string) {
     } as FormRules
   })
 
+  const buildJdbcFormItems = (forms: Array<any>, pluginName: string) => {
+    if (!isJdbcPlugin(pluginName)) return forms
+    const urlIndex = forms.findIndex((item) => item.field === 'url')
+    if (urlIndex < 0) return forms
+
+    const hints = getJdbcFieldHintByPlugin(pluginName)
+    const urlField = forms[urlIndex]
+    const nextForms = forms.filter((item) => item.field !== 'url')
+    const jdbcFields = [
+      {
+        field: JDBC_HOST_FIELD,
+        label: t('datasource.jdbc_host'),
+        type: 'input',
+        placeholder: t('datasource.jdbc_host_placeholder'),
+        span: 12,
+        clearable: true
+      },
+      {
+        field: JDBC_PORT_FIELD,
+        label: t('datasource.jdbc_port'),
+        type: 'input',
+        placeholder: t('datasource.jdbc_port_placeholder'),
+        span: 12,
+        clearable: true
+      },
+      {
+        field: JDBC_DATABASE_FIELD,
+        label: t('datasource.jdbc_database'),
+        type: 'input',
+        placeholder: hints.databasePlaceholder,
+        span: 12,
+        clearable: true
+      },
+      {
+        field: JDBC_URL_PARAMS_FIELD,
+        label: t('datasource.jdbc_url_params'),
+        type: 'input',
+        placeholder: `${hints.paramsPlaceholder} (e.g. ${hints.urlExample})`,
+        span: 12,
+        clearable: true
+      },
+      {
+        ...urlField,
+        show: { field: JDBC_HOST_FIELD, value: ['__never__'] }
+      }
+    ]
+    nextForms.splice(urlIndex, 0, ...jdbcFields)
+    return nextForms
+  }
+
   const getFormItems = async (value: string) => {
     state.formName = value
+    const clearJdbcRules = () => {
+      delete state.rules[JDBC_HOST_FIELD]
+      delete state.rules[JDBC_PORT_FIELD]
+      delete state.rules.url
+    }
+    const applyJdbcRules = (pluginName: string) => {
+      clearJdbcRules()
+      if (!isJdbcPlugin(pluginName)) return
+      state.rules[JDBC_HOST_FIELD] = {
+        trigger: ['input', 'blur'],
+        validator() {
+          if (!state.detailForm[JDBC_HOST_FIELD]) {
+            return new Error(t('datasource.jdbc_host_required'))
+          }
+        }
+      }
+      state.rules[JDBC_PORT_FIELD] = {
+        trigger: ['input', 'blur'],
+        validator() {
+          const port = String(state.detailForm[JDBC_PORT_FIELD] || '').trim()
+          if (!port) {
+            return new Error(t('datasource.jdbc_port_required'))
+          }
+          if (!/^\d+$/.test(port)) {
+            return new Error(t('datasource.jdbc_port_numeric'))
+          }
+        }
+      }
+    }
+
     if (formStructuresStore.getItem(value)) {
-      state.formStructure = formStructuresStore.getItem(value) as StructureItem[]
+      const cachedForms = formStructuresStore.getItem(value) as StructureItem[]
+      state.formStructure = cachedForms
+      Object.assign(state.detailForm, useFormField(cachedForms as Array<any>))
+      Object.assign(
+        state.rules,
+        useFormValidate(cachedForms as Array<any>, state.detailForm, t)
+      )
+      applyJdbcRules(value)
       return
     }
 
@@ -72,12 +167,16 @@ export function useForm(type: string) {
 
     try {
       const res = JSON.parse(result)
-      res.forms = res.forms.map((form: any) => ({ ...form, span: 12 }))
+      res.forms = buildJdbcFormItems(
+        res.forms.map((form: any) => ({ ...form, span: 12 })),
+        value
+      )
       Object.assign(state.detailForm, useFormField(res.forms))
       Object.assign(
         state.rules,
         useFormValidate(res.forms, state.detailForm, t)
       )
+      applyJdbcRules(value)
       state.locales = res.locales
       state.formStructure = useFormStructure(
         res.apis ? useFormRequest(res.apis, res.forms) : res.forms
