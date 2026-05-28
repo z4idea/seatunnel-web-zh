@@ -174,11 +174,13 @@ const ScheduleModal = defineComponent({
       {
         title: t('project.synchronization_definition.schedule_status'),
         key: 'status',
+        width: '120px',
         render: (row: any) => renderSyncTaskStatusTag(row.status, t)
       },
       {
         title: t('project.synchronization_definition.schedule_write_row_count'),
         key: 'writeRowCount',
+         width: '150px',
         render: (row: any) =>
           row.writeRowCount === null || row.writeRowCount === undefined
             ? '-'
@@ -187,16 +189,19 @@ const ScheduleModal = defineComponent({
       {
         title: t('project.synchronization_definition.schedule_error_message'),
         key: 'errorMessage',
+       
         render: (row: any) => row.errorMessage || '-'
       },
       {
         title: t('project.synchronization_definition.schedule_instance_id'),
         key: 'jobInstanceId',
+      
         render: (row: any) => row.jobInstanceId || '-'
       },
       {
         title: t('project.synchronization_definition.schedule_message'),
         key: 'message',
+        
         render: (row: any) => row.message || '-'
       }
     ]
@@ -710,12 +715,12 @@ const ScheduleModal = defineComponent({
         show={this.show}
     
         mask-closable={false}
-        style={{ width: '920px' }}
+        style={{ width: '1000px' }}
         onUpdateShow={(value) => !value && this.handleCancel()}
       >
         <NCard
           title={(
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',borderBottom:'1px solid #e5e5e5',paddingBottom:'12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2c3947', fontSize: '18px', fontWeight: 600 }}>
                 <img src={TitleIcon} style={{ width: '35px', height: '35px' }} />
                 <span>{`${this.t('project.synchronization_definition.schedule_title')}${this.row?.name ? ` - ${this.row.name}` : ''}`}</span>
@@ -733,151 +738,273 @@ const ScheduleModal = defineComponent({
           {{
             default: () => (
               <NSpin show={this.loading}>
-                <NTabs v-model:value={this.activeTab} animated>
-                  <NTabPane
-                    name='config'
-                    tab={this.t(
-                      'project.synchronization_definition.schedule_config'
-                    )}
-                  >
-                    <NSpace vertical size={16}>
-                      <NAlert type='info' showIcon={false}>
-                        {this.t(
-                          'project.synchronization_definition.schedule_cron_tip'
-                        )}
-                      </NAlert>
-                      <NForm
-                        ref='formRef'
-                        model={this.formModel}
-                        rules={this.rules}
-                        labelPlacement='left'
-                        labelWidth={140}
-                      >
-                        <NFormItem
-                          label={this.t(
-                            'project.synchronization_definition.schedule_enabled'
+                <div style={{ display: 'flex', height: '65vh' }}>
+                  {/* 左侧 tab 导航 */}
+                  <div style={{ 
+                    width: '160px', 
+                    borderRight: '1px dashed #DDE1ED',
+                   
+                  }}>
+                    <div
+                      onClick={() => this.activeTab = 'config'}
+                      style={{
+                        padding: '16px 20px 16px 12px',
+                        cursor: 'pointer',
+                        backgroundColor: this.activeTab === 'config' ? '#ffffff' : 'transparent',
+                        color: this.activeTab === 'config' ? '#1960bc' : '#4b5563',
+                        fontWeight: this.activeTab === 'config' ? 400 : 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        position: 'relative'
+                      }}
+                    >
+                      {this.activeTab === 'config' && (
+                        <div style={{
+                          position: 'absolute',
+                          left: '0px',
+                          width: '4px',
+                          height: '20px',
+                          backgroundColor: '#1960BC',
+                          borderRadius: '2px'
+                        }} />
+                      )}
+                      <span style={{fontSize:'16px'}}>{this.t('project.synchronization_definition.schedule_config')}  </span>
+                    </div>
+                    <div
+                      onClick={() => this.activeTab = 'history'}
+                      style={{
+                        padding: '16px 20px 16px 12px',
+                        cursor: 'pointer',
+                        backgroundColor: this.activeTab === 'history' ? '#ffffff' : 'transparent',
+                        color: this.activeTab === 'history' ? '#1960bc' : '#4b5563',
+                        fontWeight: this.activeTab === 'history' ? 400 : 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        position: 'relative'
+                      }}
+                    >
+                      {this.activeTab === 'history' && (
+                        <div style={{
+                          position: 'absolute',
+                          left: '0px',
+                          width: '4px',
+                          height: '20px',
+                          backgroundColor: '#1960BC',
+                          borderRadius: '2px'
+                        }} />
+                      )}
+                     <span style={{fontSize:'16px'}}>{this.t('project.synchronization_definition.schedule_history')}  </span>  
+                    </div>
+                  </div>
+
+                  {/* 右侧内容区域 */}
+                  <div style={{ flex: 1, padding: '20px', overflow: 'auto', position: 'relative', zIndex: 1 }}>
+                    {/* 配置 tab 内容 */}
+                    {this.activeTab === 'config' && (
+                      <NSpace vertical size={16}>
+                        <div style={{
+                          fontFamily:'PingFang SC',
+                          backgroundColor: '#EDF6FF',
+                          color: '#1960BC',
+                          fontWeight: 500,
+                          fontSize: '16px',
+                          padding: '12px 16px',
+                          borderRadius: '4px'
+                        }}>
+                          {this.t(
+                            'project.synchronization_definition.schedule_cron_tip'
                           )}
+                        </div>
+                        <NForm
+                          ref='formRef'
+                          model={this.formModel}
+                          rules={this.rules}
+                          labelPlacement='left'
+                          labelWidth={140}
                         >
-                          <NSwitch
-                            value={this.formModel.enabled}
-                            onUpdateValue={this.handleEnableChange}
-                          />
-                        </NFormItem>
-                        <NFormItem
-                          label={this.t(
-                            'project.synchronization_definition.schedule_quick_template'
-                          )}
-                        >
-                          <NSpace vertical size={12} style={{ width: '100%' }}>
-                            <NSelect
-                              value={this.cronTemplate.type}
-                              options={this.CRON_TEMPLATE_OPTIONS}
-                              onUpdateValue={this.handleTemplateTypeChange}
+                          <NFormItem
+                            label={this.t(
+                              'project.synchronization_definition.schedule_enabled'
+                            )}
+                          >
+                            <NSwitch
+                              value={this.formModel.enabled}
+                              onUpdateValue={this.handleEnableChange}
                             />
-                            {this.cronTemplate.type !== 'CUSTOM' && (
-                              <NSpace vertical size={12}>
-                                {[
-                                  'DAILY_AT',
-                                  'WEEKLY_DAYS_AT',
-                                  'WEEKDAYS_AT',
-                                  'WEEKENDS_AT',
-                                  'MONTH_FIRST_AT',
-                                  'MONTH_LAST_AT',
-                                  'QUARTER_FIRST_AT',
-                                  'QUARTER_LAST_AT',
-                                  'YEAR_LAST_AT',
-                                  'YEAR_FIRST_AT'
-                                ].includes(this.cronTemplate.type) && (
-                                  <NSpace
-                                    vertical
-                                    size={10}
-                                    style={CRON_FIELD_GROUP_STYLE}
-                                  >
-                                    <div style={CRON_FIELD_ROW_STYLE}>
-                                      <span style={CRON_FIELD_LABEL_STYLE}>
-                                        {this.t(
-                                          'project.synchronization_definition.schedule_hour'
-                                        )}
-                                      </span>
-                                      <NInputNumber
-                                        value={this.cronTemplate.hour}
-                                        min={0}
-                                        max={23}
-                                        placeholder='0-23'
-                                        style={CRON_FIELD_INPUT_STYLE}
-                                        onUpdateValue={(value) =>
-                                          (this.cronTemplate.hour = value || 0)
-                                        }
-                                      />
-                                    </div>
-                                    <div style={CRON_FIELD_ROW_STYLE}>
-                                      <span style={CRON_FIELD_LABEL_STYLE}>
-                                        {this.t(
-                                          'project.synchronization_definition.schedule_minute'
-                                        )}
-                                      </span>
-                                      <NInputNumber
-                                        value={this.cronTemplate.minute}
-                                        min={0}
-                                        max={59}
-                                        placeholder='0-59'
-                                        style={CRON_FIELD_INPUT_STYLE}
-                                        onUpdateValue={(value) =>
-                                          (this.cronTemplate.minute =
-                                            value || 0)
-                                        }
-                                      />
-                                    </div>
-                                    <div style={CRON_FIELD_ROW_STYLE}>
-                                      <span style={CRON_FIELD_LABEL_STYLE}>
-                                        {this.t(
-                                          'project.synchronization_definition.schedule_second'
-                                        )}
-                                      </span>
-                                      <NInputNumber
-                                        value={this.cronTemplate.second}
-                                        min={0}
-                                        max={59}
-                                        placeholder='0-59'
-                                        style={CRON_FIELD_INPUT_STYLE}
-                                        onUpdateValue={(value) =>
-                                          (this.cronTemplate.second =
-                                            value || 0)
-                                        }
-                                      />
-                                    </div>
-                                  </NSpace>
-                                )}
-                                {this.cronTemplate.type ===
-                                  'WEEKLY_DAYS_AT' && (
-                                  <NCheckboxGroup
-                                    value={this.cronTemplate.weekDays}
-                                    onUpdateValue={(value) =>
-                                      (this.cronTemplate.weekDays =
-                                        this.normalizeWeekDays(
-                                          value as string[]
-                                        ))
-                                    }
-                                  >
-                                    <NSpace>
-                                      {this.WEEK_DAY_OPTIONS.map((item) => (
-                                        <NCheckbox
-                                          key={item.value}
-                                          value={item.value}
-                                          label={item.label}
+                          </NFormItem>
+                          <NFormItem
+                            label={this.t(
+                              'project.synchronization_definition.schedule_quick_template'
+                            )}
+                          >
+                            <NSpace vertical size={12} style={{ width: '100%' }}>
+                              <NSelect
+                                value={this.cronTemplate.type}
+                                options={this.CRON_TEMPLATE_OPTIONS}
+                                onUpdateValue={this.handleTemplateTypeChange}
+                              />
+                              {this.cronTemplate.type !== 'CUSTOM' && (
+                                <NSpace vertical size={12}>
+                                  {[
+                                    'DAILY_AT',
+                                    'WEEKLY_DAYS_AT',
+                                    'WEEKDAYS_AT',
+                                    'WEEKENDS_AT',
+                                    'MONTH_FIRST_AT',
+                                    'MONTH_LAST_AT',
+                                    'QUARTER_FIRST_AT',
+                                    'QUARTER_LAST_AT',
+                                    'YEAR_LAST_AT',
+                                    'YEAR_FIRST_AT'
+                                  ].includes(this.cronTemplate.type) && (
+                                    <NSpace
+                                      vertical
+                                      size={10}
+                                      style={CRON_FIELD_GROUP_STYLE}
+                                    >
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_hour'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.hour}
+                                          min={0}
+                                          max={23}
+                                          placeholder='0-23'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.hour = value || 0)
+                                          }
                                         />
-                                      ))}
+                                      </div>
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_minute'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.minute}
+                                          min={0}
+                                          max={59}
+                                          placeholder='0-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.minute =
+                                              value || 0)
+                                          }
+                                        />
+                                      </div>
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_second'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.second}
+                                          min={0}
+                                          max={59}
+                                          placeholder='0-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.second =
+                                              value || 0)
+                                          }
+                                        />
+                                      </div>
                                     </NSpace>
-                                  </NCheckboxGroup>
-                                )}
-                                {['EVERY_N_HOURS', 'EVERY_N_MINUTES'].includes(
-                                  this.cronTemplate.type
-                                ) && (
-                                  <NSpace
-                                    vertical
-                                    size={10}
-                                    style={CRON_FIELD_GROUP_STYLE}
-                                  >
+                                  )}
+                                  {this.cronTemplate.type ===
+                                    'WEEKLY_DAYS_AT' && (
+                                    <NCheckboxGroup
+                                      value={this.cronTemplate.weekDays}
+                                      onUpdateValue={(value) =>
+                                        (this.cronTemplate.weekDays =
+                                          this.normalizeWeekDays(
+                                            value as string[]
+                                          ))
+                                      }
+                                    >
+                                      <NSpace>
+                                        {this.WEEK_DAY_OPTIONS.map((item) => (
+                                          <NCheckbox
+                                            key={item.value}
+                                            value={item.value}
+                                            label={item.label}
+                                          />
+                                        ))}
+                                      </NSpace>
+                                    </NCheckboxGroup>
+                                  )}
+                                  {['EVERY_N_HOURS', 'EVERY_N_MINUTES'].includes(
+                                    this.cronTemplate.type
+                                  ) && (
+                                    <NSpace
+                                      vertical
+                                      size={10}
+                                      style={CRON_FIELD_GROUP_STYLE}
+                                    >
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_interval'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.interval}
+                                          min={1}
+                                          max={59}
+                                          placeholder='1-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.interval =
+                                              value || 1)
+                                          }
+                                        />
+                                      </div>
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_minute'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.minute}
+                                          min={0}
+                                          max={59}
+                                          placeholder='0-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.minute =
+                                              value || 0)
+                                          }
+                                        />
+                                      </div>
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_second'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.second}
+                                          min={0}
+                                          max={59}
+                                          placeholder='0-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.second =
+                                              value || 0)
+                                          }
+                                        />
+                                      </div>
+                                    </NSpace>
+                                  )}
+                                  {this.cronTemplate.type ===
+                                    'EVERY_N_SECONDS' && (
                                     <div style={CRON_FIELD_ROW_STYLE}>
                                       <span style={CRON_FIELD_LABEL_STYLE}>
                                         {this.t(
@@ -896,230 +1023,204 @@ const ScheduleModal = defineComponent({
                                         }
                                       />
                                     </div>
-                                    <div style={CRON_FIELD_ROW_STYLE}>
-                                      <span style={CRON_FIELD_LABEL_STYLE}>
-                                        {this.t(
-                                          'project.synchronization_definition.schedule_minute'
-                                        )}
-                                      </span>
-                                      <NInputNumber
-                                        value={this.cronTemplate.minute}
-                                        min={0}
-                                        max={59}
-                                        placeholder='0-59'
-                                        style={CRON_FIELD_INPUT_STYLE}
-                                        onUpdateValue={(value) =>
-                                          (this.cronTemplate.minute =
-                                            value || 0)
-                                        }
-                                      />
-                                    </div>
-                                    <div style={CRON_FIELD_ROW_STYLE}>
-                                      <span style={CRON_FIELD_LABEL_STYLE}>
-                                        {this.t(
-                                          'project.synchronization_definition.schedule_second'
-                                        )}
-                                      </span>
-                                      <NInputNumber
-                                        value={this.cronTemplate.second}
-                                        min={0}
-                                        max={59}
-                                        placeholder='0-59'
-                                        style={CRON_FIELD_INPUT_STYLE}
-                                        onUpdateValue={(value) =>
-                                          (this.cronTemplate.second =
-                                            value || 0)
-                                        }
-                                      />
-                                    </div>
-                                  </NSpace>
-                                )}
-                                {this.cronTemplate.type ===
-                                  'EVERY_N_SECONDS' && (
-                                  <div style={CRON_FIELD_ROW_STYLE}>
-                                    <span style={CRON_FIELD_LABEL_STYLE}>
-                                      {this.t(
-                                        'project.synchronization_definition.schedule_interval'
-                                      )}
-                                    </span>
-                                    <NInputNumber
-                                      value={this.cronTemplate.interval}
-                                      min={1}
-                                      max={59}
-                                      placeholder='1-59'
-                                      style={CRON_FIELD_INPUT_STYLE}
-                                      onUpdateValue={(value) =>
-                                        (this.cronTemplate.interval =
-                                          value || 1)
-                                      }
-                                    />
+                                  )}
+                                  <div style={{
+                                    backgroundColor: '#DCDFE659',
+                                    fontSize: '15px',
+                                    fontWeight: 500,
+                                    fontFamily: 'PingFang SC',
+                                    padding: '12px 16px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    {this.t(
+                                      'project.synchronization_definition.schedule_template_tip'
+                                    )}
                                   </div>
-                                )}
-                                <NAlert type='default' showIcon={false}>
-                                  {this.t(
-                                    'project.synchronization_definition.schedule_template_tip'
-                                  )}
-                                </NAlert>
-                                <NAlert type='success' showIcon={false}>
-                                  {this.t(
-                                    'project.synchronization_definition.schedule_generated_cron'
-                                  )}
-                                  : {this.formModel.cronExpression || '-'}
-                                </NAlert>
-                                <NAlert type='info' showIcon={false}>
-                                  {this.t(
-                                    'project.synchronization_definition.schedule_generated_description'
-                                  )}
-                                  : {this.buildCronDescription()}
-                                </NAlert>
-                              </NSpace>
-                            )}
-                          </NSpace>
-                        </NFormItem>
-                        <NFormItem
-                          path='cronExpression'
-                          label={this.t(
-                            'project.synchronization_definition.schedule_cron'
-                          )}
-                        >
-                          <NCollapse
-                            expandedNames={this.advancedExpandedNames}
-                            onUpdateExpandedNames={(value) =>
-                              (this.advancedExpandedNames = value as string[])
-                            }
-                            style={{ width: '100%' }}
-                          >
-                            <NCollapseItem
-                              title={this.t(
-                                'project.synchronization_definition.schedule_advanced_mode'
+                                  <div style={{
+                                    backgroundColor: '#E6F9EC',
+                                    fontSize: '15px',
+                                    fontWeight: 500,
+                                    fontFamily: 'PingFang SC',
+                                    padding: '12px 16px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    {this.t(
+                                      'project.synchronization_definition.schedule_generated_cron'
+                                    )}
+                                    : {this.formModel.cronExpression || '-'}
+                                  </div>
+                                  <div style={{
+                                    backgroundColor: '#EFF4FB',
+                                    fontSize: '15px',
+                                    fontWeight: 500,
+                                    fontFamily: 'PingFang SC',
+                                    padding: '12px 16px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    {this.t(
+                                      'project.synchronization_definition.schedule_generated_description'
+                                    )}
+                                    : {this.buildCronDescription()}
+                                  </div>
+                                </NSpace>
                               )}
-                              name='advanced-cron'
-                            >
-                              <NSpace vertical style={{ width: '100%' }}>
-                                <NAlert type='warning' showIcon={false}>
-                                  {this.t(
-                                    'project.synchronization_definition.schedule_advanced_tip'
-                                  )}
-                                </NAlert>
-                                <NInput
-                                  value={this.formModel.cronExpression}
-                                  onUpdateValue={
-                                    this.handleCronExpressionChange
-                                  }
-                                  placeholder={this.t(
-                                    'project.synchronization_definition.schedule_cron_placeholder'
-                                  )}
-                                />
-                              </NSpace>
-                            </NCollapseItem>
-                          </NCollapse>
-                        </NFormItem>
-                        <NFormItem
-                          label={this.t(
-                            'project.synchronization_definition.schedule_active_start'
-                          )}
-                        >
-                          <NDatePicker
-                            v-model={[
-                              this.formModel.activeStartTime,
-                              'formattedValue'
-                            ]}
-                            type='datetime'
-                            clearable
-                            value-format='yyyy-MM-dd HH:mm:ss'
-                            placeholder={this.t(
-                              'project.synchronization_definition.schedule_active_start_placeholder'
+                            </NSpace>
+                          </NFormItem>
+                          <NFormItem
+                            path='cronExpression'
+                            label={this.t(
+                              'project.synchronization_definition.schedule_cron'
                             )}
-                          />
-                        </NFormItem>
-                        <NFormItem
-                          label={this.t(
-                            'project.synchronization_definition.schedule_active_end'
-                          )}
-                        >
-                          <NDatePicker
-                            v-model={[
-                              this.formModel.activeEndTime,
-                              'formattedValue'
-                            ]}
-                            type='datetime'
-                            clearable
-                            value-format='yyyy-MM-dd HH:mm:ss'
-                            placeholder={this.t(
-                              'project.synchronization_definition.schedule_active_end_placeholder'
-                            )}
-                          />
-                        </NFormItem>
-                      </NForm>
-                      <NSpace justify='space-between'>
-                        <NSpace>
-                          <NTag type='info' bordered={false}>
-                            {this.t(
-                              'project.synchronization_definition.schedule_next_trigger'
-                            )}
-                            : {this.formModel.nextTriggerTime || '-'}
-                          </NTag>
-                          <NTag
-                            type={
-                              this.formModel.lastScheduleStatus === 'FAILED'
-                                ? 'error'
-                                : this.formModel.lastScheduleStatus ===
-                                  'SUCCESS'
-                                ? 'success'
-                                : 'default'
-                            }
-                            bordered={false}
                           >
-                            {this.t(
-                              'project.synchronization_definition.schedule_last_status'
+                            <NCollapse
+                              expandedNames={this.advancedExpandedNames}
+                              onUpdateExpandedNames={(value) =>
+                                (this.advancedExpandedNames = value as string[])
+                              }
+                              style={{ width: '100%' }}
+                            >
+                              <NCollapseItem
+                                title={this.t(
+                                  'project.synchronization_definition.schedule_advanced_mode'
+                                )}
+                                name='advanced-cron'
+                              >
+                                <NSpace vertical style={{ width: '100%' }}>
+                                  <NAlert type='warning' showIcon={false}>
+                                    {this.t(
+                                      'project.synchronization_definition.schedule_advanced_tip'
+                                    )}
+                                  </NAlert>
+                                  <NInput
+                                    value={this.formModel.cronExpression}
+                                    onUpdateValue={
+                                      this.handleCronExpressionChange
+                                    }
+                                    placeholder={this.t(
+                                      'project.synchronization_definition.schedule_cron_placeholder'
+                                    )}
+                                  />
+                                </NSpace>
+                              </NCollapseItem>
+                            </NCollapse>
+                          </NFormItem>
+                          <NFormItem
+                            label={this.t(
+                              'project.synchronization_definition.schedule_active_start'
                             )}
-                            :{' '}
-                            {this.formModel.lastScheduleStatus
-                              ? this.t(
-                                  `project.synchronization_definition.status_${String(
-                                    this.formModel.lastScheduleStatus
-                                  ).toLowerCase()}`
-                                )
-                              : '-'}
-                          </NTag>
+                          >
+                            <NDatePicker
+                              v-model={[
+                                this.formModel.activeStartTime,
+                                'formattedValue'
+                              ]}
+                              type='datetime'
+                              clearable
+                              value-format='yyyy-MM-dd HH:mm:ss'
+                              placeholder={this.t(
+                                'project.synchronization_definition.schedule_active_start_placeholder'
+                              )}
+                            />
+                          </NFormItem>
+                          <NFormItem
+                            label={this.t(
+                              'project.synchronization_definition.schedule_active_end'
+                            )}
+                          >
+                            <NDatePicker
+                              v-model={[
+                                this.formModel.activeEndTime,
+                                'formattedValue'
+                              ]}
+                              type='datetime'
+                              clearable
+                              value-format='yyyy-MM-dd HH:mm:ss'
+                              placeholder={this.t(
+                                'project.synchronization_definition.schedule_active_end_placeholder'
+                              )}
+                            />
+                          </NFormItem>
+                        </NForm>
+                        <NSpace justify='space-between'>
+                          <NSpace>
+                            <NTag type='info' bordered={false} style={{
+                              color: '#1960BC',
+                              fontFamily: 'PingFang SC',
+                              fontWeight: 500,
+                              fontSize: '16px',
+                              height:'44px'
+                            }}>
+                              {this.t(
+                                'project.synchronization_definition.schedule_next_trigger'
+                              )}
+                              : {this.formModel.nextTriggerTime || '-'}
+                            </NTag>
+                            <NTag
+                              type={
+                                this.formModel.lastScheduleStatus === 'FAILED'
+                                  ? 'error'
+                                  : this.formModel.lastScheduleStatus ===
+                                    'SUCCESS'
+                                  ? 'success'
+                                  : 'default'
+                              }
+                              style={{
+                              color: '#212B36',
+                              fontFamily: 'PingFang SC',
+                              fontWeight: 500,
+                              fontSize: '16px',
+                              height:'44px'
+                            }}
+                              bordered={false}
+                            >
+                              {this.t(
+                                'project.synchronization_definition.schedule_last_status'
+                              )}
+                              :{' '}
+                              {this.formModel.lastScheduleStatus
+                                ? this.t(
+                                    `project.synchronization_definition.status_${String(
+                                      this.formModel.lastScheduleStatus
+                                    ).toLowerCase()}`
+                                  )
+                                : '-'}
+                            </NTag>
+                          </NSpace>
                         </NSpace>
                       </NSpace>
-                    </NSpace>
-                  </NTabPane>
-                  <NTabPane
-                    name='history'
-                    tab={this.t(
-                      'project.synchronization_definition.schedule_history'
                     )}
-                  >
-                    {this.historyData.length ? (
-                      <NSpace vertical>
-                        <NDataTable
-                          columns={this.scheduleColumns}
-                          data={this.historyData}
-                          loading={this.historyLoading}
-                        />
-                        <NSpace justify='center'>
-                          <NPagination
-                            page={this.historyPage}
-                            page-size={this.historyPageSize}
-                            page-count={this.historyTotalPage}
-                            show-size-picker
-                            page-sizes={[10, 30, 50]}
-                            onUpdatePage={this.handleHistoryPageChange}
-                            onUpdatePageSize={this.handleHistoryPageSizeChange}
+
+                    {/* 历史记录 tab 内容 */}
+                    {this.activeTab === 'history' && (
+                      this.historyData.length ? (
+                        <NSpace vertical>
+                          <NDataTable
+                            columns={this.scheduleColumns}
+                            data={this.historyData}
+                            loading={this.historyLoading}
                           />
+                          <NSpace justify='right' style={{ width: '100%' }}>
+                            <NPagination
+                              page={this.historyPage}
+                              page-size={this.historyPageSize}
+                              page-count={this.historyTotalPage}
+                              show-size-picker
+                              page-sizes={[10, 30, 50]}
+                              onUpdatePage={this.handleHistoryPageChange}
+                              onUpdatePageSize={this.handleHistoryPageSizeChange}
+                            />
+                          </NSpace>
                         </NSpace>
-                      </NSpace>
-                    ) : (
-                      <NEmpty
-                        description={this.t(
-                          'project.synchronization_definition.schedule_history_empty'
-                        )}
-                      />
+                      ) : (
+                        <NEmpty
+                          description={this.t(
+                            'project.synchronization_definition.schedule_history_empty'
+                          )}
+                        />
+                      )
                     )}
-                  </NTabPane>
-                </NTabs>
+                  </div>
+                </div>
               </NSpin>
             ),
             footer: () => (

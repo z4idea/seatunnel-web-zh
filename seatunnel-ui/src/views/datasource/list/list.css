@@ -225,8 +225,8 @@ font-size: 16px !important;
 .title-text::before{
   content: '';
   display: inline-block;
-  width: 22px;
-  height: 22px;
+  width: 29px;
+  height: 29px;
   background: url('@/assets/list-page-title.png') no-repeat center center;
   vertical-align: middle;
   background-size: 100% 100%;

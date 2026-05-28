@@ -187,7 +187,7 @@ const DagToolbar = defineComponent({
                   trigger: () => (
                     <NButton
                       strong
-                      
+                      secondary
                       circle
                       type='info'
                       onClick={() => void (state.showLayoutModal = true)}

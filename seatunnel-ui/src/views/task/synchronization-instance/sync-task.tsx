@@ -211,8 +211,16 @@ const SyncTask = defineComponent({
       initSearch()
       createColumns(variables)
       creatInstanceButtons(variables)
+      tableColumn.value = variables.columns
       requestData()
     })
+
+    watch(
+      () => variables.columns,
+      (newColumns) => {
+        tableColumn.value = newColumns
+      }
+    )
 
     onUnmounted(() => {
       clearTimeout(logTimer)
@@ -265,7 +273,7 @@ const SyncTask = defineComponent({
     const { t } = this
     return (
       <NSpace vertical>
-        <div style={{ backgroundColor: '#ffffff', height: '74px' }}>
+        <div style={{ backgroundColor: '#ffffff', height: '40px' }}>
           <div
             style={{
               display: 'flex',
@@ -330,21 +338,13 @@ const SyncTask = defineComponent({
               }}
             >
               <NSpace justify='end'>
-                <NButton  secondary onClick={this.handleReset} class="create-btn1">
-                  <span
-                style={{ fontSize: '16px' }}
-                class="iconify"
-                data-icon='system-uicons:reset'
-                aria-hidden="true"
-              />
-            重置
-                </NButton>
+            
               
                 <NButton  class="create-btn" onClick={this.handleSearch}>
                   <span
                 style={{ fontSize: '16px' }}
                 class="iconify"
-                data-icon='icon-park-outline:find'
+                data-icon='mingcute:search-3-line'
                 aria-hidden="true"
               />
            <span style={{paddingLeft:'5px'}}>{this.t('project.node.sql_type_query')}</span>
@@ -355,19 +355,11 @@ const SyncTask = defineComponent({
         </div>
         {/* {t('project.synchronizing_task_instance')} */}
         <div style={{ backgroundColor: '#ffffff', padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div style={{ fontWeight: 500, fontSize: '16px' }}>{t('project.synchronizing_task_instance')}</div>
-            <ColumnSelector
-              tableKey='taskInstance'
-              tableColumns={this.columns}
-              onChangeOptions={this.handleChangeColumn}
-            ></ColumnSelector>
-          </div>
+         
           <NSpace vertical>
             <NDataTable
               bordered={true}
              
-            
               loading={this.loadingRef}
               columns={this.tableColumn}
               data={this.tableData}

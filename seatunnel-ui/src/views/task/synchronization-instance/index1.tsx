@@ -103,10 +103,16 @@ const SynchronizationInstance = defineComponent({
 
             {/* 右侧内容区域 */}
             <div style={{ flex: 1, paddingLeft: '16px', overflow: 'auto', position: 'relative', zIndex: 1 }}>
-              <KeepAlive>
-                {this.syncTaskType === 'BATCH' && <SyncTask syncTaskType='BATCH' key='BATCH' />}
-                {this.syncTaskType === 'STREAMING' && <SyncTask syncTaskType='STREAMING' key='STREAMING' />}
-              </KeepAlive>
+              {this.syncTaskType === 'BATCH' && (
+                <KeepAlive>
+                  <SyncTask syncTaskType='BATCH' />
+                </KeepAlive>
+              )}
+              {this.syncTaskType === 'STREAMING' && (
+                <KeepAlive>
+                  <SyncTask syncTaskType='STREAMING' />
+                </KeepAlive>
+              )}
             </div>
           </div>
         

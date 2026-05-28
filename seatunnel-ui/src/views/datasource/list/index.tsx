@@ -119,37 +119,43 @@ const DatasourceList = defineComponent({
     } = this
 
     return (
-      <div class="sync-definition-wrapper" style={{ backgroundColor: '#ffffff', borderRadius: '4px', paddingTop: '16px' }}>
-        <div style={{ height: '50px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', width: '100%' }}>
+      <div class="sync-definition-wrapper" >
+        <div style={{ height: '50px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span class="title-text">{t('datasource.datasource')}</span>
           </div>
-          <NSpace>
-            <NInput
-              v-model={[this.searchVal, 'value']}
-              placeholder={t('datasource.search_input_tips')}
-              style={{ width: '200px' }}
-            />
-            <NButton onClick={this.handleSearch}  class="create-btn">
-              <NIcon>
-                <i class='iconify' data-icon='icon-park-outline:find' data-inline='false' style={{ fontSize: '16px' }} />
-              </NIcon>
-              <span style={{paddingLeft:'5px'}}>{t('datasource.search')}</span>
-            </NButton>
-           
-          </NSpace>
+         
         </div>
         {/* <NCard title={t('datasource.datasource')}>
           
         </NCard> */}
-        <div style={{ marginTop: '16px' }}>
-          <div style={{ marginBottom: '16px' }}>
-             <NButton onClick={onCreate}  class="create-btn">
-              <NIcon>
-                <i class='iconify' data-icon='icon-park-outline:add' data-inline='false' style={{ fontSize: '16px' }} />
-              </NIcon>
-              <span style={{paddingLeft:'5px'}}>{t('datasource.create')}</span>
-            </NButton>
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '4px', padding: '16px' }}>
+          <div style={{ marginBottom: '16px',display:'flex',justifyContent:'space-between' }}>
+            <div>
+               <NButton onClick={onCreate}  class="create-btn">
+                <NIcon>
+                  <i class='iconify' data-icon='icon-park-outline:add' data-inline='false' style={{ fontSize: '16px' }} />
+                </NIcon>
+                <span style={{paddingLeft:'5px'}}>{t('datasource.create')}</span>
+              </NButton>
+            </div>
+            <div>
+                <NSpace>
+                <NInput
+                  v-model={[this.searchVal, 'value']}
+                  placeholder={t('datasource.search_input_tips')}
+                  style={{ width: '200px' }}
+                />
+                <NButton onClick={this.handleSearch}  class="create-btn">
+                  <NIcon>
+                    <i class='iconify' data-icon='icon-park-outline:search'  data-inline='false' style={{ fontSize: '16px' }} />
+                  </NIcon>
+                  <span style={{paddingLeft:'5px'}}>{t('datasource.search')}</span>
+                </NButton>
+           
+               </NSpace>
+            </div>
+           
           </div>
           <NDataTable
             row-class-name='data-source-items'
