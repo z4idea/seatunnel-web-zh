@@ -26,10 +26,24 @@
   .itemBox {
     margin: 10px;
     border-radius: 10px;
-    width: 110px;
+    width: 161px;
+    height: 106px;
     padding: 30px 10px;
     text-align: center;
     cursor: pointer;
-    box-shadow: 0 0 6px 1px rgba(0, 0, 0, 0.1);
+    border: 1px dashed #C9D6F2;
+    box-sizing: border-box;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    &:hover {
+      background-color: #f3f7fb;
+
+      div {
+        color: #1960BC !important;
+      }
+    }
   }
 }
