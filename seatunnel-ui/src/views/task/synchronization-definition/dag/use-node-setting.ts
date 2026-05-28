@@ -41,7 +41,8 @@ export function useNodeSettingModal(
     saving: false,
     loading: false,
     width: '60%',
-    tab: 'configuration'
+    tab: 'configuration',
+    initialSnapshot: ''
   })
 
   const isLocalFileValues = (values: any) =>
@@ -512,6 +513,7 @@ export function useNodeSettingModal(
     configurationFormRef,
     modelRef,
     onSave,
+    initModelData,
     handleTab,
     handleChangeTable
   }

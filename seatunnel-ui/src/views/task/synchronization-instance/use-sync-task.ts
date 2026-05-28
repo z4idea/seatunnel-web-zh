@@ -60,7 +60,6 @@ import {
   isSyncTaskSuccessStatus,
   renderSyncTaskStatusTag
 } from './status-display'
-import '../synchronization-definition/index.css'
 
 export function useSyncTask(syncTaskType = 'BATCH') {
   const { t } = useI18n()

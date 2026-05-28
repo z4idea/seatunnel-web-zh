@@ -272,51 +272,36 @@ const SyncTask = defineComponent({
   render() {
     const { t } = this
     return (
-      <NSpace vertical>
-        <div style={{ backgroundColor: '#ffffff', height: '40px' }}>
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'nowrap',
-              gap: '12px',
-              alignItems: 'center',
-              height: '100%',
-              padding: '12px'
-             
-            }}
-          >
-            <div style={{ flex: '1 1 auto', minWidth: '160px', maxWidth: '280px' }}>
+      <NSpace vertical class='sync-instance-panel'>
+        <div class='sync-instance-filter-bar'>
+          <div class='sync-instance-filter-item'>
               <NInput
-                style={{ width: '100%' }}
                 v-model={[this.taskName, 'value']}
                 placeholder={this.t(
                   'project.synchronization_instance.task_name'
                 )}
                 onKeyup={this.handleKeyup}
               />
-            </div>
-            <div style={{ flex: '1 1 auto', minWidth: '140px', maxWidth: '220px' }}>
+          </div>
+          <div class='sync-instance-filter-item'>
               <NInput
-                style={{ width: '100%' }}
                 v-model={[this.executeUser, 'value']}
                 placeholder={this.t(
                   'project.synchronization_instance.execute_user'
                 )}
                 onKeyup={this.handleKeyup}
               />
-            </div>
-            <div style={{ flex: '1 1 auto', minWidth: '140px', maxWidth: '220px' }} class="select_options">
+          </div>
+          <div class='sync-instance-filter-item sync-instance-filter-item--select'>
               <NSelect
-                style={{ width: '100%',height:'32px' }}
                 v-model={[this.stateType, 'value']}
                 options={getSyncTaskStatusOptions(this.t)}
                 placeholder={this.t('project.synchronization_instance.state')}
                 clearable
               />
-            </div>
-            <div style={{ flex: '2 1 auto', minWidth: '280px', maxWidth: '450px' }}>
+          </div>
+          <div class='sync-instance-filter-item sync-instance-filter-item--date'>
               <NDatePicker
-                style={{ width: '100%' }}
                 v-model={[this.datePickerRange, 'formattedValue']}
                 type='datetimerange'
                 format='yyyy-MM-dd HH:mm:ss'
@@ -329,38 +314,28 @@ const SyncTask = defineComponent({
                 )}
                 shortcuts={this.rangeShortCuts.rangeOption}
               />
-            </div>
-            <div
-              style={{
-                marginLeft: 'auto',
-                display: 'flex',
-                gap: '8px',
-                flexShrink: 0
-              }}
+          </div>
+          <div class='sync-instance-filter-actions'>
+            <NButton
+              class='sync-instance-search-btn'
+              onClick={this.handleSearch}
             >
-              <NSpace justify='end'>
-            
-              
-                <NButton  class="create-btn" onClick={this.handleSearch}>
-                  <span
-                style={{ fontSize: '16px' }}
-                class="iconify"
+              <span
+                class='iconify sync-instance-search-btn__icon'
                 data-icon='mingcute:search-3-line'
-                aria-hidden="true"
+                aria-hidden='true'
               />
-           <span style={{paddingLeft:'5px'}}>{this.t('project.node.sql_type_query')}</span>
-                </NButton>
-              </NSpace>
-            </div>
+              <span class='sync-instance-search-btn__text'>
+                {this.t('project.node.sql_type_query')}
+              </span>
+            </NButton>
           </div>
         </div>
-        {/* {t('project.synchronizing_task_instance')} */}
-        <div style={{ backgroundColor: '#ffffff', padding: '16px' }}>
-         
+        <div class='sync-instance-table-card'>
           <NSpace vertical>
             <NDataTable
+              class='sync-instance-table'
               bordered={true}
-             
               loading={this.loadingRef}
               columns={this.tableColumn}
               data={this.tableData}
@@ -368,7 +343,7 @@ const SyncTask = defineComponent({
               scrollX={this.tableWidth}
               v-model:checked-row-keys={this.checkedRowKeys}
             />
-            <div class="sync-pagination-bar">
+            <div class='sync-instance-pagination'>
               <NSpace justify='center'>
                 <NPagination
                   v-model:page={this.page}
