@@ -143,12 +143,13 @@ const SynchronizationDefinition = defineComponent({
   },
  render() {
     return (
-      <div class="sync-definition-wrapper" style={{ backgroundColor: '#ffffff', borderRadius: '4px', paddingTop: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center',marginBottom:'16px' }}>
+      <div class="sync-definition-wrapper" style={{ borderRadius: '4px', paddingTop: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center',marginBottom:'16px'}} >
             <span class="title-text">采集任务设计</span>
           </div>
         {/* 顶部操作栏 - 无卡片、平铺 */}
-        <div class="sync-top-bar">
+        <div style={{backgroundColor: '#ffffff', borderRadius: '4px', padding: '8px 16px' }} >
+              <div class="sync-top-bar">
           <NButton class="create-btn" onClick={this.handleModalChange}>
             <NIcon size={14} style={{ marginRight: 6 }}>
               <span
@@ -211,6 +212,8 @@ const SynchronizationDefinition = defineComponent({
             />
           </div>
         </div>
+        </div>
+      
 
         {/* 模态框保持不变 */}
         <TaskModal
