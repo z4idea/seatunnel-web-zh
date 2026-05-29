@@ -2,7 +2,7 @@
 .sync-definition-wrapper {
   width: 100%;
   background-color: #f8f9fa; /* 页面背景色匹配目标图 */
-  padding: 8px 16px;
+  /* padding: 8px 16px; */
   /* 设置 Naive UI 按钮主题色 */
   --n-primary-color: #1960bc;
   --n-primary-color-hover: #2a72d3;

@@ -89,7 +89,11 @@ const DatasourceList = defineComponent({
         columns.value = getColumns()
       }
     })
-
+    
+    const closeEditModal = () => {
+      showEditModal.value = false
+    }
+    
     watch(useI18n().locale, () => {
       columns.value = getColumns()
     })
@@ -106,7 +110,8 @@ const DatasourceList = defineComponent({
       handleSelectSourceType,
       closeSourceModal,
       showEditModal,
-      SourceId
+      SourceId,
+      closeEditModal
     }
   },
   render() {
@@ -124,7 +129,8 @@ const DatasourceList = defineComponent({
       handleSelectSourceType,
       closeSourceModal,
       showEditModal,
-      SourceId
+      SourceId,
+      closeEditModal
     } = this
 
     return (
@@ -192,7 +198,7 @@ const DatasourceList = defineComponent({
           onChange={handleSelectSourceType}
           onCancel={closeSourceModal}
         />
-        <EditModal show={showEditModal} SourceId={SourceId} />
+        <EditModal show={showEditModal} SourceId={SourceId} onClose={closeEditModal} />
         
       
       </div>
