@@ -34,7 +34,8 @@ import { getLocalFileRoots, listLocalFiles } from '@/service/local-file'
 import type { PropType } from 'vue'
 import type { DataTableColumns } from 'naive-ui'
 import type { LocalFileEntry } from '@/service/local-file'
-
+import TitleIcon from '@/assets/title-icon.png'
+import { Background } from '@antv/x6/lib/registry'
 const props = {
   model: {
     type: Object as PropType<Record<string, any>>,
@@ -184,9 +185,54 @@ const LocalFilePicker = defineComponent({
           <NButton onClick={open}>{t('datasource.local_file_browse')}</NButton>
         </NInputGroup>
         <NModal show={state.show} onMaskClick={close} onEsc={close}>
-          <NCard
+          <NCard 
             style={{ width: '760px' }}
-            title={t('datasource.local_file_select')}
+            title={h('div', { 
+            style: { 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              paddingBottom: '12px',
+              borderBottom: '1px solid #DFE3E8'
+            } 
+          }, [
+            h('div', {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }
+            }, [
+              h('img', { src: TitleIcon, style: { width: '35px', height: '35px' } }),
+              h('span', {
+                style: {
+                  color: '#2C3947',
+                  fontWeight: 600,
+                  fontFamily: 'PingFang SC',
+                  fontSize: '24px'
+                }
+              }, t('datasource.local_file_select'))
+            ]),
+            // h(NButton, {
+            //   text: true,
+            //   style: {
+            //     padding: '4px',
+            //     fontSize: '20px',
+            //     color: '#999',
+            //     cursor: 'pointer'
+            //   },
+            //   onClick: () => handleClose()
+            // }, {
+            //   default: () => h(NIcon, null, {
+            //     default: () => h('i', { 
+            //       class: 'iconify', 
+            //       'data-icon': 'material-symbols:close', 
+            //       'data-inline': 'false',
+            //       style: { fontSize: '24px' }
+            //     })
+            //   })
+            // })
+          ])}
             bordered={false}
           >
             <NSpace vertical>
@@ -218,7 +264,7 @@ const LocalFilePicker = defineComponent({
                 rowKey={(row) => row.path}
               />
               <NSpace justify='end'>
-                <NButton onClick={close}>{t('datasource.cancel')}</NButton>
+                <NButton onClick={close} secondary style={{width:'80px',height:'40px',borderRadius:'4px',backgroundColor:'#F3F7FB',fontSize:'16px',color:'#1960BC',fontWeight:'500'}}>{t('datasource.cancel')}</NButton>
               </NSpace>
             </NSpace>
           </NCard>
