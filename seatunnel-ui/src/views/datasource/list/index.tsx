@@ -42,6 +42,7 @@ const DatasourceList = defineComponent({
     const showSourceModal = ref(false)
     const showEditModal = ref<boolean>(false)
     const SourceId = ref<string>('')
+    const sourceType = ref<string>('')
     const columns: Ref<TableColumns> = ref([])
     const router = useRouter()
     const route = useRoute()
@@ -71,7 +72,12 @@ const DatasourceList = defineComponent({
     }
 
     const handleSelectSourceType = (value: string) => {
-      router.push({ name: 'datasource-create', query: { type: value } })
+        console.log(sourceType.value,'sourceType.value')
+      // SourceId.value = '' // 创建新数据源时不要设置ID，避免调用接口
+      sourceType.value = value
+    
+      showEditModal.value = true
+      // router.push({ name: 'datasource-create', query: { type: value } })  //旧的
       closeSourceModal()
     }
 
@@ -97,7 +103,7 @@ const DatasourceList = defineComponent({
     watch(useI18n().locale, () => {
       columns.value = getColumns()
     })
-
+  
     return {
       t,
       showSourceModal,
@@ -111,7 +117,8 @@ const DatasourceList = defineComponent({
       closeSourceModal,
       showEditModal,
       SourceId,
-      closeEditModal
+      closeEditModal,
+      sourceType
     }
   },
   render() {
@@ -130,7 +137,8 @@ const DatasourceList = defineComponent({
       closeSourceModal,
       showEditModal,
       SourceId,
-      closeEditModal
+      closeEditModal,
+      sourceType
     } = this
 
     return (
@@ -198,7 +206,7 @@ const DatasourceList = defineComponent({
           onChange={handleSelectSourceType}
           onCancel={closeSourceModal}
         />
-        <EditModal show={showEditModal} SourceId={SourceId} onClose={closeEditModal} />
+        <EditModal show={showEditModal} SourceId={SourceId} sourceType={sourceType}  onClose={closeEditModal} />
         
       
       </div>

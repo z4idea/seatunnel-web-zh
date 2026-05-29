@@ -185,7 +185,6 @@ export function useForm(type: string) {
   }
 
   const changeType = (value: string) => {
-    router.replace({ name: 'datasource-create', query: { type: value } })
     getFormItems(value)
   }
 

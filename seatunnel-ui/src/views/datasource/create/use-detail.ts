@@ -40,7 +40,8 @@ export function useDetail(
   setFieldsValue: Function,
   getFormItems: Function,
   detailFormRef: Ref,
-  idRef: Ref<string>
+  idRef: Ref<string>,
+  onSuccess?: Function
 ) {
   const { t } = useI18n()
   const router = useRouter()
@@ -143,10 +144,17 @@ export function useDetail(
         : await datasourceAdd(formatParams())
 
       status.saving = false
-      router.push({
-        name: 'datasource-list',
-        query: {}
-      })
+      
+      // 如果有成功回调，优先调用回调
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        // 否则使用路由跳转
+        router.push({
+          name: 'datasource-list',
+          query: {}
+        })
+      }
       return true
     } catch (err) {
       status.saving = false

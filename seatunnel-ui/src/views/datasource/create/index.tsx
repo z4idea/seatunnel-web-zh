@@ -53,6 +53,10 @@ const DatasourceCreate = defineComponent({
     onClose: {
       type: Function,
       default: () => {}
+    },
+    sourceType: {
+      type: String,
+      default: ''
     }
   },
   setup(props) {
@@ -65,20 +69,26 @@ const DatasourceCreate = defineComponent({
     const detailFormRef = ref(null)
 
     const { state, changeType, getFieldsValue, setFieldsValue, getFormItems } =
-      useForm(route.query.type as string)
+      useForm(props.sourceType)
 
     const { status, testConnect, createOrUpdate, queryById } = useDetail(
       getFieldsValue,
       setFieldsValue,
       getFormItems,
       detailFormRef,
-      SourceId
+      SourceId,
+      () => {
+        // 保存成功后关闭弹窗
+        handleClose()
+      }
     )
 
     const handleClose = () => {
       props.onClose()
     }
-
+    const showModal = () => {
+      showSourceModal.value = true
+    }
     const onClose = () => {
       dialog.warning({
         title: t('datasource.warning'),
@@ -97,6 +107,11 @@ const DatasourceCreate = defineComponent({
       SourceId.value = newVal
       if (newVal) {
         queryById(newVal)
+      }
+    })
+    watch(() => props.sourceType, (newVal) => {
+      if (newVal) {
+        getFormItems(newVal)
       }
     })
     return () => (
@@ -177,7 +192,7 @@ const DatasourceCreate = defineComponent({
                       <NButton
                         text
                         type='primary'
-                        onClick={() => void (showSourceModal.value = true)}
+                        onClick={showModal}
                       >
                         {t('datasource.select')}
                       </NButton>
