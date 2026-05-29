@@ -37,7 +37,7 @@ const SynchronizationInstance = defineComponent({
   },
   render() {
     return (
-      <div class='sync-instance-page'>
+      <div class='sync-instance-page' style={{ backgroundColor: '#ffffff', borderRadius: '4px', paddingTop: '16px' }}>
         <div class='sync-instance-page__title'>
           <span class='sync-instance-page__title-text'>采集执行历史</span>
         </div>

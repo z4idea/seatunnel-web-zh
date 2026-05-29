@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref,watch } from 'vue'
 import {
   NSpace,
   NBreadcrumb,
@@ -26,7 +26,8 @@ import {
   NFormItemGi,
   NGrid,
   NDivider,
-  NIcon
+  NIcon,
+  NModal
 } from 'naive-ui'
 import { DynamicFormItem } from '@/components/dynamic-form/dynamic-form-item'
 import { useRoute, useRouter } from 'vue-router'
@@ -38,7 +39,19 @@ import SourceModal from '../components/source-modal'
 import './index.css'
 
 const DatasourceCreate = defineComponent({
-  setup() {
+  name: 'DatasourceCreate',
+  props: {
+    show: {
+      type: Boolean,
+      default: false
+    },
+    SourceId:{
+       type: String,
+        default: ''
+    }
+  },
+  setup(props) {
+    const SourceId = ref(props.SourceId)
     const { t } = useI18n()
     const route = useRoute()
     const router = useRouter()
@@ -49,12 +62,12 @@ const DatasourceCreate = defineComponent({
     const { state, changeType, getFieldsValue, setFieldsValue, getFormItems } =
       useForm(route.query.type as string)
 
-    const { status, testConnect, createOrUpdate } = useDetail(
+    const { status, testConnect, createOrUpdate, queryById } = useDetail(
       getFieldsValue,
       setFieldsValue,
       getFormItems,
       detailFormRef,
-      route.params.id as string
+      SourceId
     )
 
     const onClose = () => {
@@ -70,23 +83,18 @@ const DatasourceCreate = defineComponent({
         negativeText: t('datasource.cancel')
       })
     }
-
+    watch(() => props.SourceId, (newVal) => {
+      SourceId.value = newVal
+      if (newVal) {
+        queryById(newVal)
+      }
+    })
     return () => (
-      <div class="sync-definition-wrapper" style={{backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+     <NModal show={props.show} preset="card" style={{width:'1000px'}} contentStyle={{ maxHeight: '80vh', overflow: 'auto' }}>
+        <div class="sync-definition-wrapper" style={{backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ backgroundColor: '#ffffff', marginTop: '16px', padding: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <NBreadcrumb style={{ fontSize: '16px', color: '#000000', fontWeight: 500 }}>
-              <NBreadcrumbItem style={{ color: '#000000', fontWeight: 500 }} onClick={onClose}>
-                {t('datasource.datasource')}
-              </NBreadcrumbItem>
-              <NBreadcrumbItem style={{ color: '#000000', fontWeight: 500 }}>
-                {t(
-                  route.params.id
-                    ? 'datasource.edit_datasource'
-                    : 'datasource.create_datasource'
-                )}
-              </NBreadcrumbItem>
-            </NBreadcrumb>
+          
             <NSpace>
               <NButton secondary class="create-btn" onClick={testConnect} loading={status.testing}>
                  <NIcon>
@@ -103,11 +111,13 @@ const DatasourceCreate = defineComponent({
             </NSpace>
           </div>
         </div>
-        <div style={{ backgroundColor: '#ffffff', marginTop: '16px' }}>
+        <div style={{ backgroundColor: '#ffffff', marginTop: '16px', padding: '0 16px 16px 16px' }}>
           <NForm
             rules={state.rules}
             ref={detailFormRef}
             class={styles['detail-content']}
+            label-placement="left"
+            label-width="150px"
           >
             <NGrid xGap={10}>
               <NFormItemGi
@@ -181,6 +191,8 @@ const DatasourceCreate = defineComponent({
           onCancel={() => void (showSourceModal.value = false)}
         />
       </div>
+     </NModal>
+      
     )
   }
 })

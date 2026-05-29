@@ -35,10 +35,13 @@ import type { Ref } from 'vue'
 import type { TableColumns } from 'naive-ui/es/data-table/src/interface'
 import '@iconify/iconify'
 import './list.css'
+import EditModal from '../create/index'
 const DatasourceList = defineComponent({
   setup: function() {
     const { t } = useI18n()
     const showSourceModal = ref(false)
+    const showEditModal = ref<boolean>(false)
+    const SourceId = ref<string>('')
     const columns: Ref<TableColumns> = ref([])
     const router = useRouter()
     const route = useRoute()
@@ -51,7 +54,9 @@ const DatasourceList = defineComponent({
 
     const { getColumns } = useColumns((id: string, type: 'edit' | 'delete') => {
       if (type === 'edit') {
-        router.push({ name: 'datasource-edit', params: { id } })
+        SourceId.value = id   
+        // router.push({ name: 'datasource-edit', params: { id } })
+        showEditModal.value = true
       } else  if(type === 'delete'){
         deleteRecord(id)
       }
@@ -99,7 +104,9 @@ const DatasourceList = defineComponent({
       onCreate,
       handleSearch,
       handleSelectSourceType,
-      closeSourceModal
+      closeSourceModal,
+      showEditModal,
+      SourceId
     }
   },
   render() {
@@ -115,7 +122,9 @@ const DatasourceList = defineComponent({
       changePageSize,
       onCreate,
       handleSelectSourceType,
-      closeSourceModal
+      closeSourceModal,
+      showEditModal,
+      SourceId
     } = this
 
     return (
@@ -183,6 +192,9 @@ const DatasourceList = defineComponent({
           onChange={handleSelectSourceType}
           onCancel={closeSourceModal}
         />
+        <EditModal show={showEditModal} SourceId={SourceId} />
+        
+      
       </div>
     )
   }

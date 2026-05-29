@@ -40,7 +40,7 @@ export function useDetail(
   setFieldsValue: Function,
   getFormItems: Function,
   detailFormRef: Ref,
-  id: string
+  idRef: Ref<string>
 ) {
   const { t } = useI18n()
   const router = useRouter()
@@ -76,9 +76,11 @@ export function useDetail(
     }
   }
 
-  const queryById = async () => {
+  const queryById = async (targetId?: string) => {
+    const currentId = targetId || idRef.value
+    if (!currentId) return
     try {
-      const result = await datasourceDetail(id)
+      const result = await datasourceDetail(currentId)
       await getFormItems(result.pluginName)
       const jdbcFields = isJdbcPlugin(result.pluginName)
         ? parseJdbcUrlByPlugin(result.pluginName, result.datasourceConfig?.url || '')
@@ -136,8 +138,8 @@ export function useDetail(
     status.saving = true
 
     try {
-      id
-        ? await datasourceUpdate(formatParams(), id)
+      idRef.value
+        ? await datasourceUpdate(formatParams(), idRef.value)
         : await datasourceAdd(formatParams())
 
       status.saving = false
@@ -153,10 +155,10 @@ export function useDetail(
   }
 
   onMounted(() => {
-    if (id) {
+    if (idRef.value) {
       queryById()
     }
   })
 
-  return { status, testConnect, createOrUpdate }
+  return { status, testConnect, createOrUpdate, queryById }
 }
