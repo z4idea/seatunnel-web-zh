@@ -52,6 +52,7 @@ import lombok.NonNull;
 import javax.annotation.Resource;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,8 +101,12 @@ public class JobDefinitionServiceImpl extends SeatunnelBaseServiceImpl
                 .engineVersion("2.3.11");
         if (BusinessMode.DATA_INTEGRATION.equals(jobReq.getJobType())) {
             builder.jobMode(JobMode.BATCH);
+            builder.env(JsonUtils.toJsonString(Collections.singletonMap("job.mode", JobMode.BATCH.name())));
         } else if (BusinessMode.DATA_REPLICA.equals(jobReq.getJobType())) {
             builder.jobMode(JobMode.STREAMING);
+            builder.env(
+                    JsonUtils.toJsonString(
+                            Collections.singletonMap("job.mode", JobMode.STREAMING.name())));
         }
         jobVersionDao.createVersion(builder.build());
 

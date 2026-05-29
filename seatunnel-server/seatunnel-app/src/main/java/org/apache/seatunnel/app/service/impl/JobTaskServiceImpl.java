@@ -106,7 +106,7 @@ public class JobTaskServiceImpl extends SeatunnelBaseServiceImpl implements IJob
     @Resource private ConnectorDataSourceMapperConfig connectorDataSourceMapperConfig;
 
     private void checkConfigIntegrity(JobVersion version, JobTaskInfo jobTaskInfo) {
-        if (StringUtils.isEmpty(version.getEnv())) {
+        if (StringUtils.isEmpty(version.getEnv()) && version.getJobMode() == null) {
             throw new SeatunnelException(SeatunnelErrorEnum.ERROR_CONFIG, "请到设置里配置任务模式再进行保存");
         }
         Map<String, PluginConfig> pluginConfigMap =

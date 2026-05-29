@@ -19,10 +19,7 @@
  */
 
 import { reactive, ref, SetupContext } from 'vue'
-import {
-  getInputTableSchema,
-  saveTaskDefinitionItem
-} from '@/service/sync-task-definition'
+import { saveTaskDefinitionItem } from '@/service/sync-task-definition'
 import _, { omit } from 'lodash'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -316,10 +313,24 @@ export function useNodeSettingModal(
             } else {
               modelOutputTableData = formatOutputSchema(resultSchema.allTableData)
             }
+          } else if (props.nodeInfo.outputSchema?.length) {
+            modelOutputTableData = props.nodeInfo.outputSchema
           } else {
-            window.$message.warning(t('project.synchronization_definition.check_model'), { duration: 0, closable: true })
-            state.saving = false
-            return false
+            const tableName = _.isArray(values.tableName)
+              ? values.tableName[0]
+              : values.tableName
+            const database = _.isArray(values.database)
+              ? values.database[0]
+              : values.database
+            modelOutputTableData = tableName
+              ? [
+                  {
+                    database,
+                    tableName,
+                    fields: []
+                  }
+                ]
+              : []
           }
         }
         }
@@ -471,28 +482,9 @@ export function useNodeSettingModal(
     modelRef.value.initData(obj)
   }
 
-  const handleChangeTable = async (node: any) => {
-    if (!modelRef.value) return
-    if (isLocalFileValues(node)) return
-    if (isHttpValues(node)) return
-    const currentTable = _.isArray(node.tableName)
-      ? node.tableName[0]
-      : node.tableName
-
-    const currentDatabase = _.isArray(node.database)
-      ? node.database[0]
-      : node.database
-
-    if (!currentTable) return
-
-    const result = await getInputTableSchema(
-      node.datasourceInstanceId,
-      currentDatabase,
-      currentTable
-    )
-
-    const selectedKeys = result.map((row: ModelRecord) => row.name)
-    modelRef.value.setSelectFields(selectedKeys)
+  const handleChangeTable = async (_node: any) => {
+    // Schema lookup on table name input is intentionally skipped to avoid
+    // blocking configuration while the table is still being edited.
   }
 
   const handleTab = (

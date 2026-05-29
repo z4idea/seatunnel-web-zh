@@ -473,9 +473,6 @@ const ConfigurationForm = defineComponent({
       if (props.nodeType === 'sink' && state.model.database) {
         await getTableOptions(state.model.database, '')
       }
-      if (props.nodeType === 'source' && !isSpecialSource()) {
-        await refreshIncrementalColumnOptions()
-      }
       emit('tableNameChange', state.model)
     }
 
