@@ -18,6 +18,7 @@
 import { useRouter } from 'vue-router'
 import { userLogout } from '@/service/user'
 import { useUserStore } from '@/store/user'
+import { markManualLogout } from '@/utils/auto-login'
 import type { Router } from 'vue-router'
 
 export function useUserDropdown() {
@@ -30,10 +31,13 @@ export function useUserDropdown() {
     } else if (key === 'setting') {
       router.push({ path: '/setting' })
     } else if (key === 'logout') {
-      userLogout().then(() => {
-        userStore.setUserInfo({})
-        router.push({ path: '/login' })
-      })
+      userLogout()
+        .catch(() => undefined)
+        .finally(() => {
+          markManualLogout()
+          userStore.setUserInfo({})
+          router.push({ path: '/login' })
+        })
     }
   }
 

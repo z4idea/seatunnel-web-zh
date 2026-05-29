@@ -22,14 +22,14 @@ import axios, {
   InternalAxiosRequestConfig
 } from 'axios'
 import utils from '@/utils'
-import router from '@/router'
 import { useUserStore } from '@/store/user'
 import { useSettingStore } from '@/store/setting'
 import type { UserDetail } from '@/service/user/types'
 import { translateMessage } from '@/utils/message'
-
-const userStore = useUserStore()
-const settingStore = useSettingStore()
+import {
+  attachSilentAuthRequestRenewal,
+  attachSilentAuthResponseRetry
+} from '@/service/silent-auth-retry'
 
 const handleError = (res: AxiosResponse<any, any>) => {
   if (import.meta.env.MODE === 'development') {
@@ -39,33 +39,37 @@ const handleError = (res: AxiosResponse<any, any>) => {
   window.$message.error(translateMessage(res.data.msg))
 }
 
+function getRequestTimeout() {
+  const settingStore = useSettingStore()
+  return settingStore.getRequestTimeValue ? settingStore.getRequestTimeValue : 6000
+}
+
 const baseRequestConfig: AxiosRequestConfig = {
-  timeout: settingStore.getRequestTimeValue
-    ? settingStore.getRequestTimeValue
-    : 6000,
+  timeout: 6000,
   baseURL: '/seatunnel/api/v1'
 }
 
 const service = axios.create(baseRequestConfig)
 
-const err = (err: AxiosError): Promise<AxiosError> => {
-  const userStore = useUserStore()
-  if (err.response?.status === 401) {
-    userStore.setUserInfo({})
-    router.push({ path: '/login' })
-  }
-  return Promise.reject(err)
-}
+attachSilentAuthResponseRetry(service)
 
-service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (Object.keys(userStore.getUserInfo).length > 0) {
-    config.headers &&
-      (config.headers.token = (userStore.getUserInfo as UserDetail)
-        .token as string)
-  }
+service.interceptors.request.use(
+  attachSilentAuthRequestRenewal((config: InternalAxiosRequestConfig) => {
+    config.timeout = config.timeout ?? getRequestTimeout()
+    const userStore = useUserStore()
+    if (Object.keys(userStore.getUserInfo).length > 0) {
+      config.headers =
+        config.headers ||
+        ({} as InternalAxiosRequestConfig['headers'])
+      ;(config.headers as Record<string, string>).token = (
+        userStore.getUserInfo as UserDetail
+      ).token as string
+    }
 
-  return config
-}, err)
+    return config
+  }),
+  (requestError) => Promise.reject(requestError)
+)
 
 service.interceptors.response.use((res: AxiosResponse) => {
   if (res.data.code === undefined) {
@@ -98,6 +102,6 @@ service.interceptors.response.use((res: AxiosResponse) => {
       handleError(res)
       throw new Error()
   }
-}, err)
+}, (error: AxiosError) => Promise.reject(error))
 
 export { service as axios }

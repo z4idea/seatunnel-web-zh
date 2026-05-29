@@ -15,21 +15,32 @@
  * limitations under the License.
  */
 
-import { axios } from '@/service/service'
-import rawAxios from 'axios'
-import { useUserStore } from '@/store/user'
+import axios from 'axios'
+import { axios as apiAxios } from '@/service/service'
+import {
+  attachSilentAuthRequestRenewal,
+  attachSilentAuthResponseRetry
+} from '@/service/silent-auth-retry'
+import { getStoredToken } from '@/utils/auto-login'
 import type { LogParams, LogRes } from './types'
 
-function getLogRequestHeaders(): Record<string, string> {
-  const userStore = useUserStore()
-  const token = (userStore.getUserInfo as { token?: string }).token
+const logAxios = axios.create()
 
-  return token ? { token } : {}
-}
+attachSilentAuthResponseRetry(logAxios)
+logAxios.interceptors.request.use(
+  attachSilentAuthRequestRenewal((config) => {
+    const token = getStoredToken()
+    if (token) {
+      config.headers = config.headers || {}
+      config.headers.token = token
+    }
+    return config
+  })
+)
 
 // Query task logs
 export function queryLog(params: LogParams): Promise<LogRes> {
-  return axios({
+  return apiAxios({
     url: '/log/detail',
     method: 'get',
     params
@@ -38,10 +49,8 @@ export function queryLog(params: LogParams): Promise<LogRes> {
 
 // Get log node list
 export function getLogNodes(jobId: string | number): Promise<any> {
-  // Here we use raw axios to make direct requests, avoiding the addition of /seatunnel/api/v1 prefix
-  return rawAxios.get(`/api/logs/${jobId}`, {
-    params: { format: 'json' },
-    headers: getLogRequestHeaders()
+  return logAxios.get(`/api/logs/${jobId}`, {
+    params: { format: 'json' }
   })
 }
 
@@ -51,37 +60,28 @@ export function getLogContent(logUrl: string): Promise<{ data: string }> {
     return Promise.reject(new Error('Log URL is required'))
   }
 
-  // Proxy absolute engine URLs through the local /api route in development.
   if (logUrl.startsWith('http')) {
     try {
       const url = new URL(logUrl)
       const pathName = url.pathname
       const search = url.search
 
-      return rawAxios.get(`/api${pathName}${search}`, {
-        headers: getLogRequestHeaders()
-      })
+      return logAxios.get(`/api${pathName}${search}`)
     } catch (e) {
       return Promise.reject(new Error('Failed to fetch log content'))
     }
   }
 
   if (logUrl.startsWith('/logs/')) {
-    return rawAxios.get(`/api${logUrl}`, {
-      headers: getLogRequestHeaders()
-    })
+    return logAxios.get(`/api${logUrl}`)
   }
 
   if (logUrl.startsWith('logs/')) {
-    return rawAxios.get(`/api/${logUrl}`, {
-      headers: getLogRequestHeaders()
-    })
+    return logAxios.get(`/api/${logUrl}`)
   }
 
   const [rawFileName] = logUrl.split('?')
   const logFileName = rawFileName.split('/').pop() || ''
 
-  return rawAxios.get(`/api/logs/${encodeURIComponent(logFileName)}`, {
-    headers: getLogRequestHeaders()
-  })
+  return logAxios.get(`/api/logs/${encodeURIComponent(logFileName)}`)
 }

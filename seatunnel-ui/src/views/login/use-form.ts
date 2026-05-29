@@ -23,6 +23,7 @@ import { useRouter } from 'vue-router'
 import type { FormRules } from 'naive-ui'
 import type { Router } from 'vue-router'
 import { useSettingStore } from '@/store/setting'
+import { clearManualLogout } from '@/utils/auto-login'
 
 export function useForm() {
   const router: Router = useRouter()
@@ -72,6 +73,7 @@ export function useForm() {
     let { username, password, useLdap, selectedWorkspace } = state.loginForm
     const headers = useLdap ? { 'X-Seatunnel-Auth-Type': 'LDAP' } : {}
     userLogin({ username, password, workspace: selectedWorkspace }, { headers }).then((res: any) => {
+      clearManualLogout()
       userStore.setUserInfo(res)
       router.push({ path: '/tasks' })
     }).catch((error: any) => {

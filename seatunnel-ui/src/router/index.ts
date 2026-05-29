@@ -19,12 +19,54 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import routes from './routes'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
+import {
+  ensureDefaultAutoLogin,
+  getStoredToken,
+  isJwtExpired,
+  isManualLogout,
+  isUserLoggedIn,
+  renewDefaultTokenIfExpired
+} from '@/utils/auto-login'
 
 const router = createRouter({
   history: createWebHashHistory(
       import.meta.env.MODE === 'production' ? '/ui/' : '/'
   ),
   routes
+})
+
+router.beforeEach(async (to, _from, next) => {
+  try {
+    const token = getStoredToken()
+    if (token && isJwtExpired(token) && !isManualLogout()) {
+      await renewDefaultTokenIfExpired()
+    }
+
+    if (isUserLoggedIn()) {
+      if (to.name === 'login') {
+        next({ path: '/tasks' })
+        return
+      }
+      next()
+      return
+    }
+
+    if (isManualLogout()) {
+      next()
+      return
+    }
+
+    const loggedIn = await ensureDefaultAutoLogin()
+    if (loggedIn && (to.name === 'login' || to.path === '/')) {
+      next({ path: '/tasks' })
+      return
+    }
+
+    next()
+  } catch (error) {
+    console.error('Route auth guard failed:', error)
+    next()
+  }
 })
 
 router.afterEach(() => {

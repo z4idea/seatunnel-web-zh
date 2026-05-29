@@ -35,7 +35,7 @@ const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 app.config.globalProperties.trim = utils.trim
 
-app.use(router)
 app.use(pinia)
+app.use(router)
 app.use(i18n)
 app.mount('#app')
