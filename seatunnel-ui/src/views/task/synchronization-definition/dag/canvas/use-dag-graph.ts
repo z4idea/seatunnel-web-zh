@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -132,11 +135,7 @@ export function useDagGraph(
       vertexMovable: false,
       vertexAddable: false,
       vertexDeletable: false
-    },
-    // 性能优化配置
-    async: true,
-    frozen: false,
-    checkView: false
+    }
   })
   
   // 连线高亮交互

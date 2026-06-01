@@ -71,6 +71,36 @@ export function useNodeModel(
 
   const isHttpSource = () => type === 'source' && state.datasourceName === 'Http'
 
+  const getFallbackSourceOutputTableData = () =>
+    tempOutputTables.filter((row: ModelRecord) => {
+      if (row.unSupport) return false
+      return state.selectedKeys.length ? state.selectedKeys.includes(row.name) : true
+    })
+
+  const getFieldMapperDefaultName = (field: ModelRecord) =>
+    String(field.comment || '').trim() || field.name
+
+  const getDefaultFieldMapperOutputTableData = () =>
+    state.inputTableData.map((field: ModelRecord) => ({
+      ...field,
+      name: getFieldMapperDefaultName(field),
+      original_field: field.name
+    }))
+
+  const getFieldMapperOutputField = (
+    field: ModelRecord,
+    originalFieldName: string,
+    explicitTargetName?: string
+  ) => ({
+    ...field,
+    name:
+      explicitTargetName ||
+      (field.name && field.name !== originalFieldName
+        ? field.name
+        : String(field.comment || '').trim() || originalFieldName),
+    original_field: originalFieldName
+  })
+
   const getModelData = () => {
     // The sink or transform model does not have an output table structure, and
     // the input table structure will be rendered according to the upstream node
@@ -176,13 +206,18 @@ export function useNodeModel(
         tempOutputTables = t.fields
         state.inputTableData = t.fields.filter((f: any) => !f.isSplit)
         if (state.columnSelectable) {
-          if (state.optionsOutputTableData && (state.optionsOutputTableData[0] as any).tableName === state.currentTable) {
-            // The default assignment of the source node output table structure.
-            const result = state.optionsOutputTableData ? (state.optionsOutputTableData[0] as any).fields : tempOutputTables.filter((row: ModelRecord) =>
-              state.selectedKeys.includes(row.name))
-            state.outputTableData = result.filter((r: any) => !r.unSupport)
+          const matchedOutputSchema = state.optionsOutputTableData.find(
+            (table: any) => table.tableName === state.currentTable
+          )
+          if (matchedOutputSchema?.fields?.length) {
+            // Prefer persisted schema when it is present; otherwise keep the
+            // queried input schema so old empty outputSchema data does not
+            // blank the source output table.
+            state.outputTableData = matchedOutputSchema.fields.filter(
+              (row: any) => !row.unSupport
+            )
           } else {
-            state.outputTableData = tempOutputTables.filter((t: any) => !t.unSupport)
+            state.outputTableData = getFallbackSourceOutputTableData()
           }
           // Assign default values to the optional input table structure of the source node.
           state.selectedKeys = state.outputTableData.filter((o: any) => !o.unSupport).map((o: any) => o.name)
@@ -190,29 +225,38 @@ export function useNodeModel(
           if (transformType === 'FieldMapper') {
             // When the transform is empty, the data of the input model is directly copied to the output model.
             if (!state.secondTransformOptions && !state.transformOptions) {
-              state.outputTableData = state.inputTableData.map((i: any) => {
-                i.original_field = i.name
-                return i
-              })
+              state.outputTableData = getDefaultFieldMapperOutputTableData()
               return false
             }
 
             const transformOptions = state.transformOptions.changeOrders ? state.transformOptions : state.secondTransformOptions
+            const renameFieldMap = new Map(
+              (transformOptions?.renameFields || []).map((item: any) => [
+                item.sourceFieldName,
+                item.targetName
+              ])
+            )
             state.outputTableData = state.optionsOutputTableData ?
               (state.optionsOutputTableData[0] as any).fields :
               t.fields.map((f: any, i: number) => {
+                const originalFieldName =
+                  transformOptions?.changeOrders?.[i]?.sourceFieldName || f.name
                 return {
-                  ...f,
-                  original_field: (transformOptions && Object.keys(transformOptions).length > 0) ?
-                    transformOptions.changeOrders[i].sourceFieldName :
-                    f.name
+                  ...getFieldMapperOutputField(
+                    f,
+                    originalFieldName,
+                    renameFieldMap.get(originalFieldName)
+                  )
                 }
               })
             state.outputTableData = state.outputTableData.map((o: any, i: number) => {
-              if (!o.original_field) {
-                o.original_field = transformOptions.changeOrders[i].sourceFieldName
-              }
-              return o
+              const originalFieldName =
+                o.original_field || transformOptions?.changeOrders?.[i]?.sourceFieldName || o.name
+              return getFieldMapperOutputField(
+                o,
+                originalFieldName,
+                renameFieldMap.get(originalFieldName)
+              )
             })
             state.outputTableData.forEach((o: any) => {
               o.isError = o.original_field === state.schemaError.fieldName

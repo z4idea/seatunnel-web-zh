@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -70,6 +73,8 @@ const DagCanvas = defineComponent({
     })
 
     let currentNodeId = ''
+    let pendingViewportFit = false
+    let pendingViewportFitForce = false
 
     const handlePreventDefault = (e: DragEvent) => {
       e.preventDefault()
@@ -85,6 +90,14 @@ const DagCanvas = defineComponent({
         dagContainer.value,
         minimapContainer.value
       )
+
+      graph.value.on('render:done', () => {
+        if (!pendingViewportFit) return
+        const force = pendingViewportFitForce
+        pendingViewportFit = false
+        pendingViewportFitForce = false
+        fitGraphViewport(force)
+      })
     }
 
     const destroyGraph = () => {
@@ -117,6 +130,21 @@ const DagCanvas = defineComponent({
       }
 
       graph.value.centerContent()
+    }
+
+    const requestViewportFit = (force = false) => {
+      pendingViewportFit = true
+      pendingViewportFitForce = pendingViewportFitForce || force
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!pendingViewportFit) return
+          const nextForce = pendingViewportFitForce
+          pendingViewportFit = false
+          pendingViewportFitForce = false
+          fitGraphViewport(nextForce)
+        })
+      })
     }
 
     const registerNode = () => {
@@ -175,7 +203,7 @@ const DagCanvas = defineComponent({
     }
 
     useDagResize(container, graph as Ref<Graph>, () => {
-      fitGraphViewport()
+      requestViewportFit()
     })
 
     ctx.expose({
@@ -197,18 +225,14 @@ const DagCanvas = defineComponent({
       getGraph: () => graph.value,
       addNodesAndEdges: (cells: Cell.Metadata[], edges: InputEdge[]) => {
         initNodesAndEdges(graph.value as Graph, cells, edges)
-        nextTick(() => {
-          fitGraphViewport(true)
-        })
+        nextTick(() => requestViewportFit(true))
       },
       getSelectedCells: () => graph.value?.getSelectedCells(),
       removeCell: (id: string) => graph.value?.removeCell(id),
       getDagData: () => getDagData(graph.value as Graph, t),
       layoutDag: (layoutType: 'grid' | 'dagre', cols: number, rows: number) => {
         formatLayout(graph.value, layoutType, cols, rows)
-        nextTick(() => {
-          fitGraphViewport(true)
-        })
+        nextTick(() => requestViewportFit(true))
       }
     })
 

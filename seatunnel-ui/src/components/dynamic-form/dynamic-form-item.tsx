@@ -2,6 +2,9 @@
  * @author: zhjj
  */
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -18,7 +21,7 @@
  * limitations under the License.
  */
 
-import { defineComponent } from 'vue'
+import { defineComponent, watch } from 'vue'
 import {
   NFormItemGi,
   NGrid,
@@ -53,16 +56,28 @@ const DynamicFormItem = defineComponent({
   name: 'DynamicFormItem',
   props,
   setup(props) {
-    const { t, te } = useI18n()
+    const { t, te, mergeLocaleMessage } = useI18n()
 
-    if (props.locales) {
-      useI18n().mergeLocaleMessage('zh_CN', {
-        i18n: (props.locales as any).zh_CN
+    const syncDynamicLocales = (locales: any) => {
+      if (!locales?.zh_CN || !locales?.en_US) return
+      mergeLocaleMessage('zh_CN', {
+        i18n: locales.zh_CN
       })
-      useI18n().mergeLocaleMessage('en_US', {
-        i18n: (props.locales as any).en_US
+      mergeLocaleMessage('en_US', {
+        i18n: locales.en_US
       })
     }
+
+    watch(
+      () => props.locales,
+      (locales) => {
+        syncDynamicLocales(locales)
+      },
+      {
+        immediate: true,
+        deep: true
+      }
+    )
 
     const formatClass = (name: string, modelField: string) => {
       return name.indexOf('[') >= 0

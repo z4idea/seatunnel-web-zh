@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -64,6 +67,7 @@ const DatasourceList = defineComponent({
     })
 
     const onCreate = () => {
+      SourceId.value = ''
       showSourceModal.value = true
     }
 
@@ -72,12 +76,9 @@ const DatasourceList = defineComponent({
     }
 
     const handleSelectSourceType = (value: string) => {
-        console.log(sourceType.value,'sourceType.value')
-      // SourceId.value = '' // 创建新数据源时不要设置ID，避免调用接口
+      SourceId.value = ''
       sourceType.value = value
-    
       showEditModal.value = true
-      // router.push({ name: 'datasource-create', query: { type: value } })  //旧的
       closeSourceModal()
     }
 
@@ -98,6 +99,9 @@ const DatasourceList = defineComponent({
     
     const closeEditModal = () => {
       showEditModal.value = false
+      SourceId.value = ''
+      sourceType.value = ''
+      updateList()
     }
     
     watch(useI18n().locale, () => {

@@ -20,18 +20,13 @@
 
 import { onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
-import {
-  useFormStructuresStore,
-  StructureItem
-} from '@/store/datasource'
+import { StructureItem } from '@/store/datasource'
 import { dynamicFormItems } from '@/service/data-source'
 import { useFormField } from '@/components/dynamic-form/use-form-field'
 import { useFormRequest } from '@/components/dynamic-form/use-form-request'
 import { useFormValidate } from '@/components/dynamic-form/use-form-validate'
 import { useFormStructure } from '@/components/dynamic-form/use-form-structure'
 import type { FormRules } from 'naive-ui'
-import type { ResponseBasic } from '@/service/types'
 import {
   JDBC_DATABASE_FIELD,
   JDBC_HOST_FIELD,
@@ -43,21 +38,15 @@ import {
 
 export function useForm(type: string) {
   const { t } = useI18n()
-  const router = useRouter()
-  const formStructuresStore = useFormStructuresStore()
 
-  const initialValues = {
-    pluginName: type,
+  const buildInitialValues = (pluginName = '') => ({
+    pluginName,
     datasourceName: '',
     description: ''
-  }
+  })
 
-  const state = reactive({
-    detailForm: { ...initialValues },
-    formName: '',
-    formStructure: [] as StructureItem[],
-    locales: {},
-    rules: {
+  const buildBaseRules = () =>
+    ({
       name: {
         trigger: ['input'],
         validator() {
@@ -66,7 +55,14 @@ export function useForm(type: string) {
           }
         }
       }
-    } as FormRules
+    } as FormRules)
+
+  const state = reactive({
+    detailForm: buildInitialValues(type),
+    formName: '',
+    formStructure: [] as StructureItem[],
+    locales: {},
+    rules: buildBaseRules()
   })
 
   const buildJdbcFormItems = (forms: Array<any>, pluginName: string) => {
@@ -120,7 +116,16 @@ export function useForm(type: string) {
   }
 
   const getFormItems = async (value: string) => {
+    if (!value) {
+      resetFieldsValue()
+      return
+    }
+
     state.formName = value
+    state.detailForm = buildInitialValues(value)
+    state.formStructure = []
+    state.locales = {}
+    state.rules = buildBaseRules()
     const clearJdbcRules = () => {
       delete state.rules[JDBC_HOST_FIELD]
       delete state.rules[JDBC_PORT_FIELD]
@@ -151,18 +156,6 @@ export function useForm(type: string) {
       }
     }
 
-    if (formStructuresStore.getItem(value)) {
-      const cachedForms = formStructuresStore.getItem(value) as StructureItem[]
-      state.formStructure = cachedForms
-      Object.assign(state.detailForm, useFormField(cachedForms as Array<any>))
-      Object.assign(
-        state.rules,
-        useFormValidate(cachedForms as Array<any>, state.detailForm, t)
-      )
-      applyJdbcRules(value)
-      return
-    }
-
     const result: any = await dynamicFormItems(value)
 
     try {
@@ -188,8 +181,12 @@ export function useForm(type: string) {
     getFormItems(value)
   }
 
-  const resetFieldsValue = () => {
-    state.detailForm = { ...initialValues }
+  const resetFieldsValue = (pluginName = '') => {
+    state.detailForm = buildInitialValues(pluginName)
+    state.formName = ''
+    state.formStructure = []
+    state.locales = {}
+    state.rules = buildBaseRules()
   }
 
   const setFieldsValue = (values: any) => {

@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { defineComponent, ref,watch,h } from 'vue'
+import { defineComponent, ref, watch, h } from 'vue'
 import {
   NSpace,
   NBreadcrumb,
@@ -68,7 +71,14 @@ const DatasourceCreate = defineComponent({
     const showSourceModal = ref(false)
     const detailFormRef = ref(null)
 
-    const { state, changeType, getFieldsValue, setFieldsValue, getFormItems } =
+    const {
+      state,
+      changeType,
+      getFieldsValue,
+      setFieldsValue,
+      getFormItems,
+      resetFieldsValue
+    } =
       useForm(props.sourceType)
 
     const { status, testConnect, createOrUpdate, queryById } = useDetail(
@@ -83,7 +93,27 @@ const DatasourceCreate = defineComponent({
       }
     )
 
+    const resetModalState = () => {
+      resetFieldsValue()
+      detailFormRef.value?.restoreValidation?.()
+    }
+
+    const initializeModalState = async () => {
+      if (SourceId.value) {
+        await queryById(SourceId.value)
+        detailFormRef.value?.restoreValidation?.()
+        return
+      }
+      if (props.sourceType) {
+        await getFormItems(props.sourceType)
+        detailFormRef.value?.restoreValidation?.()
+        return
+      }
+      resetModalState()
+    }
+
     const handleClose = () => {
+      resetModalState()
       props.onClose()
     }
     const showModal = () => {
@@ -105,13 +135,24 @@ const DatasourceCreate = defineComponent({
     }
     watch(() => props.SourceId, (newVal) => {
       SourceId.value = newVal
-      if (newVal) {
-        queryById(newVal)
+      if (props.show && newVal) {
+        void queryById(newVal)
       }
     })
     watch(() => props.sourceType, (newVal) => {
-      if (newVal) {
-        getFormItems(newVal)
+      if (props.show && !SourceId.value) {
+        if (newVal) {
+          void getFormItems(newVal)
+        } else {
+          resetModalState()
+        }
+      }
+    })
+    watch(() => props.show, (visible) => {
+      if (visible) {
+        void initializeModalState()
+      } else {
+        resetModalState()
       }
     })
     return () => (
