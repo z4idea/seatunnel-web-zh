@@ -22,6 +22,7 @@ package org.apache.seatunnel.app.service.impl;
 
 import org.apache.seatunnel.api.configuration.util.OptionRule;
 import org.apache.seatunnel.app.config.ConnectorDataSourceMapperConfig;
+import org.apache.seatunnel.app.config.SlinkProperties;
 import org.apache.seatunnel.app.dal.dao.IDatasourceDao;
 import org.apache.seatunnel.app.dal.dao.IJobTaskDao;
 import org.apache.seatunnel.app.dal.dao.IVirtualTableDao;
@@ -107,6 +108,8 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
     private static final String SLINK_DATASOURCE_ORIGIN = "SLINK";
 
     @Autowired private ConfigShadeUtil configShadeUtil;
+
+    @Autowired private SlinkProperties slinkProperties;
 
     @Resource private WorkspaceService workspaceService;
 
@@ -761,6 +764,10 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
         datasourceDetailRes.setAllowSink(datasource.getAllowSink());
         datasourceDetailRes.setEditable(datasource.getEditable());
         datasourceDetailRes.setDeletable(datasource.getDeletable());
+        if (StringUtils.equalsIgnoreCase(datasource.getOrigin(), SLINK_DATASOURCE_ORIGIN)) {
+            datasourceDetailRes.setSlinkDefaultDatabase(slinkProperties.getDatabase());
+            datasourceDetailRes.setSlinkDefaultSchema(slinkProperties.getSchema());
+        }
         datasourceDetailRes.setCreateTime(datasource.getCreateTime());
         datasourceDetailRes.setUpdateTime(datasource.getUpdateTime());
 

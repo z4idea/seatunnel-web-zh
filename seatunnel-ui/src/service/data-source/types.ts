@@ -30,6 +30,13 @@ export interface DataSourceDetail {
   allowSink?: boolean
   editable?: boolean
   deletable?: boolean
+  slinkDefaultDatabase?: string
+  slinkDefaultSchema?: string
+}
+
+export interface SlinkDefaultConfig {
+  database?: string
+  schema?: string
 }
 
 export interface DatasourceListParameters {

@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -19,7 +22,8 @@ import { axios } from '@/service/service'
 import {
   DatasourceListParameters,
   DataSourceDetail,
-  DatasourceTestConnectParameters
+  DatasourceTestConnectParameters,
+  SlinkDefaultConfig
 } from './types'
 
 const DATASOURCE_BASE_URL = '/datasource'
@@ -59,6 +63,13 @@ export function deleteDatasource(id: string): any {
 export function getDatasourceDetail(id: string): any {
   return axios({
     url: DATASOURCE_BASE_URL + '/' + id,
+    method: 'get'
+  })
+}
+
+export function getSlinkDefaultConfig(): Promise<SlinkDefaultConfig> {
+  return axios({
+    url: DATASOURCE_BASE_URL + '/slink-defaults',
     method: 'get'
   })
 }

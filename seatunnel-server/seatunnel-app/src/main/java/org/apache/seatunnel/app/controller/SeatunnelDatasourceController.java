@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -19,6 +20,7 @@ package org.apache.seatunnel.app.controller;
 
 import org.apache.seatunnel.app.common.Constants;
 import org.apache.seatunnel.app.common.Result;
+import org.apache.seatunnel.app.config.SlinkProperties;
 import org.apache.seatunnel.app.dal.dao.IUserDao;
 import org.apache.seatunnel.app.dal.entity.User;
 import org.apache.seatunnel.app.domain.dto.datasource.DatabaseTableFields;
@@ -29,6 +31,7 @@ import org.apache.seatunnel.app.domain.request.datasource.DatasourceReq;
 import org.apache.seatunnel.app.domain.response.PageInfo;
 import org.apache.seatunnel.app.domain.response.datasource.DatasourceDetailRes;
 import org.apache.seatunnel.app.domain.response.datasource.DatasourceRes;
+import org.apache.seatunnel.app.domain.response.datasource.SlinkDefaultConfigRes;
 import org.apache.seatunnel.app.service.IDatasourceService;
 import org.apache.seatunnel.app.utils.CartesianProductUtils;
 import org.apache.seatunnel.app.utils.PropertyUtils;
@@ -70,6 +73,8 @@ import java.util.stream.Collectors;
 public class SeatunnelDatasourceController extends BaseController {
 
     @Autowired private IDatasourceService datasourceService;
+
+    @Resource private SlinkProperties slinkProperties;
 
     @Resource(name = "userDaoImpl")
     private IUserDao userMapper;
@@ -303,6 +308,13 @@ public class SeatunnelDatasourceController extends BaseController {
     @GetMapping("/databases")
     Result<List<String>> getDatabases(@RequestParam("datasourceName") String datasourceName) {
         return Result.success(datasourceService.queryDatabaseByDatasourceName(datasourceName));
+    }
+
+    @GetMapping("/slink-defaults")
+    Result<SlinkDefaultConfigRes> getSlinkDefaults() {
+        return Result.success(
+                new SlinkDefaultConfigRes(
+                        slinkProperties.getDatabase(), slinkProperties.getSchema()));
     }
 
     @GetMapping("/tables")

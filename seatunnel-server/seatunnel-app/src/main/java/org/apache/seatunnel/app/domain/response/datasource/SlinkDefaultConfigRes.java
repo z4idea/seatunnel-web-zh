@@ -1,6 +1,4 @@
-/*
- * @author: zhjj
- */
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,46 +18,14 @@
 
 package org.apache.seatunnel.app.domain.response.datasource;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.Date;
-import java.util.Map;
-
 @Data
-public class DatasourceDetailRes {
+@AllArgsConstructor
+public class SlinkDefaultConfigRes {
 
-    private String id;
+    private String database;
 
-    private String datasourceName;
-
-    private String pluginName;
-
-    private String pluginVersion;
-
-    // todo check configuration
-    private Map<String, String> datasourceConfig;
-
-    private String description;
-
-    private String origin;
-
-    private Boolean allowSource;
-
-    private Boolean allowSink;
-
-    private Boolean editable;
-
-    private Boolean deletable;
-
-    private String slinkDefaultDatabase;
-
-    private String slinkDefaultSchema;
-
-    private String createUserName;
-
-    private String updateUserName;
-
-    private Date createTime;
-
-    private Date updateTime;
+    private String schema;
 }

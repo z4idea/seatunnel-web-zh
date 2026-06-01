@@ -35,9 +35,16 @@ import {
   findSink,
   getInputTableSchema
 } from '@/service/sync-task-definition'
-import { getDatasourceDetail } from '@/service/data-source'
+import {
+  getDatasourceDetail,
+  getSlinkDefaultConfig
+} from '@/service/data-source'
 import { previewLocalFile } from '@/service/local-file'
 import { previewHttpDatasource } from '@/service/http-datasource'
+import type {
+  DataSourceDetail,
+  SlinkDefaultConfig
+} from '@/service/data-source/types'
 import type { JdbcIncrementalColumnType } from '@/service/sync-task-definition'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
 import { getDefaultNodeName, isComponentDefaultName } from './component-display'
@@ -233,6 +240,9 @@ export const useConfigurationForm = (
   const getSingleValue = (value: null | string | string[]) =>
     Array.isArray(value) ? value[0] || null : value
 
+  const hasValue = (value: unknown) =>
+    !(value === null || value === undefined || String(value).trim() === '')
+
   const isLocalFileSource = () =>
     nodeType === 'source' &&
     (state.model.sourceKind === 'LOCAL_FILE' ||
@@ -337,6 +347,38 @@ export const useConfigurationForm = (
     }
 
     return forms
+  }
+
+  const applySlinkSinkDefaults = async (
+    datasourceDetail?: DataSourceDetail | null
+  ) => {
+    if (
+      nodeType !== 'sink' ||
+      String(state.model.datasourceOrigin || '').toUpperCase() !== 'SLINK'
+    ) {
+      return
+    }
+
+    const defaultSchema = String(
+      datasourceDetail?.slinkDefaultSchema || ''
+    ).trim()
+
+    if (defaultSchema) {
+      const matchedDatabaseOption = state.databaseOptions.find(
+        (option: TableOption) => option.value === defaultSchema
+      )
+      state.databaseOptions = matchedDatabaseOption
+        ? [matchedDatabaseOption]
+        : [{ label: defaultSchema, value: defaultSchema }]
+      state.model.database = defaultSchema
+      if (dagStore.getDagInfo.jobType === 'DATA_INTEGRATION') {
+        await getTableOptions(defaultSchema, '')
+      }
+    }
+
+    if (defaultSchema && state.formFieldNames.includes('schema')) {
+      ;(state.model as Record<string, any>).schema = defaultSchema
+    }
   }
 
   const setIncrementalColumnOptions = (options: TableOption[]) => {
@@ -516,9 +558,9 @@ export const useConfigurationForm = (
     option?: any
   ) => {
     if (option?.label) state.model.datasourceInstanceName = option.label
-    const datasourceDetail = datasourceInstanceId
+    const datasourceDetail = (datasourceInstanceId
       ? await getDatasourceDetail(datasourceInstanceId)
-      : null
+      : null) as DataSourceDetail | null
     state.model.datasourceOrigin = datasourceDetail?.origin || ''
     if (option?.datasourceName) {
       state.model.datasourceName = option.datasourceName
@@ -564,6 +606,7 @@ export const useConfigurationForm = (
         }))
       }
       await getFormStructure(datasourceInstanceId)
+      await applySlinkSinkDefaults(datasourceDetail)
     } finally {
       state.databaseLoading = false
     }
@@ -604,6 +647,47 @@ export const useConfigurationForm = (
     }
   }
 
+  const applySlinkSinkDatasourceConstraint = async () => {
+    if (nodeType !== 'sink') {
+      return
+    }
+
+    let slinkDefaultConfig: SlinkDefaultConfig | null = null
+    try {
+      slinkDefaultConfig = await getSlinkDefaultConfig()
+    } catch {
+      return
+    }
+
+    const defaultDatasourceName = String(slinkDefaultConfig?.database || '').trim()
+    if (!defaultDatasourceName) {
+      return
+    }
+
+    const matchedOption = state.datasourceOptions.find(
+      (option: TableOption) => option.label === defaultDatasourceName
+    )
+    state.datasourceOptions = matchedOption ? [matchedOption] : []
+    if (!matchedOption) {
+      state.model.datasourceInstanceId = null
+      state.model.datasourceInstanceName = null
+      state.model.database = null
+      state.model.tableName = null
+      return
+    }
+
+    if (state.model.datasourceInstanceId === matchedOption.value) {
+      state.model.datasourceInstanceName = String(matchedOption.label || '')
+      return
+    }
+
+    state.model.datasourceInstanceId = matchedOption.value
+    state.model.datasourceInstanceName = String(matchedOption.label || '')
+    state.model.database = null
+    state.model.tableName = null
+    await getDatabaseOptions(String(matchedOption.value), matchedOption)
+  }
+
   const getSinks = async () => {
     try {
       if (state.datasourceLoading) return
@@ -616,6 +700,7 @@ export const useConfigurationForm = (
           item.dataSourceInfo?.connectorInfo?.pluginIdentifier.pluginName,
         datasourceName: item.dataSourceInfo?.datasourceName
       }))
+      await applySlinkSinkDatasourceConstraint()
     } finally {
       state.datasourceLoading = false
     }
