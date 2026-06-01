@@ -236,3 +236,45 @@ font-size: 16px !important;
   background-size: 100% 100%;
   margin-right: 8px;
 }
+
+/* DAG 连接点高亮样式 */
+.x6-port-body {
+  transition: all 0.2s ease;
+}
+
+.x6-port-body.port-highlight {
+  fill: #5F95FF !important;
+  stroke: #5F95FF !important;
+  stroke-width: 2px !important;
+  r: 6 !important;
+}
+
+/* DAG 连线样式优化 */
+.x6-edge {
+  cursor: pointer;
+}
+
+.x6-edge-selected .x6-edge-path {
+  stroke: #5F95FF !important;
+  stroke-width: 3px !important;
+}
+
+/* DAG 节点选中样式 */
+.x6-node-selected rect {
+  stroke: #5F95FF !important;
+  stroke-width: 2px !important;
+}
+
+/* 性能优化：使用 GPU 加速 */
+.x6-graph-svg {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.x6-node {
+  will-change: transform;
+}
+
+.x6-edge {
+  will-change: transform;
+}

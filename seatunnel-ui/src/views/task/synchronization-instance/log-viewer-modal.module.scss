@@ -46,6 +46,25 @@
   margin-left: 16px;
 }
 
+.download-button {
+  margin-left: 8px;
+}
+
+.search-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .log-content-container {
   height: 70vh; /* Uses viewport height unit to ensure sufficient height on different screen sizes */
   min-height: 500px; /* Sets minimum height to ensure enough space on small screens */
@@ -65,7 +84,7 @@
 .log-content {
   height: 100%;
   overflow: auto !important; /* Forces scrollbar to be visible */
-  font-family: monospace;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 13px; /* Slightly increased font size for better readability */
   line-height: 1.5;
   white-space: pre-wrap;
@@ -81,6 +100,30 @@
     height: auto; /* Changed to auto to fit content */
     min-height: 100%; /* Ensures it occupies at least the container's height */
     overflow: visible; /* Makes pre element's content visible, controlled by parent container's scroll */
+  }
+  
+  /* 关键字高亮样式 */
+  :global(.log-keyword-highlight) {
+    color: #d32f2f;
+    font-weight: 600;
+    background-color: rgba(211, 47, 47, 0.1);
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+  
+  /* 搜索高亮样式 */
+  :global(.log-search-highlight) {
+    background-color: rgba(255, 235, 59, 0.6);
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+  
+  :global(.log-search-highlight-current) {
+    background-color: rgba(255, 152, 0, 0.8);
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: 600;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.3);
   }
   
   /* Custom scrollbar styles - for Webkit browsers */

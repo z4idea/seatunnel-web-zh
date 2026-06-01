@@ -23,7 +23,7 @@ export function useDagGraph(
   dagContainer: HTMLElement,
   minimapContainer: HTMLElement
 ) {
-  return new Graph({
+  const graphInstance = new Graph({
     container: dagContainer,
     scroller: {
       enabled: true,
@@ -50,11 +50,26 @@ export function useDagGraph(
       factor: 1.1
     },
     connecting: {
-      router: 'manhattan',
+      router: {
+        name: 'manhattan',
+        args: {
+          padding: 20,
+          startDirections: ['right'],
+          endDirections: ['left']
+        }
+      },
+      connector: {
+        name: 'rounded',
+        args: {
+          radius: 8
+        }
+      },
       allowBlank: false,
       allowLoop: false,
       allowNode: false,
-      snap: true,
+      snap: {
+        radius: 20
+      },
       createEdge() {
         return graph.value?.createEdge({ shape: DagEdgeName })
       },
@@ -80,7 +95,10 @@ export function useDagGraph(
         return true
       }
     },
-    snapline: true,
+    snapline: {
+      enabled: true,
+      sharp: true
+    },
     minimap: {
       enabled: true,
       width: 200,
@@ -94,6 +112,60 @@ export function useDagGraph(
       movable: true,
       showNodeSelectionBox: true,
       showEdgeSelectionBox: true
-    }
+    },
+    highlighting: {
+      magnetAdsorbed: {
+        name: 'stroke',
+        args: {
+          attrs: {
+            fill: '#5F95FF',
+            stroke: '#5F95FF'
+          }
+        }
+      }
+    },
+    interacting: {
+      nodeMovable: true,
+      edgeMovable: false,
+      edgeLabelMovable: false,
+      arrowheadMovable: false,
+      vertexMovable: false,
+      vertexAddable: false,
+      vertexDeletable: false
+    },
+    // 性能优化配置
+    async: true,
+    frozen: false,
+    checkView: false
   })
+  
+  // 连线高亮交互
+  graphInstance.on('edge:mouseenter', ({ edge }) => {
+    edge.attr('line/strokeWidth', 3)
+    edge.attr('line/stroke', '#5F95FF')
+    edge.setZIndex(1000)
+  })
+  
+  graphInstance.on('edge:mouseleave', ({ edge }) => {
+    edge.attr('line/strokeWidth', 2)
+    edge.attr('line/stroke', '#A2B1C3')
+    edge.setZIndex(0)
+  })
+  
+  // 节点连接点高亮
+  graphInstance.on('node:mouseenter', ({ node }) => {
+    const ports = dagContainer.querySelectorAll('.x6-port-body')
+    ports.forEach((port) => {
+      port.classList.add('port-highlight')
+    })
+  })
+  
+  graphInstance.on('node:mouseleave', ({ node }) => {
+    const ports = dagContainer.querySelectorAll('.x6-port-body')
+    ports.forEach((port) => {
+      port.classList.remove('port-highlight')
+    })
+  })
+  
+  return graphInstance
 }

@@ -1,0 +1,87 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.progress-section {
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progress-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.progress-percent {
+  font-size: 24px;
+  font-weight: 700;
+  color: #18a058;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #18a058;
+}
+
+.metric-unit {
+  font-size: 14px;
+  color: #999;
+  margin-left: 4px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  
+  &[data-status="running"],
+  &[data-status="executing"] {
+    background-color: #e6f7ff;
+    color: #1890ff;
+  }
+  
+  &[data-status="finished"],
+  &[data-status="completed"],
+  &[data-status="success"] {
+    background-color: #f6ffed;
+    color: #52c41a;
+  }
+  
+  &[data-status="failed"],
+  &[data-status="error"] {
+    background-color: #fff1f0;
+    color: #ff4d4f;
+  }
+  
+  &[data-status="canceled"],
+  &[data-status="killed"],
+  &[data-status="stopped"] {
+    background-color: #f5f5f5;
+    color: #999;
+  }
+}

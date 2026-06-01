@@ -1344,7 +1344,15 @@ export default {
     error_message: '错误信息',
     issue_detail: '异常详情',
     completed_with_issue_tip: '任务状态已完成，但引擎返回了异常详情，请结合日志一起判断。',
-    task_metrics: '任务监控'
+    task_metrics: '任务监控',
+    search_placeholder: '搜索日志内容...',
+    case_sensitive: '区分大小写',
+    download_success: '日志下载成功',
+    task_progress: '任务执行进度',
+    execution_progress: '执行进度',
+    read_metrics: '读取指标',
+    write_metrics: '写入指标',
+    write_rate: '写入速率（行/秒）'
   },
   menu: {
     fav: '收藏组件',

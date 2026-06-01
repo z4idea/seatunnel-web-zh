@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { defineComponent, PropType, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { defineComponent, PropType, ref, watch, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   NModal,
@@ -25,7 +25,11 @@ import {
   NButton,
   NEmpty,
   NAlert,
-  NSwitch
+  NSwitch,
+  NInput,
+  NInputGroup,
+  NTag,
+  NTooltip
 } from 'naive-ui'
 import { getLogNodes, getLogContent } from '@/service/log'
 import type { LogNode } from '@/service/log/types'
@@ -62,6 +66,15 @@ const LogViewerModal = defineComponent({
     const error = ref('')
     const refreshTimerId = ref<number | null>(null)
     const userScrolled = ref(false)
+    
+    // 搜索相关状态
+    const searchKeyword = ref('')
+    const caseSensitive = ref(false)
+    const currentMatchIndex = ref(0)
+    const matchedLines = ref<number[]>([])
+    
+    // 高亮关键字配置
+    const highlightKeywords = ref<string[]>(['ERROR', 'WARN', 'Exception', 'Failed'])
 
     const refreshIntervalOptions = [
       { label: t('project.synchronization_instance.refresh_off'), value: 0 },
@@ -71,6 +84,48 @@ const LogViewerModal = defineComponent({
       { label: t('project.synchronization_instance.refresh_30s'), value: 30 },
       { label: t('project.synchronization_instance.refresh_60s'), value: 60 }
     ]
+    
+    // 计算搜索匹配数量
+    const matchCount = computed(() => matchedLines.value.length)
+    
+    // 处理日志内容高亮
+    const highlightedLogContent = computed(() => {
+      if (!logContent.value) return ''
+      
+      let content = logContent.value
+      const lines = content.split('\n')
+      const highlightedLines = lines.map((line, index) => {
+        let highlightedLine = line
+        
+        // 高亮预设关键字（ERROR, WARN等）
+        highlightKeywords.value.forEach(keyword => {
+          const regex = new RegExp(`(${keyword})`, 'gi')
+          highlightedLine = highlightedLine.replace(regex, '<span class="log-keyword-highlight">$1</span>')
+        })
+        
+        // 高亮搜索关键字
+        if (searchKeyword.value) {
+          const searchRegex = caseSensitive.value 
+            ? new RegExp(`(${escapeRegex(searchKeyword.value)})`, 'g')
+            : new RegExp(`(${escapeRegex(searchKeyword.value)})`, 'gi')
+          
+          if (searchRegex.test(line)) {
+            const isCurrentMatch = matchedLines.value[currentMatchIndex.value] === index
+            const highlightClass = isCurrentMatch ? 'log-search-highlight-current' : 'log-search-highlight'
+            highlightedLine = highlightedLine.replace(searchRegex, `<span class="${highlightClass}">$1</span>`)
+          }
+        }
+        
+        return highlightedLine
+      })
+      
+      return highlightedLines.join('\n')
+    })
+    
+    // 转义正则表达式特殊字符
+    const escapeRegex = (str: string) => {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
 
     const resetLogState = () => {
       logNodes.value = []
@@ -80,6 +135,9 @@ const LogViewerModal = defineComponent({
       loadingLogs.value = false
       error.value = ''
       userScrolled.value = false
+      searchKeyword.value = ''
+      currentMatchIndex.value = 0
+      matchedLines.value = []
     }
 
     const normalizeLogNodes = (payload: any): LogNode[] => {
@@ -195,6 +253,88 @@ const LogViewerModal = defineComponent({
 
       userScrolled.value = !isAtBottom
     }
+    
+    // 搜索功能
+    const handleSearch = () => {
+      if (!searchKeyword.value || !logContent.value) {
+        matchedLines.value = []
+        currentMatchIndex.value = 0
+        return
+      }
+      
+      const lines = logContent.value.split('\n')
+      const matches: number[] = []
+      const searchRegex = caseSensitive.value 
+        ? new RegExp(escapeRegex(searchKeyword.value), 'g')
+        : new RegExp(escapeRegex(searchKeyword.value), 'gi')
+      
+      lines.forEach((line, index) => {
+        if (searchRegex.test(line)) {
+          matches.push(index)
+        }
+      })
+      
+      matchedLines.value = matches
+      currentMatchIndex.value = 0
+      
+      if (matches.length > 0) {
+        scrollToLine(matches[0])
+      }
+    }
+    
+    // 上一个匹配
+    const handlePrevMatch = () => {
+      if (matchedLines.value.length === 0) return
+      
+      currentMatchIndex.value = (currentMatchIndex.value - 1 + matchedLines.value.length) % matchedLines.value.length
+      scrollToLine(matchedLines.value[currentMatchIndex.value])
+    }
+    
+    // 下一个匹配
+    const handleNextMatch = () => {
+      if (matchedLines.value.length === 0) return
+      
+      currentMatchIndex.value = (currentMatchIndex.value + 1) % matchedLines.value.length
+      scrollToLine(matchedLines.value[currentMatchIndex.value])
+    }
+    
+    // 滚动到指定行
+    const scrollToLine = (lineNumber: number) => {
+      nextTick(() => {
+        if (logContentRef.value) {
+          const lineHeight = 21 // 1.5 * 14px font-size
+          const scrollPosition = lineNumber * lineHeight - logContentRef.value.clientHeight / 2
+          logContentRef.value.scrollTop = Math.max(0, scrollPosition)
+        }
+      })
+    }
+    
+    // 下载日志
+    const handleDownload = () => {
+      if (!logContent.value) {
+        window.$message.warning(t('project.synchronization_instance.no_log_content'))
+        return
+      }
+      
+      const blob = new Blob([logContent.value], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${props.jobName || props.jobId}_${selectedLogNode.value.split('/').pop() || 'log'}.txt`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+      window.$message.success(t('project.synchronization_instance.download_success'))
+    }
+    
+    // 清空搜索
+    const handleClearSearch = () => {
+      searchKeyword.value = ''
+      matchedLines.value = []
+      currentMatchIndex.value = 0
+    }
 
     watch(() => selectedLogNode.value, (newValue, oldValue) => {
       if (!newValue || newValue === oldValue) {
@@ -253,7 +393,18 @@ const LogViewerModal = defineComponent({
       userScrolled,
       handleRefresh,
       handleScroll,
-      scrollToBottom
+      scrollToBottom,
+      searchKeyword,
+      caseSensitive,
+      currentMatchIndex,
+      matchedLines,
+      matchCount,
+      highlightedLogContent,
+      handleSearch,
+      handlePrevMatch,
+      handleNextMatch,
+      handleDownload,
+      handleClearSearch
     }
   },
   render() {
@@ -305,7 +456,67 @@ const LogViewerModal = defineComponent({
               <NButton onClick={this.handleRefresh} loading={this.loadingLogs} class={styles['refresh-button']}>
                 {t('project.synchronization_instance.refresh')}
               </NButton>
+              <NButton onClick={this.handleDownload} disabled={!this.logContent} class={styles['download-button']}>
+                <span class="iconify" data-icon="material-symbols:download" style="margin-right: 4px;" />
+                {t('project.synchronization_instance.download_log')}
+              </NButton>
             </div>
+          </div>
+          
+          {/* 搜索栏 */}
+          <div class={styles['search-panel']}>
+            <NInputGroup>
+              <NInput
+                v-model:value={this.searchKeyword}
+                placeholder={t('project.synchronization_instance.search_placeholder')}
+                onKeyup={(e: KeyboardEvent) => e.key === 'Enter' && this.handleSearch()}
+                style="flex: 1;"
+              >
+                {{
+                  suffix: () => (
+                    this.searchKeyword && (
+                      <span
+                        class="iconify"
+                        data-icon="material-symbols:close"
+                        style="cursor: pointer; color: #999;"
+                        onClick={this.handleClearSearch}
+                      />
+                    )
+                  )
+                }}
+              </NInput>
+              <NTooltip trigger="hover">
+                {{
+                  trigger: () => (
+                    <NButton
+                      onClick={() => this.caseSensitive = !this.caseSensitive}
+                      type={this.caseSensitive ? 'primary' : 'default'}
+                      style="width: 40px;"
+                    >
+                      Aa
+                    </NButton>
+                  ),
+                  default: () => t('project.synchronization_instance.case_sensitive')
+                }}
+              </NTooltip>
+              <NButton onClick={this.handleSearch} type="primary">
+                <span class="iconify" data-icon="material-symbols:search" />
+              </NButton>
+            </NInputGroup>
+            
+            {this.matchCount > 0 && (
+              <div class={styles['search-result']}>
+                <NTag size="small" type="info">
+                  {this.currentMatchIndex + 1} / {this.matchCount}
+                </NTag>
+                <NButton size="small" onClick={this.handlePrevMatch} disabled={this.matchCount === 0}>
+                  <span class="iconify" data-icon="material-symbols:keyboard-arrow-up" />
+                </NButton>
+                <NButton size="small" onClick={this.handleNextMatch} disabled={this.matchCount === 0}>
+                  <span class="iconify" data-icon="material-symbols:keyboard-arrow-down" />
+                </NButton>
+              </div>
+            )}
           </div>
           
           <div class={styles['log-content-container']}>
@@ -322,7 +533,7 @@ const LogViewerModal = defineComponent({
                   ref="logContentRef"
                   onScroll={this.handleScroll}
                 >
-                  <pre>{this.logContent || t('project.synchronization_instance.no_log_content')}</pre>
+                  <pre innerHTML={this.highlightedLogContent || t('project.synchronization_instance.no_log_content')}></pre>
                   {this.userScrolled && this.autoScroll && (
                     <div
                       style="position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;"

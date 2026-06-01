@@ -101,7 +101,9 @@ public class JobDefinitionServiceImpl extends SeatunnelBaseServiceImpl
                 .engineVersion("2.3.11");
         if (BusinessMode.DATA_INTEGRATION.equals(jobReq.getJobType())) {
             builder.jobMode(JobMode.BATCH);
-            builder.env(JsonUtils.toJsonString(Collections.singletonMap("job.mode", JobMode.BATCH.name())));
+            builder.env(
+                    JsonUtils.toJsonString(
+                            Collections.singletonMap("job.mode", JobMode.BATCH.name())));
         } else if (BusinessMode.DATA_REPLICA.equals(jobReq.getJobType())) {
             builder.jobMode(JobMode.STREAMING);
             builder.env(

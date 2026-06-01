@@ -1378,7 +1378,15 @@ export default {
     issue_detail: 'Issue Details',
     completed_with_issue_tip:
       'The job finished, but the engine still returned diagnostic details. Check logs together.',
-    task_metrics: 'Task Monitor'
+    task_metrics: 'Task Metrics',
+    search_placeholder: 'Search log content...',
+    case_sensitive: 'Case Sensitive',
+    download_success: 'Log downloaded successfully',
+    task_progress: 'Task Progress',
+    execution_progress: 'Execution Progress',
+    read_metrics: 'Read Metrics',
+    write_metrics: 'Write Metrics',
+    write_rate: 'Write Rate (Row / Second)'
   },
   menu: {
     fav: 'Favorites',
