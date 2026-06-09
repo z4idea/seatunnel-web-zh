@@ -141,6 +141,8 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
 
     @Resource private IJobIncrementalService jobIncrementalService;
 
+    @Resource private SlinkMetadataSyncService slinkMetadataSyncService;
+
     @Autowired private ConfigShadeUtil configShadeUtil;
 
     @Autowired private EncryptionConfig encryptionConfig;
@@ -488,6 +490,9 @@ public class JobInstanceServiceImpl extends SeatunnelBaseServiceImpl
         jobInstance.setErrorMessage(JobUtils.getJobInstanceErrorMessage(jobResult.getError()));
         jobInstanceDao.update(jobInstance);
         jobIncrementalService.completeExecution(jobInstance, jobResult.getStatus());
+        if (JobStatus.FINISHED == jobResult.getStatus()) {
+            slinkMetadataSyncService.syncFinishedJobMetadata(jobInstance);
+        }
     }
 
     private Config buildTransformConfig(

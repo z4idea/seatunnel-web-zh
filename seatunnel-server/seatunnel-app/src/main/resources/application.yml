@@ -61,6 +61,9 @@ slink:
 seatunnel-web:
   schedule:
     time-zone: Asia/Shanghai
+  slink:
+    metadata-sync:
+      base-url: http://192.168.76.134:17081
   engine:
     base-url: http://localhost:8080
   datasource:
