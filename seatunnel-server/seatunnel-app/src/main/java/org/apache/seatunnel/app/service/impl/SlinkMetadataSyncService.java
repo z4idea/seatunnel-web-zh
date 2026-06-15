@@ -74,11 +74,12 @@ public class SlinkMetadataSyncService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         String url = buildSyncUrl();
-
+        log.info("url: {}", url);
         for (Map<String, Object> requestBody : requests) {
             try {
                 restTemplate.postForEntity(
                         url, new HttpEntity<>(requestBody, headers), String.class);
+                log.info("完成调用");
             } catch (Exception e) {
                 log.error(
                         "Failed to sync SLink metadata, jobInstanceId={}, tableName={}",
@@ -176,7 +177,8 @@ public class SlinkMetadataSyncService {
                         readOptionalString(connectorConfig, "url"),
                         readOptionalString(connectorConfig, "jdbcUrl"));
 
-        if (StringUtils.isNotBlank(schema) && StringUtils.startsWithIgnoreCase(jdbcUrl, "jdbc:dm://")) {
+        if (StringUtils.isNotBlank(schema)
+                && StringUtils.startsWithIgnoreCase(jdbcUrl, "jdbc:dm://")) {
             jdbcUrl = appendDmSchemaToJdbcUrl(jdbcUrl, schema);
         }
 
