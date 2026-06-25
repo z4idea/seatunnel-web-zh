@@ -1,4 +1,6 @@
 /*
+ * @author: zhjj
+ *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -19,11 +21,12 @@ package org.apache.seatunnel.app.scheduler;
 
 import org.apache.seatunnel.app.config.ScheduleProperties;
 
-import org.springframework.scheduling.support.CronSequenceGenerator;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.TimeZone;
 
 @Component
 public class JobScheduleTimeCalculator {
@@ -37,13 +40,12 @@ public class JobScheduleTimeCalculator {
     }
 
     public void validate(String cronExpression) {
-        new CronSequenceGenerator(cronExpression, getScheduleTimeZone());
+        CronExpression.parse(cronExpression);
     }
 
     public Date calculateNextTriggerTime(
             String cronExpression, Date activeStartTime, Date activeEndTime, Date referenceTime) {
-        CronSequenceGenerator cronSequenceGenerator =
-                new CronSequenceGenerator(cronExpression, getScheduleTimeZone());
+        CronExpression cron = CronExpression.parse(cronExpression);
         Date baseTime = referenceTime == null ? new Date() : referenceTime;
         if (activeEndTime != null && baseTime.after(activeEndTime)) {
             return null;
@@ -51,14 +53,22 @@ public class JobScheduleTimeCalculator {
         if (activeStartTime != null && baseTime.before(activeStartTime)) {
             baseTime = new Date(activeStartTime.getTime() - PREVIOUS_SECOND_MILLIS);
         }
-        Date nextTriggerTime = cronSequenceGenerator.next(baseTime);
-        if (activeEndTime != null && nextTriggerTime.after(activeEndTime)) {
+        ZonedDateTime nextTriggerTime = cron.next(toScheduleTime(baseTime));
+        if (nextTriggerTime == null) {
             return null;
         }
-        return nextTriggerTime;
+        Date nextTriggerDate = Date.from(nextTriggerTime.toInstant());
+        if (activeEndTime != null && nextTriggerDate.after(activeEndTime)) {
+            return null;
+        }
+        return nextTriggerDate;
     }
 
-    private TimeZone getScheduleTimeZone() {
-        return TimeZone.getTimeZone(scheduleProperties.getTimeZone());
+    private ZonedDateTime toScheduleTime(Date value) {
+        return ZonedDateTime.ofInstant(value.toInstant(), getScheduleZoneId());
+    }
+
+    private ZoneId getScheduleZoneId() {
+        return ZoneId.of(scheduleProperties.getTimeZone());
     }
 }
