@@ -27,5 +27,7 @@ public interface IJobMetricsDao {
 
     List<JobMetrics> getByInstanceId(@NonNull Long jobInstanceId);
 
+    List<JobMetrics> getByInstanceIds(@NonNull List<Long> jobInstanceIds);
+
     JobMetricsMapper getJobMetricsMapper();
 }

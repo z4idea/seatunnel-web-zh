@@ -60,6 +60,19 @@
         </if>
     </select>
 
+    <select id="queryJobMetricsByInstanceIds" resultType="org.apache.seatunnel.app.dal.entity.JobMetrics">
+        select
+        <include refid="Base_Column_List"/>
+        from t_st_job_metrics
+        where workspace_id = #{workspaceId}
+        <if test="jobInstanceIds != null and jobInstanceIds.size() > 0">
+            and job_instance_id in
+            <foreach collection="jobInstanceIds" item="jobInstanceId" open="(" separator="," close=")">
+                #{jobInstanceId}
+            </foreach>
+        </if>
+    </select>
+
     <insert id="insertBatchMetrics">
         insert into t_st_job_metrics (<include refid="Base_Column_List"/>, `create_user_id`, `update_user_id`)
         values

@@ -41,6 +41,15 @@ public class JobMetricsDaoImpl implements IJobMetricsDao {
     }
 
     @Override
+    public List<JobMetrics> getByInstanceIds(@NonNull List<Long> jobInstanceIds) {
+        if (jobInstanceIds.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return jobMetricsMapper.queryJobMetricsByInstanceIds(
+                jobInstanceIds, getCurrentWorkspaceId());
+    }
+
+    @Override
     public JobMetricsMapper getJobMetricsMapper() {
         return jobMetricsMapper;
     }

@@ -28,5 +28,9 @@ public interface JobMetricsMapper extends BaseMapper<JobMetrics> {
     List<JobMetrics> queryJobMetricsByInstanceId(
             @Param("jobInstanceId") Long jobInstanceId, @Param("workspaceId") Long workspaceId);
 
+    List<JobMetrics> queryJobMetricsByInstanceIds(
+            @Param("jobInstanceIds") List<Long> jobInstanceIds,
+            @Param("workspaceId") Long workspaceId);
+
     void insertBatchMetrics(@Param("jobMetrics") List<JobMetrics> jobMetrics);
 }
