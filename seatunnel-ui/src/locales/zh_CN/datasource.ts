@@ -47,6 +47,7 @@ export default {
   success: '成功',
   test_connect: '测试连接',
   test_connect_success: '测试连接成功',
+  http_url_required: '请输入 HTTP 接口地址',
   jdbc_host: 'IP',
   jdbc_host_placeholder: '请输入 IP 地址',
   jdbc_host_required: '请输入 IP 地址',

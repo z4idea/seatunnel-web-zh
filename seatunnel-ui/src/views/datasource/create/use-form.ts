@@ -57,6 +57,19 @@ export function useForm(type: string) {
       }
     } as FormRules)
 
+  const applyPluginSpecificRules = (pluginName: string) => {
+    if (pluginName !== 'Http') return
+    state.rules.url = {
+      trigger: ['input', 'blur'],
+      validator() {
+        const url = String((state.detailForm as Record<string, any>).url || '').trim()
+        if (!url) {
+          return new Error(t('datasource.http_url_required'))
+        }
+      }
+    }
+  }
+
   const state = reactive({
     detailForm: buildInitialValues(type),
     formName: '',
@@ -170,6 +183,7 @@ export function useForm(type: string) {
         useFormValidate(res.forms, state.detailForm, t)
       )
       applyJdbcRules(value)
+      applyPluginSpecificRules(value)
       state.locales = res.locales
       state.formStructure = useFormStructure(
         res.apis ? useFormRequest(res.apis, res.forms) : res.forms

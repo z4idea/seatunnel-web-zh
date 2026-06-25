@@ -209,6 +209,7 @@ const DatasourceCreate = defineComponent({
           ])}>
              <div style={{ backgroundColor: '#ffffff',  padding: '0 16px' }}>
             <NForm
+              model={state.detailForm}
               rules={state.rules}
               ref={detailFormRef}
               class={styles['detail-content']}

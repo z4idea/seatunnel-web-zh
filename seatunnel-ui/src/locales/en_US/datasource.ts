@@ -47,6 +47,7 @@ export default {
   success: 'Success',
   test_connect: 'Test Connect',
   test_connect_success: 'Test Connect Success',
+  http_url_required: 'Please enter HTTP URL',
   jdbc_host: 'IP',
   jdbc_host_placeholder: 'Please enter IP address',
   jdbc_host_required: 'Please enter IP address',
