@@ -28,7 +28,7 @@ export function useColumns(onCallback: Function) {
   const getColumns = () => {
     const columns = [
       {
-        title: 'ID',
+        title: t('common.id'),
         key: 'id',
         render: (ignore: any, index: number) => index + 1
       },

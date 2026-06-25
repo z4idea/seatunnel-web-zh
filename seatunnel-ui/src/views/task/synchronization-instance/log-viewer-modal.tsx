@@ -33,6 +33,7 @@ import {
 } from 'naive-ui'
 import { getLogNodes, getLogContent } from '@/service/log'
 import type { LogNode } from '@/service/log/types'
+import { translateMessage } from '@/utils/message'
 import styles from './log-viewer-modal.module.scss'
 
 const LogViewerModal = defineComponent({
@@ -184,7 +185,9 @@ const LogViewerModal = defineComponent({
         }
       } catch (err: any) {
         console.error('Error fetching log nodes:', err)
-        error.value = err.message || t('project.synchronization_instance.fetch_logs_error')
+        error.value = translateMessage(
+          err.message || t('project.synchronization_instance.fetch_logs_error')
+        )
         loading.value = false
       }
     }
@@ -212,7 +215,9 @@ const LogViewerModal = defineComponent({
         loadingLogs.value = false
       } catch (err: any) {
         console.error('Error fetching log content:', err)
-        error.value = err.message || t('project.synchronization_instance.fetch_log_content_error')
+        error.value = translateMessage(
+          err.message || t('project.synchronization_instance.fetch_log_content_error')
+        )
         loading.value = false
         loadingLogs.value = false
       }

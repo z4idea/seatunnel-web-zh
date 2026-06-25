@@ -17,6 +17,7 @@
 
 /* @author: zhjj */
 import { defineComponent, PropType } from 'vue'
+import { translateMessage } from '@/utils/message'
 import styles from './error-message-highlight.module.scss'
 
 const props = {
@@ -30,7 +31,11 @@ const ErrorMessageHighlight = defineComponent({
   name: 'ErrorMessageHighlight',
   props,
   render(props: { params: string }) {
-    return <pre class={styles.errorMessageContainer}>{props.params}</pre>
+    return (
+      <pre class={styles.errorMessageContainer}>
+        {translateMessage(props.params)}
+      </pre>
+    )
   }
 })
 

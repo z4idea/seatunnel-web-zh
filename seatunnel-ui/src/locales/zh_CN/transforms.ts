@@ -25,10 +25,10 @@ export default {
       '将 Debezium 参数透传给 DebeziumEmbeddedEngine，用于捕获数据库变更。可参考 Debezium MySQL Connector 文档填写，示例：{\n  \"snapshot.mode\": \"initial\"\n}',
     properties_value: '扩展参数',
     properties_placeholder: '请输入额外的连接配置参数',
-    mysql_server_id_value: 'MySQL Server ID',
+    mysql_server_id_value: 'MySQL 服务端 ID',
     mysql_server_id_placeholder:
       '请输入当前数据库客户端的数值 ID，或数值 ID 范围，例如 5400 或 5400-5408',
-    server_id_value: 'Server ID',
+    server_id_value: '服务端 ID',
     server_id_placeholder:
       '请输入当前数据库客户端的数值 ID，或数值 ID 范围，例如 5400 或 5400-5408',
     use_select_count_value: '是否使用 SELECT COUNT',

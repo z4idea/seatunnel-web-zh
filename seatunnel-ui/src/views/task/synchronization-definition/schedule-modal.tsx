@@ -50,6 +50,7 @@ import {
   saveJobSchedule,
   updateJobScheduleEnabled
 } from '@/service/sync-task-definition'
+import { translateMessage } from '@/utils/message'
 import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
 import TitleIcon from '@/assets/title-icon.png'
 import './index.css'
@@ -190,7 +191,8 @@ const ScheduleModal = defineComponent({
         title: t('project.synchronization_definition.schedule_error_message'),
         key: 'errorMessage',
        
-        render: (row: any) => row.errorMessage || '-'
+        render: (row: any) =>
+          row.errorMessage ? translateMessage(row.errorMessage) : '-'
       },
       {
         title: t('project.synchronization_definition.schedule_instance_id'),
@@ -202,7 +204,7 @@ const ScheduleModal = defineComponent({
         title: t('project.synchronization_definition.schedule_message'),
         key: 'message',
         
-        render: (row: any) => row.message || '-'
+        render: (row: any) => (row.message ? translateMessage(row.message) : '-')
       }
     ]
 

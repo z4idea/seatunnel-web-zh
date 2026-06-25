@@ -34,6 +34,7 @@ import {
   NIcon
 } from 'naive-ui'
 import { queryJobExecutionDetail } from '@/service/sync-task-instance'
+import { translateMessage } from '@/utils/message'
 import styles from './task-progress-monitor.module.scss'
 
 interface TaskMetrics {
@@ -217,7 +218,7 @@ const TaskProgressMonitor = defineComponent({
           <NSpace vertical size="large">
             {this.metrics.errorMessage && (
               <NAlert type="error" title={t('project.synchronization_instance.error_message')}>
-                {this.metrics.errorMessage}
+                {translateMessage(this.metrics.errorMessage)}
               </NAlert>
             )}
             

@@ -40,7 +40,7 @@ const TaskDetailModal = defineComponent({
     const { t } = useI18n()
 
     const fieldLabels: Record<string, string> = {
-      id: 'ID',
+      id: t('common.id'),
       name: t('project.synchronization_definition.synchronization_task_name'),
       description: t('project.synchronization_definition.task_describe'),
       sourceDatabaseTable: t(
@@ -51,8 +51,8 @@ const TaskDetailModal = defineComponent({
       createTime: t('project.synchronization_definition.create_time'),
       updateUserName: t('project.synchronization_definition.update_user'),
       updateTime: t('project.synchronization_definition.update_time'),
-      projectCode: 'Project Code',
-      projectName: 'Project Name',
+      projectCode: t('common.project_code'),
+      projectName: t('common.project_name'),
       scheduleEnabled: t('project.synchronization_definition.schedule_status'),
       scheduleNextTriggerTime: t(
         'project.synchronization_definition.schedule_next_trigger'

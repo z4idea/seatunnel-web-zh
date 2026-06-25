@@ -89,7 +89,7 @@ export default {
     show_hide_label: '显示 / 隐藏标签',
     schedule_start_time: '定时开始时间',
     schedule_end_time: '定时结束时间',
-    crontab_expression: 'Crontab',
+    crontab_expression: 'Cron 表达式',
     workflow_publish_status: '工作流上线状态',
     workflow_definition: '工作流定义',
     workflow_instance: '工作流实例',

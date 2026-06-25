@@ -19,7 +19,7 @@
  */
 
 export default {
-  id: 'Id',
+  id: '编号',
   datasource: '数据源管理',
   create_datasource: '创建源',
   choose_datasource_type: '选择源类型',
@@ -67,7 +67,7 @@ export default {
   oracle_connect_type_tips: '请选择服务名或SID',
   oracle_service_name: '服务名',
   oracle_sid: 'SID',
-  jdbc_connect_parameters: 'jdbc连接参数',
+  jdbc_connect_parameters: 'JDBC连接参数',
   principal_tips: '请输入Principal',
   authentication_type: '验证方式',
   dm_server_authentication: '达梦服务器验证',

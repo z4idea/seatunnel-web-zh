@@ -699,7 +699,7 @@ const ConfigurationForm = defineComponent({
                   v-model={[state.model.localFileFormat, 'value']}
                 />
               </NFormItem>
-              <NFormItem label='encoding'>
+              <NFormItem label={t('common.encoding')}>
                 <NInput
                   v-model={[state.model.encoding, 'value']}
                   placeholder='UTF-8'

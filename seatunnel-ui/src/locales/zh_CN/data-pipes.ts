@@ -16,7 +16,7 @@
  */
 
 export default {
-  id: 'Id',
+  id: '编号',
   data_pipes: '数据管道',
   create: '创建',
   name: '名称',
