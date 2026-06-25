@@ -82,7 +82,7 @@ const WEEK_DAY_OPTIONS = [
 const WEEK_DAY_ORDER = WEEK_DAY_OPTIONS.map((item) => item.value)
 const CRON_TEMPLATE_OPTIONS = [
   { label: '每天固定时间', value: 'DAILY_AT' },
-  { label: '每周指定星期', value: 'WEEKLY_DAYS_AT' },
+  { label: '每周指定星期几', value: 'WEEKLY_DAYS_AT' },
   { label: '工作日固定时间', value: 'WEEKDAYS_AT' },
   { label: '周末固定时间', value: 'WEEKENDS_AT' },
   { label: '每月第一天固定时间', value: 'MONTH_FIRST_AT' },
