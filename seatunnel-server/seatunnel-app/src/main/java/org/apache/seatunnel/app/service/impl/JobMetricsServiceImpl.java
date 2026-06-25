@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -59,7 +60,6 @@ import lombok.extern.slf4j.Slf4j;
 import javax.annotation.Resource;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -462,7 +462,9 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
 
     private List<JobMetrics> getJobPipelineDetailMetrics(@NonNull JobInstance jobInstance) {
         if (StringUtils.isEmpty(jobInstance.getJobEngineId())) {
-            return jobMetricsDao.getByInstanceId(jobInstance.getId());
+            List<JobMetrics> jobMetrics = jobMetricsDao.getByInstanceId(jobInstance.getId());
+            applyPipelineConnectorFallback(jobInstance, jobMetrics);
+            return jobMetrics;
         }
         List<JobMetrics> jobMetrics;
         if (JobUtils.isJobEndStatus(jobInstance.getJobStatus())) {
@@ -478,6 +480,7 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
             // If job is not end state, get metrics from engine.
             jobMetrics = getJobMetricsFromEngine(jobInstance, jobInstance.getJobEngineId());
         }
+        applyPipelineConnectorFallback(jobInstance, jobMetrics);
         return jobMetrics;
     }
 
@@ -571,11 +574,11 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
     private void syncMetricsToDb(@NonNull JobInstance jobInstance, @NonNull String jobEngineId) {
         Map<Integer, JobMetrics> jobMetricsFromEngineMap =
                 getJobMetricsFromEngineMap(jobInstance, jobEngineId);
+        List<JobMetrics> jobMetricsFromEngine = new ArrayList<>(jobMetricsFromEngineMap.values());
+        applyPipelineConnectorFallback(jobInstance, jobMetricsFromEngine);
         int userId = ServletUtils.getCurrentUserId();
         List<JobMetrics> jobMetricsFromDb = getJobMetricsFromDb(jobInstance, jobEngineId);
         if (jobMetricsFromDb.isEmpty()) {
-            List<JobMetrics> jobMetricsFromEngine =
-                    Arrays.asList(jobMetricsFromEngineMap.values().toArray(new JobMetrics[0]));
             jobMetricsFromEngine.forEach(
                     metrics -> {
                         try {
@@ -603,6 +606,14 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
                 jobMetrics.setReadQps(currentPiplinejobMetricsFromEngine.getReadQps());
                 jobMetrics.setReadRowCount(currentPiplinejobMetricsFromEngine.getReadRowCount());
                 jobMetrics.setWriteRowCount(currentPiplinejobMetricsFromEngine.getWriteRowCount());
+                if (StringUtils.isBlank(jobMetrics.getSourceTableNames())) {
+                    jobMetrics.setSourceTableNames(
+                            currentPiplinejobMetricsFromEngine.getSourceTableNames());
+                }
+                if (StringUtils.isBlank(jobMetrics.getSinkTableNames())) {
+                    jobMetrics.setSinkTableNames(
+                            currentPiplinejobMetricsFromEngine.getSinkTableNames());
+                }
                 jobMetrics.setStatus(jobStatus);
                 jobMetricsDao.getJobMetricsMapper().updateById(jobMetrics);
             }
@@ -652,7 +663,51 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
         IEngineMetricsExtractor engineMetricsExtractor =
                 (new EngineMetricsExtractorFactory(engine)).getEngineMetricsExtractor();
 
-        return engineMetricsExtractor.getMetricsByJobEngineId(jobEngineId);
+        List<JobMetrics> jobMetrics = engineMetricsExtractor.getMetricsByJobEngineId(jobEngineId);
+        applyPipelineConnectorFallback(jobInstance, jobMetrics);
+        return jobMetrics;
+    }
+
+    private void applyPipelineConnectorFallback(
+            @NonNull JobInstance jobInstance, List<JobMetrics> jobMetrics) {
+        if (jobMetrics == null || jobMetrics.isEmpty()) {
+            return;
+        }
+
+        JobDAG jobDAG = loadJobDAGForMetrics(jobInstance);
+        JobMetricsPipelineConnectorFormatter.applyFallbackConnectorNames(jobDAG, jobMetrics);
+    }
+
+    private JobDAG loadJobDAGForMetrics(@NonNull JobInstance jobInstance) {
+        String jobEngineId = jobInstance.getJobEngineId();
+        try {
+            if (StringUtils.isBlank(jobEngineId)) {
+                JobInstanceHistory history =
+                        jobInstanceHistoryDao.getByInstanceId(jobInstance.getId());
+                if (history == null || StringUtils.isBlank(history.getDag())) {
+                    return null;
+                }
+                return JsonUtils.parseObject(history.getDag(), JobDAG.class);
+            }
+
+            JobInstanceHistory history = getJobHistoryFromDb(jobInstance, jobEngineId);
+            if (history != null && StringUtils.isNotBlank(history.getDag())) {
+                return JsonUtils.parseObject(history.getDag(), JobDAG.class);
+            }
+
+            JobInstanceHistory historyFromEngine =
+                    getJobHistoryFromEngine(jobInstance, jobEngineId);
+            if (historyFromEngine == null || StringUtils.isBlank(historyFromEngine.getDag())) {
+                return null;
+            }
+            return JsonUtils.parseObject(historyFromEngine.getDag(), JobDAG.class);
+        } catch (Exception e) {
+            log.warn(
+                    "Failed to load job DAG for metrics fallback, jobInstanceId={}",
+                    jobInstance.getId(),
+                    e);
+            return null;
+        }
     }
 
     private List<JobPipelineSummaryMetricsRes> summaryMetrics(

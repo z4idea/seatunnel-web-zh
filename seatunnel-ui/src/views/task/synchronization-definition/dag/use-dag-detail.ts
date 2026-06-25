@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -28,8 +31,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
-import _ from 'lodash'
 import { formatMessagePayload } from '@/utils/message'
+import { loadDagDetailData } from './dag-detail-loader'
 import type { InputPlugin, InputEdge } from './types'
 
 export const useDagDetail = () => {
@@ -46,63 +49,39 @@ export const useDagDetail = () => {
     if (state.loading) return
     state.loading = true
     try {
-      const [nodesAndEdges, dagConfig, dagInfo] = await Promise.all([
-        getDefinitionNodesAndEdges(route.params.jobDefinitionCode as string),
-        getDefinitionConfig(route.params.jobDefinitionCode as string),
-        getDefinitionDetail(route.params.jobDefinitionCode as string)
-      ])
+      const result = await loadDagDetailData({
+        jobDefinitionCode: route.params.jobDefinitionCode as string,
+        t,
+        message,
+        setDagInfo: (dagInfo) => dagStore.setDagInfo(dagInfo),
+        services: {
+          getDefinitionNodesAndEdges,
+          getDefinitionConfig,
+          getDefinitionDetail,
+          checkDatabaseAndTable
+        }
+      })
 
-      const checkedNodesAndEdges = nodesAndEdges
-        ? await Promise.all(
-            nodesAndEdges.plugins.map(async (p: any) => {
-              if (p.type === 'SOURCE') {
-                return {
-                  ...(await checkDatabaseAndTable(
-                    String(p.dataSourceId),
-                    p.tableOption
-                  )),
-                  pluginId: p.pluginId,
-                  name: p.name
-                }
-              }
-            })
-          )
-        : null
+      result.sourceValidationIssues?.forEach((issue: any) => {
+        if (issue.databases.length > 0) {
+            message.warning(
+              `(${issue.name}-${issue.pluginId})[${issue.databases.toString()}] ${t(
+                'project.synchronization_definition.database_exception_message'
+              )}`,
+              { closable: true, duration: 0 }
+            )
+        }
+        if (issue.tables.length > 0) {
+            message.warning(
+              `(${issue.name}-${issue.pluginId})[${issue.tables.toString()}] ${t(
+                'project.synchronization_definition.table_exception_message'
+              )}`,
+              { closable: true, duration: 0 }
+            )
+        }
+      })
 
-      checkedNodesAndEdges
-        ? (nodesAndEdges.plugins = nodesAndEdges.plugins.map((pn: any) => {
-            if (pn.type === 'SOURCE') {
-              checkedNodesAndEdges.map((pc: any) => {
-                if (pc && pn.pluginId === pc.pluginId) {
-                  if (pc.databases.length > 0) {
-                    message.warning(
-                      `(${pc.name}-${
-                        pc.pluginId
-                      })[${pc.databases.toString()}] ${t(
-                        'project.synchronization_definition.database_exception_message'
-                      )}`,
-                      { closable: true, duration: 0 }
-                    )
-                  }
-                  if (pc.tables.length > 0) {
-                    message.warning(
-                      `(${pc.name}-${pc.pluginId})[${pc.tables.toString()}] ${t(
-                        'project.synchronization_definition.table_exception_message'
-                      )}`,
-                      { closable: true, duration: 0 }
-                    )
-                  }
-                  _.pullAll(pn.tableOption.databases, pc.databases)
-                  _.pullAll(pn.tableOption.tables, pc.tables)
-                }
-              })
-            }
-            return pn
-          }))
-        : null
-
-      dagStore.setDagInfo({ ...dagConfig, ...dagInfo })
-      return { nodesAndEdges: nodesAndEdges }
+      return result
     } finally {
       state.loading = false
     }

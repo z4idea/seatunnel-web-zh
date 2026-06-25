@@ -63,7 +63,7 @@ CREATE TABLE `t_st_datasource`  (
   `datasource_name` varchar(63) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `plugin_name` varchar(63) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `plugin_version` varchar(63) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT '1.0.0',
-  `datasource_config` varchar(1023) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `datasource_config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `description` varchar(63) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL,
   `origin` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'USER',
   `allow_source` tinyint(1) NOT NULL DEFAULT 1,

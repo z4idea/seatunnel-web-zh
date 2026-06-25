@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -32,6 +33,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -81,6 +84,29 @@ public class SeatunnelDatasourceControllerTest {
         assertTrue(updateResult.isSuccess());
         result = seatunnelDatasourceControllerWrapper.getDatasource(datasourceId);
         assertEquals(req.getDescription(), result.getData().getDescription());
+    }
+
+    @Test
+    public void updateDatasource_shouldSupportLongDatasourceConfig() {
+        String datasourceId =
+                seatunnelDatasourceControllerWrapper.createFakeSourceDatasource(
+                        "ds_long" + uniqueId);
+
+        DatasourceReq req = new DatasourceReq();
+        req.setDatasourceConfig(
+                "{\"payload\":\""
+                        + IntStream.range(0, 1400)
+                                .mapToObj(index -> "a")
+                                .collect(Collectors.joining())
+                        + "\"}");
+
+        Result<Boolean> updateResult =
+                seatunnelDatasourceControllerWrapper.updateDatasource(datasourceId, req);
+        assertTrue(updateResult.isSuccess());
+
+        Result<DatasourceDetailRes> result =
+                seatunnelDatasourceControllerWrapper.getDatasource(datasourceId);
+        assertEquals(1400, result.getData().getDatasourceConfig().get("payload").length());
     }
 
     @Test

@@ -65,7 +65,7 @@ CREATE TABLE t_st_datasource (
                                  datasource_name VARCHAR(63) NOT NULL,
                                  plugin_name VARCHAR(63) NOT NULL,
                                  plugin_version VARCHAR(63) DEFAULT '1.0.0',
-                                 datasource_config VARCHAR(1023) NOT NULL,
+                                 datasource_config CLOB NOT NULL,
                                  description VARCHAR(63) DEFAULT NULL,
                                  origin VARCHAR(32) NOT NULL DEFAULT 'USER',
                                  allow_source BOOLEAN NOT NULL DEFAULT TRUE,

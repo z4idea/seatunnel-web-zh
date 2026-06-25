@@ -21,7 +21,7 @@
         <result column="datasource_name" jdbcType="VARCHAR" property="datasourceName"/>
         <result column="plugin_name" jdbcType="VARCHAR" property="pluginName"/>
         <result column="plugin_version" jdbcType="VARCHAR" property="pluginVersion"/>
-        <result column="datasource_config" jdbcType="VARCHAR" property="datasourceConfig"/>
+        <result column="datasource_config" jdbcType="LONGVARCHAR" property="datasourceConfig"/>
         <result column="description" jdbcType="VARCHAR" property="description"/>
         <result column="origin" jdbcType="VARCHAR" property="origin"/>
         <result column="allow_source" jdbcType="BOOLEAN" property="allowSource"/>
@@ -53,7 +53,7 @@
                 `plugin_version` = #{pluginVersion,jdbcType=VARCHAR},
             </if>
             <if test="datasourceConfig != null">
-                `datasource_config` = #{datasourceConfig,jdbcType=VARCHAR},
+                `datasource_config` = #{datasourceConfig,jdbcType=LONGVARCHAR},
             </if>
             <if test="description != null">
                 `description` = #{description,jdbcType=VARCHAR},
