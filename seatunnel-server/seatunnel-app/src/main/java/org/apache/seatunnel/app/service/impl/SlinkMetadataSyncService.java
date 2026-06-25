@@ -54,7 +54,7 @@ public class SlinkMetadataSyncService {
     @Resource private RestTemplate restTemplate;
 
     @Value("${seatunnel-web.slink.metadata-sync.base-url:http://192.168.76.134:17081}")
-    //@Value("${seatunnel-web.slink.metadata-sync.base-url:http://192.168.73.230:48080}")
+    // @Value("${seatunnel-web.slink.metadata-sync.base-url:http://192.168.73.230:48080}")
     private String baseUrl;
 
     @Value("${seatunnel-web.slink.metadata-sync.path:/admin-api/data/metadata/sync}")

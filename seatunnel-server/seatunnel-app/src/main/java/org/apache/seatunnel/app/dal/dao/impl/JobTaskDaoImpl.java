@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -27,6 +30,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 
 import javax.annotation.Resource;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.apache.seatunnel.app.utils.ServletUtils.getCurrentWorkspaceId;
@@ -41,6 +45,17 @@ public class JobTaskDaoImpl implements IJobTaskDao {
         return jobTaskMapper.selectList(
                 Wrappers.lambdaQuery(new JobTask())
                         .eq(JobTask::getVersionId, jobVersionId)
+                        .eq(JobTask::getWorkspaceId, getCurrentWorkspaceId()));
+    }
+
+    @Override
+    public List<JobTask> getTasksByVersionIds(List<Long> jobVersionIds) {
+        if (jobVersionIds == null || jobVersionIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return jobTaskMapper.selectList(
+                Wrappers.lambdaQuery(new JobTask())
+                        .in(JobTask::getVersionId, jobVersionIds)
                         .eq(JobTask::getWorkspaceId, getCurrentWorkspaceId()));
     }
 

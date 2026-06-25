@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -141,6 +144,7 @@ public class JobDefinitionServiceImpl extends SeatunnelBaseServiceImpl
                 job.getData().stream()
                         .filter(jobDefinitionRes -> hasReadPerm(jobDefinitionRes.getName()))
                         .collect(Collectors.toList());
+        fillSourceDatabaseTable(filteredJobs);
 
         PageInfo<JobDefinitionRes> jobs = new PageInfo<>();
         jobs.setData(filteredJobs);
@@ -220,6 +224,27 @@ public class JobDefinitionServiceImpl extends SeatunnelBaseServiceImpl
     public List<String> getJobDefinitionNames(String workspaceName, String searchName) {
         return jobDefinitionDao.getJobDefinitionNames(
                 workspaceService.getWorkspaceIdOrCurrent(workspaceName), searchName);
+    }
+
+    private void fillSourceDatabaseTable(List<JobDefinitionRes> jobs) {
+        if (CollectionUtils.isEmpty(jobs)) {
+            return;
+        }
+
+        Map<Long, List<JobTask>> tasksByVersionId =
+                jobTaskDao
+                        .getTasksByVersionIds(
+                                jobs.stream()
+                                        .map(JobDefinitionRes::getId)
+                                        .collect(Collectors.toList()))
+                        .stream()
+                        .collect(Collectors.groupingBy(JobTask::getVersionId));
+
+        jobs.forEach(
+                job ->
+                        job.setSourceDatabaseTable(
+                                JobDefinitionSourceDatabaseTableFormatter.format(
+                                        tasksByVersionId.get(job.getId()))));
     }
 
     private void permCheck(String resourceName, AccessType accessType) {

@@ -105,6 +105,13 @@ export function useTable() {
         ...COLUMN_WIDTH_CONFIG['description']
       },
       {
+        title: t('project.synchronization_definition.source_database_table'),
+        key: 'sourceDatabaseTable',
+        ...COLUMN_WIDTH_CONFIG['description'],
+        render: (row: { sourceDatabaseTable?: string }) =>
+          row.sourceDatabaseTable || '-'
+      },
+      {
         title: t('project.synchronization_definition.create_user'),
         key: 'createUserName',
         ...COLUMN_WIDTH_CONFIG['userName']
