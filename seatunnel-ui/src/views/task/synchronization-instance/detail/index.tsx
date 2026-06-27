@@ -23,6 +23,7 @@ import {
   NBreadcrumb,
   NBreadcrumbItem,
   NCard,
+  NButton,
   NSpace,
   NTabPane,
   NTabs
@@ -46,27 +47,35 @@ const SynchronizationInstanceDetail = defineComponent({
   },
   render() {
     return (
-      <NSpace vertical>
+      <NSpace vertical> 
         <NCard>
-          <NBreadcrumb>
-            <NBreadcrumbItem>
-              <span
-                onClick={() =>
-                  this.router.push({
-                    name: 'synchronization-instance',
-                    params: { projectCode: this.route.params.projectCode },
-                    query: {
-                      project: this.route.query.project,
-                      global: this.route.query.global
-                    }
-                  })
-                }
-              >
-                {this.t('menu.synchronization_instance')}
-              </span>
-            </NBreadcrumbItem>
-            <NBreadcrumbItem>{this.route.query.taskName}</NBreadcrumbItem>
-          </NBreadcrumb>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <NBreadcrumb>
+              <NBreadcrumbItem>
+                <span
+                  onClick={() =>
+                    this.router.push({
+                      name: 'synchronization-instance',
+                      params: { projectCode: this.route.params.projectCode },
+                      query: {
+                        project: this.route.query.project,
+                        global: this.route.query.global
+                      }
+                    })
+                  }
+                >
+                  {this.t('menu.synchronization_instance')}
+                </span>
+              </NBreadcrumbItem>
+              <NBreadcrumbItem>{this.route.query.taskName}</NBreadcrumbItem>
+            </NBreadcrumb>
+            <NButton
+              type='tertiary'
+              onClick={() => this.router.back()}
+            >
+              <span style={{ marginRight: 4 }}>返回</span>
+              </NButton>
+          </div>
         </NCard>
         <NTabs type='segment'>
           <NTabPane

@@ -41,7 +41,8 @@ import {
   NSwitch,
   NTabPane,
   NTabs,
-  NTag
+  NTag,
+  NTooltip
 } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import {
@@ -170,7 +171,22 @@ const ScheduleModal = defineComponent({
     const scheduleColumns = [
       {
         title: t('project.synchronization_definition.schedule_trigger_time'),
-        key: 'triggerTime'
+        key: 'triggerTime',
+        width: '200px',
+        render: (row: any) => (
+          <NTooltip trigger='hover'>
+            {{
+              trigger: () => (
+                <span style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>{row.triggerTime || '-'}</span>
+              ),
+              default: () => row.triggerTime || '-'
+            }}
+          </NTooltip>
+        )
       },
       {
         title: t('project.synchronization_definition.schedule_status'),
@@ -181,30 +197,75 @@ const ScheduleModal = defineComponent({
       {
         title: t('project.synchronization_definition.schedule_write_row_count'),
         key: 'writeRowCount',
-         width: '150px',
+        width: '150px',
         render: (row: any) =>
           row.writeRowCount === null || row.writeRowCount === undefined
             ? '-'
             : row.writeRowCount
       },
       {
-        title: t('project.synchronization_definition.schedule_error_message'),
-        key: 'errorMessage',
-       
-        render: (row: any) =>
-          row.errorMessage ? translateMessage(row.errorMessage) : '-'
-      },
+  title: t('project.synchronization_definition.schedule_error_message'),
+  key: 'errorMessage',
+  width: '250px',
+  ellipsis: true, 
+  render: (row: any) => (
+    <NTooltip trigger="hover" inverted>
+      {{
+        trigger: () => (
+          <span
+            style={{
+              display: "inline-block",
+              maxWidth: "240px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {row.errorMessage ? translateMessage(row.errorMessage) : "-"}
+          </span>
+        ),
+        default: () => row.errorMessage ? translateMessage(row.errorMessage) : "-"
+      }}
+    </NTooltip>
+  )
+},
       {
         title: t('project.synchronization_definition.schedule_instance_id'),
         key: 'jobInstanceId',
-      
-        render: (row: any) => row.jobInstanceId || '-'
+        width: '150px',
+        render: (row: any) => (
+          <NTooltip trigger='hover'>
+            {{
+              trigger: () => (
+                <span style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>{row.jobInstanceId || '-'}</span>
+              ),
+              default: () => row.jobInstanceId || '-'
+            }}
+          </NTooltip>
+        )
       },
       {
         title: t('project.synchronization_definition.schedule_message'),
         key: 'message',
-        
-        render: (row: any) => (row.message ? translateMessage(row.message) : '-')
+        width: '250px',
+        render: (row: any) => (
+          <NTooltip trigger='hover'>
+            {{
+              trigger: () => (
+                <span style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>{row.message ? translateMessage(row.message) : '-'}</span>
+              ),
+              default: () => row.message ? translateMessage(row.message) : '-'
+            }}
+          </NTooltip>
+        )
       }
     ]
 
@@ -1200,6 +1261,8 @@ const ScheduleModal = defineComponent({
                             columns={this.scheduleColumns}
                             data={this.historyData}
                             loading={this.historyLoading}
+                            bordered
+                            scrollX={1090}
                           />
                           <NSpace justify='right' style={{ width: '100%' }}>
                             <NPagination
