@@ -1,3 +1,4 @@
+/* @author: zhjj */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -30,6 +31,7 @@ import { useI18n } from 'vue-i18n'
 import { useTable } from './use-table'
 import { TaskModal } from './task-modal'
 import { ScheduleModal } from './schedule-modal'
+import { TaskDetailModal } from './detail-modal'
 import { useRoute, useRouter } from 'vue-router'
 import _ from 'lodash'
 import './index.css'
@@ -70,6 +72,16 @@ const SynchronizationDefinition = defineComponent({
     const handleScheduleModalChange = (row: any) => {
       variables.scheduleRow = row
       variables.showScheduleModalRef = true
+    }
+
+    const handleDetailModalChange = (row: any) => {
+      variables.row = row
+      variables.showDetailModalRef = true
+    }
+
+    const onCancelDetailModal = () => {
+      variables.showDetailModalRef = false
+      variables.row = {}
     }
 
     const onCancelScheduleModal = () => {
@@ -118,12 +130,12 @@ const SynchronizationDefinition = defineComponent({
     onMounted(() => {
       variables.searchName = ''
       initSearch()
-      createColumns(variables, handleScheduleModalChange)
+      createColumns(variables, handleDetailModalChange, handleScheduleModalChange)
       requestData()
     })
 
     watch(useI18n().locale, () => {
-      createColumns(variables, handleScheduleModalChange)
+      createColumns(variables, handleDetailModalChange, handleScheduleModalChange)
     })
 
     return {
@@ -134,7 +146,9 @@ const SynchronizationDefinition = defineComponent({
       onCancelModal,
       onConfirmModal,
       handleModalChange,
+      handleDetailModalChange,
       handleScheduleModalChange,
+      onCancelDetailModal,
       onCancelScheduleModal,
       onSavedScheduleModal,
       onSearch,
@@ -220,6 +234,11 @@ const SynchronizationDefinition = defineComponent({
           showModalRef={this.showModalRef}
           onCancelModal={this.onCancelModal}
           onConfirmModal={this.onConfirmModal}
+        />
+        <TaskDetailModal
+          show={this.showDetailModalRef}
+          row={this.row}
+          onClose={this.onCancelDetailModal}
         />
         <ScheduleModal
           show={this.showScheduleModalRef}

@@ -20,7 +20,7 @@ import '@iconify/iconify'
 import { useI18n } from 'vue-i18n'
 import { h, reactive, ref } from 'vue'
 import { useTableOperation } from '@/hooks'
-import { NTag, NSwitch, NSpace, NIcon, NPopconfirm } from 'naive-ui'
+import { NTag, NSwitch, NSpace, NIcon, NPopconfirm, NButton } from 'naive-ui'
 import {
   querySyncTaskDefinitionPaging,
   deleteSyncTaskDefinition,
@@ -35,6 +35,7 @@ import {
 } from '@/common/column-width-config'
 import { useMessage } from 'naive-ui'
 import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
+import { createTaskDetailTrigger } from './task-detail-trigger'
 import './use-table.css'
 
 export function useTable() {
@@ -63,6 +64,7 @@ export function useTable() {
     totalPage: ref(1),
     tableWidth: ref(0),
     showModalRef: ref(false),
+    showDetailModalRef: ref(false),
     showScheduleModalRef: ref(false),
     statusRef: ref(0),
     row: {},
@@ -81,6 +83,7 @@ export function useTable() {
 
   const createColumns = (
     variables: any,
+    onOpenDetailModal?: (row: any) => void,
     onOpenScheduleModal?: (row: any) => void
   ) => {
     variables.columns = [
@@ -90,7 +93,25 @@ export function useTable() {
         ),
         key: 'name',
         bordered: true,
-        ...COLUMN_WIDTH_CONFIG['name']
+        ...COLUMN_WIDTH_CONFIG['name'],
+        render: (row: any) => {
+          const trigger = createTaskDetailTrigger(
+            row,
+            onOpenDetailModal || (() => undefined)
+          )
+
+          return h(
+            NButton,
+            {
+              text: true,
+              type: 'primary',
+              onClick: trigger.onClick
+            },
+            {
+              default: () => trigger.label
+            }
+          )
+        }
       },
       {
         title: t('project.synchronization_definition.business_model'),
