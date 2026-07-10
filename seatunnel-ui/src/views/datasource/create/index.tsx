@@ -263,6 +263,7 @@ const DatasourceCreate = defineComponent({
                     class='input-data-source-description'
                     v-model={[state.detailForm.description, 'value']}
                     type='textarea'
+                    maxlength={300}
                     placeholder={t('datasource.description_tips')}
                     rows={1}
                   />

@@ -225,6 +225,7 @@ const DynamicFormItem = defineComponent({
                     clearable={f.clearable}
                     type={f.inputType}
                     rows={f.row ? f.row : 4}
+                    maxlength={60}
                   />
                 )}
                 {f.type === 'select' &&
