@@ -179,6 +179,7 @@ const SynchronizationDefinition = defineComponent({
             <NInput
               clearable
               size="small"
+              maxlength={60}
               style={{ width: 240,height:36+'px' }}
               v-model={[this.searchName, 'value']}
               placeholder={this.t('project.synchronization_definition.task_name')}
