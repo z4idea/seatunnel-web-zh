@@ -145,13 +145,8 @@ public class JobDefinitionServiceImpl extends SeatunnelBaseServiceImpl
                         .filter(jobDefinitionRes -> hasReadPerm(jobDefinitionRes.getName()))
                         .collect(Collectors.toList());
         fillSourceDatabaseTable(filteredJobs);
-
-        PageInfo<JobDefinitionRes> jobs = new PageInfo<>();
-        jobs.setData(filteredJobs);
-        jobs.setPageSize(pageSize);
-        jobs.setPageNo(pageNo);
-        jobs.setTotalCount(filteredJobs.size());
-        return jobs;
+        job.setData(filteredJobs);
+        return job;
     }
 
     @Override

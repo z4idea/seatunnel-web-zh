@@ -1,4 +1,8 @@
 /*
+ * @author: zhjj
+ */
+
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -40,6 +44,55 @@ type MetricRecord = {
   readQps: number
   writeQps: number
   recordDelay: number
+}
+
+type MetricSeriesPoint = [number, number]
+
+export const buildMetricSeriesData = (
+  data: MetricRecord[],
+  key: MetricField
+): MetricSeriesPoint[] => {
+  return data.map((item) => [item.createTime, item[key]])
+}
+
+export const formatMetricTooltip = (
+  params: any,
+  key: MetricField,
+  title: string
+): string => {
+  const point = Array.isArray(params) ? params[0] : params
+  if (!point || !Array.isArray(point.value)) {
+    return ''
+  }
+
+  const timestamp = Number(point.value[0])
+  const metricValue = Number(point.value[1])
+  if (!Number.isFinite(timestamp) || !Number.isFinite(metricValue)) {
+    return ''
+  }
+
+  let displayValue: string | number = metricValue
+  if (key.includes('Qps')) {
+    displayValue = metricValue.toFixed(2)
+  } else if (metricValue >= 10000) {
+    displayValue = `${(metricValue / 10000).toFixed(1)}w`
+  } else {
+    displayValue = Math.round(metricValue)
+  }
+
+  const fullDateTime = format(timestamp, 'yyyy-MM-dd HH:mm:ss')
+  return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+    <div style="color: #8c8c8c; font-size: 12px; margin-bottom: 4px">
+      ${fullDateTime}
+    </div>
+    <div style="display: flex; align-items: center">
+      <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: ${point.color}; margin-right: 8px"></span>
+      <span style="font-weight: 500">${displayValue}</span>
+    </div>
+    <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px">
+      ${title}
+    </div>
+  </div>`
 }
 
 export function useTaskMetrics() {
@@ -101,10 +154,6 @@ export function useTaskMetrics() {
     timeOptions
   })
 
-  const formatTimeToString = (timestamp: number): string => {
-    return format(timestamp, 'yyyy-MM-dd HH:mm:ss')
-  }
-
   const toNumber = (value: unknown): number => {
     const result = Number(value)
     return Number.isFinite(result) ? result : 0
@@ -153,37 +202,11 @@ export function useTaskMetrics() {
   const buildSeriesData = (
     data: MetricRecord[],
     key: MetricField
-  ): { points: Array<[number, number]>; hasRealData: boolean; isSinglePoint: boolean } => {
-    if (data.length === 0) {
-      return {
-        points: [],
-        hasRealData: false,
-        isSinglePoint: false
-      }
-    }
-
-    if (data.length === 1) {
-      const [start, end] = getTimeRange(data)
-      const value = data[0][key]
-      const pointTime = data[0].createTime
-      const left = Math.max(start, pointTime - Math.max((end - start) / 4, 1000))
-      const right = Math.min(end, pointTime + Math.max((end - start) / 4, 1000))
-
-      return {
-        points: [
-          [left, value],
-          [pointTime, value],
-          [right, value]
-        ],
-        hasRealData: true,
-        isSinglePoint: true
-      }
-    }
-
+  ): { points: MetricSeriesPoint[]; hasRealData: boolean; isSinglePoint: boolean } => {
     return {
-      points: data.map((item) => [item.createTime, item[key]] as [number, number]),
-      hasRealData: true,
-      isSinglePoint: false
+      points: buildMetricSeriesData(data, key),
+      hasRealData: data.length > 0,
+      isSinglePoint: data.length === 1
     }
   }
 
@@ -237,13 +260,9 @@ export function useTaskMetrics() {
     },
     tooltip: { 
       show: true,
-      trigger: 'axis',
+      trigger: 'item',
       axisPointer: {
-        type: 'line',
-        lineStyle: {
-          color: '#BFBFBF',
-          type: 'dashed'
-        }
+        type: 'none'
       },
       position: 'top',
       backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -256,36 +275,8 @@ export function useTaskMetrics() {
         fontSize: 13
       },
       formatter: (params: any) => {
-        const point = Array.isArray(params) ? params[0] : params
-        if (!point) {
-          return ''
-        }
-
-        let value = Array.isArray(point.value) ? point.value[1] : point.value
-        if (key.includes('Qps')) {
-          value = value.toFixed(2)
-        } else if (value >= 10000) {
-          value = (value / 10000).toFixed(1) + 'w'
-        } else {
-          value = Math.round(value)
-        }
-        
         try {
-          const timeValue = Array.isArray(point.value) ? point.value[0] : point.axisValue
-          const fullDateTime = formatTimeToString(Number(timeValue))
-          
-          return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
-            <div style="color: #8c8c8c; font-size: 12px; margin-bottom: 4px">
-              ${fullDateTime}
-            </div>
-            <div style="display: flex; align-items: center">
-              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: ${point.color}; margin-right: 8px"></span>
-              <span style="font-weight: 500">${value}</span>
-            </div>
-            <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px">
-              ${title}
-            </div>
-          </div>`
+          return formatMetricTooltip(params, key, title)
         } catch (err) {
           console.error('Error formatting tooltip time:', err)
           return ''

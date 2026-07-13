@@ -121,6 +121,7 @@ public class DatasourceDaoImpl implements IDatasourceDao {
         if (origin != null && !origin.isEmpty()) {
             datasourceQueryWrapper.eq("origin", origin);
         }
+        datasourceQueryWrapper.orderByDesc("create_time", "id");
         if (searchVal != null
                 && !searchVal.isEmpty()
                 && pluginName != null

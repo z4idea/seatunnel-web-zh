@@ -492,7 +492,7 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
         JobInstance jobInstance = jobInstanceDao.getJobInstance(jobInstanceId);
         List<JobMetrics> jobPipelineDetailMetrics = getJobPipelineDetailMetrics(jobInstance);
         return jobPipelineDetailMetrics.stream()
-                .map(this::wrapperJobMetrics)
+                .map(metrics -> wrapperJobMetrics(metrics, jobInstance.getJobStatus()))
                 .collect(Collectors.toList());
     }
 
@@ -760,6 +760,13 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
     }
 
     private JobPipelineDetailMetricsRes wrapperJobMetrics(@NonNull JobMetrics metrics) {
+        return wrapperJobMetrics(metrics, metrics.getStatus());
+    }
+
+    private JobPipelineDetailMetricsRes wrapperJobMetrics(
+            @NonNull JobMetrics metrics, JobStatus jobStatus) {
+        JobStatus displayStatus =
+                JobUtils.isJobEndStatus(jobStatus) ? jobStatus : metrics.getStatus();
         return new JobPipelineDetailMetricsRes(
                 metrics.getId(),
                 metrics.getPipelineId(),
@@ -770,7 +777,7 @@ public class JobMetricsServiceImpl extends SeatunnelBaseServiceImpl implements I
                 metrics.getReadQps(),
                 metrics.getWriteQps(),
                 metrics.getRecordDelay(),
-                metrics.getStatus());
+                displayStatus);
     }
 
     private void syncMetricsToDbRunning(
