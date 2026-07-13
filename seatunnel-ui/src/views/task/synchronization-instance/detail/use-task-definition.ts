@@ -88,6 +88,7 @@ export function useTaskDefinition(t: any) {
 
     useDagAddShape(graph, obj.nodes, obj.edges, t)
     useDagLayout(graph)
+    graph.centerContent()
   }
 
   return {
