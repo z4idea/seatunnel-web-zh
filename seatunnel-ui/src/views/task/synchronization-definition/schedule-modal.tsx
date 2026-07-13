@@ -52,7 +52,7 @@ import {
   updateJobScheduleEnabled
 } from '@/service/sync-task-definition'
 import { translateMessage } from '@/utils/message'
-import { renderSyncTaskStatusTag } from '../synchronization-instance/status-display'
+import {renderSyncTaskStatusTag, isSyncTaskFailureStatus} from '../synchronization-instance/status-display'
 import TitleIcon from '@/assets/title-icon.png'
 import './index.css'
 type ScheduleRow = {
@@ -221,10 +221,15 @@ const ScheduleModal = defineComponent({
               whiteSpace: "nowrap",
             }}
           >
-            {row.errorMessage ? translateMessage(row.errorMessage) : "-"}
+            {isSyncTaskFailureStatus(row.status) && row.errorMessage
+              ? translateMessage(row.errorMessage)
+              :"-"}
           </span>
         ),
-        default: () => row.errorMessage ? translateMessage(row.errorMessage) : "-"
+        default: () =>
+          isSyncTaskFailureStatus(row.status) && row.errorMessgae
+            ?translateMessage(row.errorMessage)
+            : "-"
       }}
     </NTooltip>
   )

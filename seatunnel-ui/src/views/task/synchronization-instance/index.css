@@ -126,10 +126,24 @@
 
 .sync-instance-filter-item .n-input-wrapper,
 .sync-instance-filter-item .n-base-selection-label {
-  min-height: 46px;
+  height: 46px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
 }
 
+.sync-instance-filter-item .n-date-picker {
+  height: 46px;
+}
+
+.sync-instance-filter-item .n-date-picker {
+  height: 46px;
+}
+
+.sync-instance-filter-item .n-input__placeholder,
+.sync-instance-filter-item .n-base-selection-placeholder {
+  line-height: 46px;
+}
 .sync-instance-filter-item .n-input__input-el,
 .sync-instance-filter-item .n-base-selection-input,
 .sync-instance-filter-item .n-base-selection-placeholder {

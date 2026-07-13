@@ -115,6 +115,7 @@ const TaskModal = defineComponent({
             >
               <NInput
                 clearable
+                maxlength={60}
                 v-model={[this.model.name, 'value']}
                 placeholder={this.t(
                   'project.synchronization_definition.task_name_tips'
