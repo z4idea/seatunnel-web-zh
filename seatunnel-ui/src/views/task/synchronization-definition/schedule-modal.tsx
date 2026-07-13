@@ -1007,9 +1007,7 @@ const ScheduleModal = defineComponent({
                                       </NSpace>
                                     </NCheckboxGroup>
                                   )}
-                                  {['EVERY_N_HOURS', 'EVERY_N_MINUTES'].includes(
-                                    this.cronTemplate.type
-                                  ) && (
+                                  {this.cronTemplate.type === 'EVERY_N_HOURS' && (
                                     <NSpace
                                       vertical
                                       size={10}
@@ -1048,6 +1046,51 @@ const ScheduleModal = defineComponent({
                                           onUpdateValue={(value) =>
                                             (this.cronTemplate.minute =
                                               value || 0)
+                                          }
+                                        />
+                                      </div>
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_second'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.second}
+                                          min={0}
+                                          max={59}
+                                          placeholder='0-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.second =
+                                              value || 0)
+                                          }
+                                        />
+                                      </div>
+                                    </NSpace>
+                                  )}
+                                  {this.cronTemplate.type ===
+                                    'EVERY_N_MINUTES' && (
+                                    <NSpace
+                                      vertical
+                                      size={10}
+                                      style={CRON_FIELD_GROUP_STYLE}
+                                    >
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_interval'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.interval}
+                                          min={1}
+                                          max={59}
+                                          placeholder='1-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.interval =
+                                              value || 1)
                                           }
                                         />
                                       </div>
