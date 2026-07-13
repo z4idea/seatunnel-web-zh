@@ -192,7 +192,14 @@ const ScheduleModal = defineComponent({
         title: t('project.synchronization_definition.schedule_status'),
         key: 'status',
         width: '120px',
-        render: (row: any) => renderSyncTaskStatusTag(row.status, t)
+        render: (row: any) => {
+          // 调度触发成功 + 有异常信息 = 任务实际执行失败
+          const realStatus =
+            row.status === 'SUCCESS' && row.errorMessage
+              ? 'FAILED'
+              : row.status
+          return renderSyncTaskStatusTag(realStatus, t)
+        }
       },
       {
         title: t('project.synchronization_definition.schedule_write_row_count'),
