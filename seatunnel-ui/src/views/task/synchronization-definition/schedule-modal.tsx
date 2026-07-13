@@ -1220,36 +1220,94 @@ const ScheduleModal = defineComponent({
                               'project.synchronization_definition.schedule_active_start'
                             )}
                           >
-                            <NDatePicker
-                              v-model={[
-                                this.formModel.activeStartTime,
-                                'formattedValue'
-                              ]}
-                              type='datetime'
-                              clearable
-                              value-format='yyyy-MM-dd HH:mm:ss'
-                              placeholder={this.t(
-                                'project.synchronization_definition.schedule_active_start_placeholder'
-                              )}
-                            />
+                            <NSpace size={4}>
+                              <input
+                                type="date"
+                                value={this.formModel.activeStartTime?.substring(0, 10) || ''}
+                                onInput={(e: any) => {
+                                  const time = (this.formModel.activeStartTime || '').substring(11) || '00:00'
+                                  this.formModel.activeStartTime = e.target.value ? `${e.target.value} ${time}:00` : null
+                                }}
+                                style={{
+                                  height: '34px',
+                                  border: '1px solid #dcdfe6',
+                                  borderRadius: '3px',
+                                  padding: '0 8px',
+                                  fontSize: '14px',
+                                  color: '#333',
+                                  backgroundColor: '#fff',
+                                  outline: 'none',
+                                  width: '140px'
+                                }}
+                              />
+                              <input
+                                type="time"
+                                value={this.formModel.activeStartTime?.substring(11, 16) || ''}
+                                onInput={(e: any) => {
+                                  const date = (this.formModel.activeStartTime || '').substring(0, 10)
+                                  if (!date) return
+                                  this.formModel.activeStartTime = e.target.value ? `${date} ${e.target.value}:00` : `${date} 00:00:00`
+                                }}
+                                style={{
+                                  height: '34px',
+                                  border: '1px solid #dcdfe6',
+                                  borderRadius: '3px',
+                                  padding: '0 8px',
+                                  fontSize: '14px',
+                                  color: '#333',
+                                  backgroundColor: '#fff',
+                                  outline: 'none',
+                                  width: '120px'
+                                }}
+                              />
+                            </NSpace>
                           </NFormItem>
                           <NFormItem
                             label={this.t(
                               'project.synchronization_definition.schedule_active_end'
                             )}
                           >
-                            <NDatePicker
-                              v-model={[
-                                this.formModel.activeEndTime,
-                                'formattedValue'
-                              ]}
-                              type='datetime'
-                              clearable
-                              value-format='yyyy-MM-dd HH:mm:ss'
-                              placeholder={this.t(
-                                'project.synchronization_definition.schedule_active_end_placeholder'
-                              )}
-                            />
+                            <NSpace size={4}>
+                              <input
+                                type="date"
+                                value={this.formModel.activeEndTime?.substring(0, 10) || ''}
+                                onInput={(e: any) => {
+                                  const time = (this.formModel.activeEndTime || '').substring(11) || '00:00'
+                                  this.formModel.activeEndTime = e.target.value ? `${e.target.value} ${time}:00` : null
+                                }}
+                                style={{
+                                  height: '34px',
+                                  border: '1px solid #dcdfe6',
+                                  borderRadius: '3px',
+                                  padding: '0 8px',
+                                  fontSize: '14px',
+                                  color: '#333',
+                                  backgroundColor: '#fff',
+                                  outline: 'none',
+                                  width: '140px'
+                                }}
+                              />
+                              <input
+                                type="time"
+                                value={this.formModel.activeEndTime?.substring(11, 16) || ''}
+                                onInput={(e: any) => {
+                                  const date = (this.formModel.activeEndTime || '').substring(0, 10)
+                                  if (!date) return
+                                  this.formModel.activeEndTime = e.target.value ? `${date} ${e.target.value}:00` : `${date} 00:00:00`
+                                }}
+                                style={{
+                                  height: '34px',
+                                  border: '1px solid #dcdfe6',
+                                  borderRadius: '3px',
+                                  padding: '0 8px',
+                                  fontSize: '14px',
+                                  color: '#333',
+                                  backgroundColor: '#fff',
+                                  outline: 'none',
+                                  width: '120px'
+                                }}
+                              />
+                            </NSpace>
                           </NFormItem>
                         </NForm>
                         <NSpace justify='space-between'>
