@@ -55,6 +55,27 @@ export const buildMetricSeriesData = (
   return data.map((item) => [item.createTime, item[key]])
 }
 
+export const buildMetricLineData = (
+  data: MetricRecord[],
+  key: MetricField,
+  timeRange: [number, number]
+): MetricSeriesPoint[] => {
+  const realPoints = buildMetricSeriesData(data, key)
+  if (realPoints.length !== 1) {
+    return realPoints
+  }
+
+  const [start, end] = timeRange
+  const [pointTime, value] = realPoints[0]
+  const extension = Math.max((end - start) / 4, 1000)
+
+  return [
+    [Math.max(start, pointTime - extension), value],
+    [pointTime, value],
+    [Math.min(end, pointTime + extension), value]
+  ]
+}
+
 export const formatMetricTooltip = (
   params: any,
   key: MetricField,
@@ -177,6 +198,12 @@ export function useTaskMetrics() {
 
   const getTimeRange = (data: MetricRecord[]): [number, number] => {
     if (variables.dateRange) {
+      if (data.length > 0) {
+        return [
+          Math.min(variables.dateRange[0], data[0].createTime),
+          Math.max(variables.dateRange[1], data[data.length - 1].createTime)
+        ]
+      }
       return variables.dateRange
     }
 
@@ -197,17 +224,6 @@ export function useTaskMetrics() {
 
     const now = Date.now()
     return [now - 60 * 60 * 1000, now]
-  }
-
-  const buildSeriesData = (
-    data: MetricRecord[],
-    key: MetricField
-  ): { points: MetricSeriesPoint[]; hasRealData: boolean; isSinglePoint: boolean } => {
-    return {
-      points: buildMetricSeriesData(data, key),
-      hasRealData: data.length > 0,
-      isSinglePoint: data.length === 1
-    }
   }
 
   const createYAxisRange = (values: number[]) => {
@@ -244,10 +260,12 @@ export function useTaskMetrics() {
   }
 
   const getChartOption = (title: string, data: MetricRecord[], key: MetricField): EChartsOption => {
-    const { points, hasRealData, isSinglePoint } = buildSeriesData(data, key)
-    const values = points.map(([, value]) => value)
-    const yAxisRange = createYAxisRange(values)
     const [startTime, endTime] = getTimeRange(data)
+    const realPoints = buildMetricSeriesData(data, key)
+    const linePoints = buildMetricLineData(data, key, [startTime, endTime])
+    const values = realPoints.map(([, value]) => value)
+    const yAxisRange = createYAxisRange(values)
+    const hasRealData = realPoints.length > 0
 
     return ({
     title: { 
@@ -348,49 +366,57 @@ export function useTaskMetrics() {
         }
       }
     },
-    series: [{
-      type: 'line',
-      data: points,
-      smooth: true,
-      symbol: 'circle',
-      symbolSize: isSinglePoint ? 8 : 6,
-      showSymbol: true,
-      triggerEvent: true,
-      connectNulls: true,
-      emphasis: {
-        focus: 'series',
+    series: [
+      {
+        type: 'line',
+        data: linePoints,
+        smooth: true,
+        symbol: 'none',
+        showSymbol: false,
+        silent: true,
+        connectNulls: true,
+        lineStyle: {
+          width: 2,
+          opacity: hasRealData ? 1 : 0
+        },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            {
+              offset: 0,
+              color: 'rgba(24,144,255,0.3)'
+            },
+            {
+              offset: 1,
+              color: 'rgba(24,144,255,0.1)'
+            }
+          ])
+        },
+        animationDuration: 400
+      } as LineSeriesOption,
+      {
+        type: 'scatter',
+        data: realPoints,
+        symbol: 'circle',
+        symbolSize: data.length === 1 ? 8 : 6,
         itemStyle: {
           color: '#1890FF',
-          borderWidth: 3,
-          borderColor: '#1890FF',
-          shadowBlur: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.2)'
-        }
-      },
-      itemStyle: {
-        color: '#1890FF',
-        borderWidth: 1,
-        borderColor: '#fff',
-        opacity: hasRealData ? 0.9 : 0
-      },
-      lineStyle: {
-        width: 2,
-        opacity: hasRealData ? 1 : 0
-      },
-      areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          {
-            offset: 0,
-            color: 'rgba(24,144,255,0.3)'
-          },
-          {
-            offset: 1,
-            color: 'rgba(24,144,255,0.1)'
+          borderWidth: 1,
+          borderColor: '#fff',
+          opacity: hasRealData ? 0.9 : 0
+        },
+        emphasis: {
+          focus: 'series',
+          itemStyle: {
+            color: '#1890FF',
+            borderWidth: 3,
+            borderColor: '#1890FF',
+            shadowBlur: 10,
+            shadowColor: 'rgba(0, 0, 0, 0.2)'
           }
-        ])
-      },
-      animationDuration: 400
-    } as LineSeriesOption],
+        },
+        animationDuration: 400
+      }
+    ],
     graphic: !hasRealData
       ? [
           {
@@ -442,6 +468,16 @@ export function useTaskMetrics() {
 
   const updateCharts = async () => {
     try {
+      if (variables.selectedTimeOption !== 'custom') {
+        const selectedOption = timeOptions.find(
+          (option) => option.value === variables.selectedTimeOption
+        )
+        if (selectedOption?.getTime) {
+          const [start, end] = selectedOption.getTime()
+          variables.dateRange = [start.getTime(), end.getTime()]
+        }
+      }
+
       const params: any = {
         jobInstanceId: route.query.jobInstanceId as string
       }
@@ -484,27 +520,32 @@ export function useTaskMetrics() {
 
       if (variables.readRowCountChart) {
         variables.readRowCountChart.setOption(
-          getChartOption(getChartTitle('read_row_count'), variables.metricsData, 'readRowCount')
+          getChartOption(getChartTitle('read_row_count'), variables.metricsData, 'readRowCount'),
+          { notMerge: true }
         )
       }
       if (variables.writeRowCountChart) {
         variables.writeRowCountChart.setOption(
-          getChartOption(getChartTitle('write_row_count'), variables.metricsData, 'writeRowCount')
+          getChartOption(getChartTitle('write_row_count'), variables.metricsData, 'writeRowCount'),
+          { notMerge: true }
         )
       }
       if (variables.readQpsChart) {
         variables.readQpsChart.setOption(
-          getChartOption(getChartTitle('read_qps'), variables.metricsData, 'readQps')
+          getChartOption(getChartTitle('read_qps'), variables.metricsData, 'readQps'),
+          { notMerge: true }
         )
       }
       if (variables.writeQpsChart) {
         variables.writeQpsChart.setOption(
-          getChartOption(getChartTitle('write_qps'), variables.metricsData, 'writeQps')
+          getChartOption(getChartTitle('write_qps'), variables.metricsData, 'writeQps'),
+          { notMerge: true }
         )
       }
       if (variables.delayChart) {
         variables.delayChart.setOption(
-          getChartOption(getChartTitle('record_delay'), variables.metricsData, 'recordDelay')
+          getChartOption(getChartTitle('record_delay'), variables.metricsData, 'recordDelay'),
+          { notMerge: true }
         )
       }
     } catch (err) {

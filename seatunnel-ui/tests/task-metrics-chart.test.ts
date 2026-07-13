@@ -3,6 +3,7 @@
  */
 
 import {
+  buildMetricLineData,
   buildMetricSeriesData,
   formatMetricTooltip
 } from '../src/views/task/synchronization-instance/detail/use-task-metrics'
@@ -23,6 +24,29 @@ describe('task metrics chart', () => {
     expect(buildMetricSeriesData(data, 'writeRowCount')).toEqual([
       [data[0].createTime, 20]
     ])
+  })
+
+  it('extends a single metric into a visible line without adding hover nodes', () => {
+    const timestamp = new Date(2026, 6, 13, 10, 29, 15).getTime()
+    const data = [
+      {
+        createTime: timestamp,
+        readRowCount: 25,
+        writeRowCount: 20,
+        readQps: 2,
+        writeQps: 1,
+        recordDelay: 0
+      }
+    ]
+
+    const linePoints = buildMetricLineData(data, 'writeRowCount', [
+      timestamp - 60_000,
+      timestamp + 60_000
+    ])
+
+    expect(linePoints).toHaveLength(3)
+    expect(linePoints[1]).toEqual([timestamp, 20])
+    expect(buildMetricSeriesData(data, 'writeRowCount')).toHaveLength(1)
   })
 
   it('shows the exact node time in the tooltip', () => {
