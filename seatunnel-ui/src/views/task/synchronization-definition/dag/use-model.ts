@@ -217,6 +217,7 @@ export function useNodeModel(
               (row: any) => !row.unSupport
             )
           } else {
+            state.selectedKeys = []
             state.outputTableData = getFallbackSourceOutputTableData()
           }
           // Assign default values to the optional input table structure of the source node.
