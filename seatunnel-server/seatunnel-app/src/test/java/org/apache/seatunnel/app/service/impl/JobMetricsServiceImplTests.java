@@ -28,6 +28,7 @@ import org.apache.seatunnel.app.dal.entity.JobMetrics;
 import org.apache.seatunnel.app.dal.entity.User;
 import org.apache.seatunnel.app.domain.response.metrics.Edge;
 import org.apache.seatunnel.app.domain.response.metrics.JobDAG;
+import org.apache.seatunnel.app.domain.response.metrics.JobPipelineDetailMetricsRes;
 import org.apache.seatunnel.app.domain.response.metrics.JobSummaryMetricsRes;
 import org.apache.seatunnel.app.domain.response.metrics.VertexInfo;
 import org.apache.seatunnel.app.security.UserContext;
@@ -135,6 +136,37 @@ public class JobMetricsServiceImplTests {
         assertEquals(1, result.size());
         assertEquals("Mysql", result.get(0).getSourceTableNames());
         assertEquals("Doris", result.get(0).getSinkTableNames());
+    }
+
+    @Test
+    public void testGetJobPipelineDetailMetricsRes_UsesEndedJobStatusForDisplay() throws Exception {
+        JobMetricsServiceImpl service = new JobMetricsServiceImpl();
+        IJobInstanceDao jobInstanceDao = mock(IJobInstanceDao.class);
+        IJobMetricsDao jobMetricsDao = mock(IJobMetricsDao.class);
+        IJobInstanceHistoryDao jobInstanceHistoryDao = mock(IJobInstanceHistoryDao.class);
+
+        ReflectionTestUtils.setField(service, "jobInstanceDao", jobInstanceDao);
+        ReflectionTestUtils.setField(service, "jobMetricsDao", jobMetricsDao);
+        ReflectionTestUtils.setField(service, "jobInstanceHistoryDao", jobInstanceHistoryDao);
+
+        User user = new User();
+        user.setId(9);
+        UserContextHolder.setUserContext(new UserContext(user, 1L, null));
+
+        JobInstance jobInstance = buildEndedJobInstance(301L, "", JobStatus.FINISHED);
+        JobMetrics staleMetrics = buildMetric(301L, 20L, 20L);
+        staleMetrics.setPipelineId(1);
+        staleMetrics.setStatus(JobStatus.FAILED);
+
+        when(jobInstanceDao.getJobInstance(301L)).thenReturn(jobInstance);
+        when(jobMetricsDao.getByInstanceId(301L)).thenReturn(Arrays.asList(staleMetrics));
+        when(jobInstanceHistoryDao.getByInstanceId(301L)).thenReturn(null);
+
+        List<JobPipelineDetailMetricsRes> result = service.getJobPipelineDetailMetricsRes(301L);
+
+        assertEquals(1, result.size());
+        assertEquals(JobStatus.FINISHED, result.get(0).getStatus());
+        assertEquals(JobStatus.FAILED, staleMetrics.getStatus());
     }
 
     private JobInstance buildEndedJobInstance(Long id, String jobEngineId, JobStatus status) {
