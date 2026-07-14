@@ -17,7 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { defineComponent, ref, onMounted, watch } from 'vue'
+import { defineComponent, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { onBeforeRouteLeave, useRouter, useRoute } from 'vue-router'
 import { DagSidebar } from './sidebar'
 import { DagCanvas } from './canvas'
 import { DagToolbar } from './toolbar'
@@ -39,6 +40,33 @@ const SynchronizationDefinitionDag = defineComponent({
     }
     const { t, locale } = useI18n()
     const { state, detailInit, onDelete, onSave } = useDagDetail()
+    const router = useRouter()
+    const route = useRoute()
+    const isSaving = ref(false)
+    const isClosing = ref(false)
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if(isSaving.value) return
+      if(dagRef.value?.isCanvasDirty?.()) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    onBeforeRouteLeave((_to, _from, next) => {
+      if (isSaving.value || isClosing.value) {
+        next()
+        return
+      }
+      if (dagRef.value?.isCanvasDirty?.()) {
+        const answer = window.confirm(
+          t('project.synchronization_definition.leave_confirm')
+        )
+        if (!answer) {
+          next(false)
+          return
+        }
+      }
+      next()
+    })
     const handelDragstart = (type: any, name: any, sourceKind = '') => {
       tempNode.type = type
       tempNode.name = name
@@ -71,9 +99,35 @@ const SynchronizationDefinitionDag = defineComponent({
       if (result) dagRef.value.removeCell(cells[0].id)
     }
 
-    const handleSave = () => {
+    const handleSave = async() => {
       const result = dagRef.value.getDagData()
-      result && onSave(dagRef.value.getDagData(), dagRef.value.getGraph())
+      if(result) {
+        isSaving.value = true
+        dagRef.value.markCanvasClean()
+        await onSave(result, dagRef.value.getGraph())
+        isSaving.value = false
+      }
+    }
+
+    const doNavigateAway = () => {
+      router.push({
+        name: 'synchronization-definition',
+        query: {
+          project: route.query.project,
+          global: route.query.global
+        }
+      })
+    }
+
+    const handleClose = () => {
+      if (dagRef.value?.isCanvasDirty?.()) {
+        const answer = window.confirm(
+          t('project.synchronization_definition.leave_confirm')
+        )
+        if (!answer) return
+      }
+      isClosing.value = true
+      doNavigateAway()
     }
 
     const handleLayout = (
@@ -96,6 +150,10 @@ const SynchronizationDefinitionDag = defineComponent({
         '--node-config-hint',
         `"${t('dag.nodeConfigHint')}"`
       )
+      window.addEventListener('beforeunload',handleBeforeUnload)
+    })
+    onBeforeUnmount(() => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
     })
 
     watch(
@@ -116,6 +174,7 @@ const SynchronizationDefinitionDag = defineComponent({
           <DagToolbar
             onDelete={handleDelete}
             onSave={handleSave}
+            onClose={handleClose}
             onLayout={handleLayout}
           />
           <div class={styles['workflow-dag']}>

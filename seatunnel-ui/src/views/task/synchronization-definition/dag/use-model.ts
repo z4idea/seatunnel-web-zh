@@ -217,6 +217,7 @@ export function useNodeModel(
               (row: any) => !row.unSupport
             )
           } else {
+            state.selectedKeys = []
             state.outputTableData = getFallbackSourceOutputTableData()
           }
           // Assign default values to the optional input table structure of the source node.
@@ -353,7 +354,9 @@ export function useNodeModel(
             // extract the dest_field in columns
             const fixedInput = refForm.value.getValues().columns.replace(/=/g, ':');
             const destFieldMatches = fixedInput.match(/"dest_field"\s*:\s*"([^"]*)"/g);
-            const destFields = destFieldMatches.map(match => match.match(/"([^"]+)"$/)[1]);
+            const destFields = destFieldMatches
+              ? destFieldMatches.map(match => match.match(/"([^"]+)"$/)[1])
+              : [];
 
             state.outputTableData = state.inputTableData.map(item => ({ ...item }));
             destFields.map(item => {

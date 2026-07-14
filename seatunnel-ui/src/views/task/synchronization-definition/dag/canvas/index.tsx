@@ -75,6 +75,8 @@ const DagCanvas = defineComponent({
     let currentNodeId = ''
     let pendingViewportFit = false
     let pendingViewportFitForce = false
+    let isInitialLoad = true
+    const hasUnsavedChanges = ref(false)
 
     const handlePreventDefault = (e: DragEvent) => {
       e.preventDefault()
@@ -90,6 +92,19 @@ const DagCanvas = defineComponent({
         dagContainer.value,
         minimapContainer.value
       )
+
+      graph.value.on('cell:added', () => {
+        if (isInitialLoad) return
+        hasUnsavedChanges.value = true
+      })
+      graph.value.on('cell:removed', () => {
+        if (isInitialLoad) return
+        hasUnsavedChanges.value = true
+      })
+      graph.value.on('cell:change:*', () => {
+        if (isInitialLoad) return
+        hasUnsavedChanges.value = true
+      })
 
       graph.value.on('render:done', () => {
         if (!pendingViewportFit) return
@@ -225,6 +240,7 @@ const DagCanvas = defineComponent({
       getGraph: () => graph.value,
       addNodesAndEdges: (cells: Cell.Metadata[], edges: InputEdge[]) => {
         initNodesAndEdges(graph.value as Graph, cells, edges)
+        isInitialLoad = false
         nextTick(() => requestViewportFit(true))
       },
       getSelectedCells: () => graph.value?.getSelectedCells(),
@@ -233,6 +249,10 @@ const DagCanvas = defineComponent({
       layoutDag: (layoutType: 'grid' | 'dagre', cols: number, rows: number) => {
         formatLayout(graph.value, layoutType, cols, rows)
         nextTick(() => requestViewportFit(true))
+      },
+      isCanvasDirty: () => hasUnsavedChanges.value,
+      markCanvasClean: () => {
+        hasUnsavedChanges.value = false
       }
     })
 

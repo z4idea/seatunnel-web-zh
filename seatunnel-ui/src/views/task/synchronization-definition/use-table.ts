@@ -93,6 +93,7 @@ export function useTable() {
         ),
         key: 'name',
         bordered: true,
+        className: 'col-left',
         ...COLUMN_WIDTH_CONFIG['name'],
         render: (row: any) => {
           const trigger = createTaskDetailTrigger(
@@ -107,9 +108,7 @@ export function useTable() {
               type: 'primary',
               onClick: trigger.onClick
             },
-            {
-              default: () => trigger.label
-            }
+            { default: () => trigger.label }
           )
         }
       },
@@ -123,6 +122,7 @@ export function useTable() {
       {
         title: t('project.synchronization_definition.task_describe'),
         key: 'description',
+        className: 'col-left',
         ...COLUMN_WIDTH_CONFIG['description']
       },
       {

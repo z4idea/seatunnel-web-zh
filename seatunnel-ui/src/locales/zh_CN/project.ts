@@ -1129,6 +1129,7 @@ export default {
     schedule_message: '结果消息',
     schedule_instance_id: '任务实例 ID',
     schedule_history_empty: '暂无调度历史',
+    leave_confirm: '画布已修改，确定要离开吗？未保存的更改将丢失。',
     whole_library_sync: '整库同步',
     data_integration: '数据集成',
     status_success: '成功',

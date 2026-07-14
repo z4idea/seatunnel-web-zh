@@ -20,16 +20,14 @@ import '@iconify/iconify'
 import { NSpace, NButton, NIcon, NTooltip } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useTextCopy } from '@/hooks'
-import { useRoute, useRouter } from 'vue-router'
 import { useFullscreen } from '@vueuse/core'
 import { LayoutModal } from './layout-modal'
 import { TaskSettingModal } from './task-setting-modal'
 import { useSynchronizationDefinitionStore } from '@/store/synchronization-definition'
-import type { Router } from 'vue-router'
 
 const DagToolbar = defineComponent({
   name: 'DagToolbar',
-  emits: ['delete', 'save', 'layout'],
+  emits: ['delete', 'save', 'layout', 'close'],
   setup(props, { emit }) {
     const state = reactive({
       showLayoutModal: false,
@@ -38,21 +36,13 @@ const DagToolbar = defineComponent({
     const { t } = useI18n()
     const { copy } = useTextCopy()
     const { isFullscreen, toggle } = useFullscreen()
-    const router: Router = useRouter()
-    const route = useRoute()
     const dagStore = useSynchronizationDefinitionStore()
     const onSave = () => {
       emit('save')
     }
 
     const onClose = () => {
-      router.push({
-        name: 'synchronization-definition',
-        query: {
-          project: route.query.project,
-          global: route.query.global
-        }
-      })
+      emit('close')
     }
 
     const onDelete = () => {

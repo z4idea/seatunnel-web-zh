@@ -58,13 +58,30 @@ const DynamicFormItem = defineComponent({
   setup(props) {
     const { t, te, mergeLocaleMessage } = useI18n()
 
+    const sanitizeLocale = (obj: Record<string, any>): any => {
+      if (typeof obj === 'string') {
+        return obj.replace(/\{/g, "'{'").replace(/\}/g, "'}'")
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(sanitizeLocale)
+      }
+      if (obj && typeof obj === 'object') {
+        const result: Record<string, any> = {}
+        for (const key of Object.keys(obj)) {
+          result[key] = sanitizeLocale(obj[key])
+        }
+        return result
+      }
+      return obj
+    }
+
     const syncDynamicLocales = (locales: any) => {
       if (!locales?.zh_CN || !locales?.en_US) return
       mergeLocaleMessage('zh_CN', {
-        i18n: locales.zh_CN
+        i18n: sanitizeLocale(locales.zh_CN)
       })
       mergeLocaleMessage('en_US', {
-        i18n: locales.en_US
+        i18n: sanitizeLocale(locales.en_US)
       })
     }
 
@@ -174,10 +191,10 @@ const DynamicFormItem = defineComponent({
                 )
               : true) && (
               <NFormItemGi
-                label={this.t(
+                label={
                   this.getTranslation(this.name, f.label, 'value', f.field) ||
-                    this.t(f.label)
-                )}
+                    (this.te(f.label) ? this.t(f.label) : f.label)
+                }
                 path={f.field}
                 span={f.span || 24}
               >
@@ -218,7 +235,9 @@ const DynamicFormItem = defineComponent({
                             f.label,
                             'placeholder',
                             f.field
-                          ) || this.t(f.placeholder)
+                          ) || (this.te(f.placeholder)
+                            ? this.t(f.placeholder)
+                            : f.placeholder)
                         : ''
                     }
                     v-model={[(this.model as any)[f.field], 'value']}
@@ -254,7 +273,9 @@ const DynamicFormItem = defineComponent({
                               f.label,
                               'placeholder',
                               f.field
-                            ) || this.t(f.placeholder)
+                            ) || (this.te(f.placeholder)
+                            ? this.t(f.placeholder)
+                            : f.placeholder)
                           : ''
                       }
                       v-model={[(this.model as any)[f.field], 'value']}

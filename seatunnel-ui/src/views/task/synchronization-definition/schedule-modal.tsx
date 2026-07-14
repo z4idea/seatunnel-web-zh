@@ -192,7 +192,14 @@ const ScheduleModal = defineComponent({
         title: t('project.synchronization_definition.schedule_status'),
         key: 'status',
         width: '120px',
-        render: (row: any) => renderSyncTaskStatusTag(row.status, t)
+        render: (row: any) => {
+          // 调度触发成功 + 有异常信息 = 任务实际执行失败
+          const realStatus =
+            row.status === 'SUCCESS' && row.errorMessage
+              ? 'FAILED'
+              : row.status
+          return renderSyncTaskStatusTag(realStatus, t)
+        }
       },
       {
         title: t('project.synchronization_definition.schedule_write_row_count'),
@@ -1007,9 +1014,7 @@ const ScheduleModal = defineComponent({
                                       </NSpace>
                                     </NCheckboxGroup>
                                   )}
-                                  {['EVERY_N_HOURS', 'EVERY_N_MINUTES'].includes(
-                                    this.cronTemplate.type
-                                  ) && (
+                                  {this.cronTemplate.type === 'EVERY_N_HOURS' && (
                                     <NSpace
                                       vertical
                                       size={10}
@@ -1048,6 +1053,51 @@ const ScheduleModal = defineComponent({
                                           onUpdateValue={(value) =>
                                             (this.cronTemplate.minute =
                                               value || 0)
+                                          }
+                                        />
+                                      </div>
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_second'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.second}
+                                          min={0}
+                                          max={59}
+                                          placeholder='0-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.second =
+                                              value || 0)
+                                          }
+                                        />
+                                      </div>
+                                    </NSpace>
+                                  )}
+                                  {this.cronTemplate.type ===
+                                    'EVERY_N_MINUTES' && (
+                                    <NSpace
+                                      vertical
+                                      size={10}
+                                      style={CRON_FIELD_GROUP_STYLE}
+                                    >
+                                      <div style={CRON_FIELD_ROW_STYLE}>
+                                        <span style={CRON_FIELD_LABEL_STYLE}>
+                                          {this.t(
+                                            'project.synchronization_definition.schedule_interval'
+                                          )}
+                                        </span>
+                                        <NInputNumber
+                                          value={this.cronTemplate.interval}
+                                          min={1}
+                                          max={59}
+                                          placeholder='1-59'
+                                          style={CRON_FIELD_INPUT_STYLE}
+                                          onUpdateValue={(value) =>
+                                            (this.cronTemplate.interval =
+                                              value || 1)
                                           }
                                         />
                                       </div>
@@ -1177,36 +1227,94 @@ const ScheduleModal = defineComponent({
                               'project.synchronization_definition.schedule_active_start'
                             )}
                           >
-                            <NDatePicker
-                              v-model={[
-                                this.formModel.activeStartTime,
-                                'formattedValue'
-                              ]}
-                              type='datetime'
-                              clearable
-                              value-format='yyyy-MM-dd HH:mm:ss'
-                              placeholder={this.t(
-                                'project.synchronization_definition.schedule_active_start_placeholder'
-                              )}
-                            />
+                            <NSpace size={4}>
+                              <input
+                                type="date"
+                                value={this.formModel.activeStartTime?.substring(0, 10) || ''}
+                                onInput={(e: any) => {
+                                  const time = (this.formModel.activeStartTime || '').substring(11) || '00:00'
+                                  this.formModel.activeStartTime = e.target.value ? `${e.target.value} ${time}:00` : null
+                                }}
+                                style={{
+                                  height: '34px',
+                                  border: '1px solid #dcdfe6',
+                                  borderRadius: '3px',
+                                  padding: '0 8px',
+                                  fontSize: '14px',
+                                  color: '#333',
+                                  backgroundColor: '#fff',
+                                  outline: 'none',
+                                  width: '140px'
+                                }}
+                              />
+                              <input
+                                type="time"
+                                value={this.formModel.activeStartTime?.substring(11, 16) || ''}
+                                onInput={(e: any) => {
+                                  const date = (this.formModel.activeStartTime || '').substring(0, 10)
+                                  if (!date) return
+                                  this.formModel.activeStartTime = e.target.value ? `${date} ${e.target.value}:00` : `${date} 00:00:00`
+                                }}
+                                style={{
+                                  height: '34px',
+                                  border: '1px solid #dcdfe6',
+                                  borderRadius: '3px',
+                                  padding: '0 8px',
+                                  fontSize: '14px',
+                                  color: '#333',
+                                  backgroundColor: '#fff',
+                                  outline: 'none',
+                                  width: '120px'
+                                }}
+                              />
+                            </NSpace>
                           </NFormItem>
                           <NFormItem
                             label={this.t(
                               'project.synchronization_definition.schedule_active_end'
                             )}
                           >
-                            <NDatePicker
-                              v-model={[
-                                this.formModel.activeEndTime,
-                                'formattedValue'
-                              ]}
-                              type='datetime'
-                              clearable
-                              value-format='yyyy-MM-dd HH:mm:ss'
-                              placeholder={this.t(
-                                'project.synchronization_definition.schedule_active_end_placeholder'
-                              )}
-                            />
+                            <NSpace size={4}>
+                              <input
+                                type="date"
+                                value={this.formModel.activeEndTime?.substring(0, 10) || ''}
+                                onInput={(e: any) => {
+                                  const time = (this.formModel.activeEndTime || '').substring(11) || '00:00'
+                                  this.formModel.activeEndTime = e.target.value ? `${e.target.value} ${time}:00` : null
+                                }}
+                                style={{
+                                  height: '34px',
+                                  border: '1px solid #dcdfe6',
+                                  borderRadius: '3px',
+                                  padding: '0 8px',
+                                  fontSize: '14px',
+                                  color: '#333',
+                                  backgroundColor: '#fff',
+                                  outline: 'none',
+                                  width: '140px'
+                                }}
+                              />
+                              <input
+                                type="time"
+                                value={this.formModel.activeEndTime?.substring(11, 16) || ''}
+                                onInput={(e: any) => {
+                                  const date = (this.formModel.activeEndTime || '').substring(0, 10)
+                                  if (!date) return
+                                  this.formModel.activeEndTime = e.target.value ? `${date} ${e.target.value}:00` : `${date} 00:00:00`
+                                }}
+                                style={{
+                                  height: '34px',
+                                  border: '1px solid #dcdfe6',
+                                  borderRadius: '3px',
+                                  padding: '0 8px',
+                                  fontSize: '14px',
+                                  color: '#333',
+                                  backgroundColor: '#fff',
+                                  outline: 'none',
+                                  width: '120px'
+                                }}
+                              />
+                            </NSpace>
                           </NFormItem>
                         </NForm>
                         <NSpace justify='space-between'>

@@ -18,7 +18,7 @@
 
 import { h } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NPopover, NButton, NSpace, NPopconfirm } from 'naive-ui'
+import { NPopover, NButton, NSpace, NPopconfirm, NEllipsis } from 'naive-ui'
 import JsonHighlight from '../components/json-highlight'
 import { getTableColumn } from '@/common/table'
 import '@iconify/iconify'
@@ -31,27 +31,26 @@ export function useColumns(onCallback: Function) {
       {
         title: t('datasource.datasource_name'),
         key: 'datasourceName',
+        className: 'col-left',
         minWidth: 180,
-        ellipsis: {
-          tooltip: true
-        },
         render: (row: any) => {
           return h(
-            'span',
-            {
-              style: {
-                display: 'inline-block',
-                maxWidth: '100%',
-                whiteSpace: 'nowrap'
-              }
-            },
-            row.datasourceName || '-'
+            'div',
+            { style: { maxWidth: '260px' } },
+            [
+              h(
+                NEllipsis,
+                { lineClamp: 2 },
+                { default: () => row.datasourceName || '-' }
+              )
+            ]
           )
         }
       },
       {
         title: t('datasource.datasource_user_name'),
-        key: 'createUserName'
+        key: 'createUserName',
+        className: 'col-left'
       },
       {
         title: t('datasource.datasource_type'),
@@ -88,15 +87,29 @@ export function useColumns(onCallback: Function) {
       {
         title: t('datasource.description'),
         key: 'description',
-        render: (row: any) => row.description || '-'
+        className: 'col-left',
+        render: (row: any) =>
+          h(
+            'div',
+            { style: { maxWidth: '200px' } },
+            [
+              h(
+                NEllipsis,
+                { lineClamp: 2 },
+                { default: () => row.description || '-' }
+              )
+            ]
+          )
       },
       {
         title: t('datasource.create_time'),
-        key: 'createTime'
+        key: 'createTime',
+        render: (row: any) => (row.createTime || '').substring(0, 16) || '-'
       },
       {
         title: t('datasource.update_time'),
-        key: 'updateTime'
+        key: 'updateTime',
+        render: (row: any) => (row.updateTime || '').substring(0, 16) || '-'
       },
       {
         title: t('datasource.operation'),
