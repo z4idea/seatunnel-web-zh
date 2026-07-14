@@ -177,6 +177,11 @@ public class JobDefinitionServiceImpl extends SeatunnelBaseServiceImpl
     }
 
     @Override
+    public Long countJobDefinitions() {
+        return jobDefinitionDao.countJobDefinitions();
+    }
+
+    @Override
     public List<JobVersion> getJobVersionByDataSourceId(long datasourceId) {
         List<Long> versionIds =
                 jobTaskDao.getJobTaskByDataSourceId(datasourceId).stream()

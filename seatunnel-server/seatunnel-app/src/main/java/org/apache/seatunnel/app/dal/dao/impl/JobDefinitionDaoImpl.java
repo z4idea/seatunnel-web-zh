@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -100,6 +103,13 @@ public class JobDefinitionDaoImpl implements IJobDefinitionDao {
     @Override
     public JobDefinition getJobByName(@NonNull String name) {
         return jobMapper.queryJob(name, getCurrentWorkspaceId());
+    }
+
+    @Override
+    public Long countJobDefinitions() {
+        return jobMapper.selectCount(
+                Wrappers.<JobDefinition>lambdaQuery()
+                        .eq(JobDefinition::getWorkspaceId, getCurrentWorkspaceId()));
     }
 
     @Override

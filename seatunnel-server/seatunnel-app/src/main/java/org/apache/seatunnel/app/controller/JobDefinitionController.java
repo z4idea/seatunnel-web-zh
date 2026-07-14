@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -76,6 +79,12 @@ public class JobDefinitionController {
             @ApiParam(value = "page size", required = true) @RequestParam Integer pageSize,
             @ApiParam(value = "job mode") @RequestParam(required = false) String jobMode) {
         return Result.success(jobService.getJob(searchName, pageNo, pageSize, jobMode));
+    }
+
+    @GetMapping("/count")
+    @ApiOperation(value = "count job definitions", httpMethod = "GET")
+    Result<Long> countJobDefinitions() {
+        return Result.success(jobService.countJobDefinitions());
     }
 
     @GetMapping("/{jobId}")
