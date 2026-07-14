@@ -538,6 +538,8 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
             String searchVal, String pluginName, Integer pageNo, Integer pageSize, String origin) {
         Page<Datasource> page = new Page<>(pageNo, pageSize);
         PageInfo<DatasourceRes> pageInfo = new PageInfo<>();
+        pageInfo.setPageNo(pageNo);
+        pageInfo.setPageSize(pageSize);
         IPage<Datasource> datasourceWithoutAuthorization =
                 datasourceDao.selectDatasourceByParam(page, null, searchVal, pluginName, origin);
 
@@ -548,13 +550,14 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
                         .collect(Collectors.toList());
 
         if (org.springframework.util.CollectionUtils.isEmpty(filteredIds)) {
+            pageInfo.setTotalCount(0);
             return pageInfo;
         }
         IPage<Datasource> datasourcePage =
                 datasourceDao.selectDatasourceByParam(
                         page, filteredIds, searchVal, pluginName, origin);
         pageInfo = new PageInfo<>();
-        pageInfo.setPageNo((int) datasourcePage.getPages());
+        pageInfo.setPageNo((int) datasourcePage.getCurrent());
         pageInfo.setPageSize((int) datasourcePage.getSize());
         pageInfo.setTotalCount((int) datasourcePage.getTotal());
         if (CollectionUtils.isEmpty(datasourcePage.getRecords())) {

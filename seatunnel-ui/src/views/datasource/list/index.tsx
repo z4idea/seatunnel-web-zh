@@ -192,8 +192,8 @@ const DatasourceList = defineComponent({
           />
           <div class="sync-pagination-bar">
             <NPagination
-              page={page}
-              page-size={pageSize}
+              v-model:page={this.page}
+              v-model:page-size={this.pageSize}
               item-count={itemCount}
               show-quick-jumper
               show-size-picker
