@@ -540,22 +540,22 @@ public class DatasourceServiceImpl extends SeatunnelBaseServiceImpl
         PageInfo<DatasourceRes> pageInfo = new PageInfo<>();
         pageInfo.setPageNo(pageNo);
         pageInfo.setPageSize(pageSize);
-        IPage<Datasource> datasourceWithoutAuthorization =
-                datasourceDao.selectDatasourceByParam(page, null, searchVal, pluginName, origin);
+        List<Datasource> datasourceWithoutAuthorization =
+                datasourceDao.selectDatasourceByParam(null, searchVal, pluginName, origin);
 
-        List<Long> filteredIds =
-                datasourceWithoutAuthorization.getRecords().stream()
+        List<Long> readableDatasourceIds =
+                datasourceWithoutAuthorization.stream()
                         .filter(datasource -> hasReadPerm(datasource.getDatasourceName()))
                         .map(Datasource::getId)
                         .collect(Collectors.toList());
 
-        if (org.springframework.util.CollectionUtils.isEmpty(filteredIds)) {
+        if (org.springframework.util.CollectionUtils.isEmpty(readableDatasourceIds)) {
             pageInfo.setTotalCount(0);
             return pageInfo;
         }
         IPage<Datasource> datasourcePage =
                 datasourceDao.selectDatasourceByParam(
-                        page, filteredIds, searchVal, pluginName, origin);
+                        page, readableDatasourceIds, searchVal, pluginName, origin);
         pageInfo = new PageInfo<>();
         pageInfo.setPageNo((int) datasourcePage.getCurrent());
         pageInfo.setPageSize((int) datasourcePage.getSize());

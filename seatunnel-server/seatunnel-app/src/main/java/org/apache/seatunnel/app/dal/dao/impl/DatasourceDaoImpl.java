@@ -113,6 +113,20 @@ public class DatasourceDaoImpl implements IDatasourceDao {
             String searchVal,
             String pluginName,
             String origin) {
+        return datasourceMapper.selectPage(
+                page,
+                buildDatasourceParamQuery(availableDatasourceIds, searchVal, pluginName, origin));
+    }
+
+    @Override
+    public List<Datasource> selectDatasourceByParam(
+            List<Long> availableDatasourceIds, String searchVal, String pluginName, String origin) {
+        return datasourceMapper.selectList(
+                buildDatasourceParamQuery(availableDatasourceIds, searchVal, pluginName, origin));
+    }
+
+    private QueryWrapper<Datasource> buildDatasourceParamQuery(
+            List<Long> availableDatasourceIds, String searchVal, String pluginName, String origin) {
         QueryWrapper<Datasource> datasourceQueryWrapper = new QueryWrapper<>();
         if (availableDatasourceIds != null) {
             datasourceQueryWrapper.in("id", availableDatasourceIds);
@@ -126,21 +140,17 @@ public class DatasourceDaoImpl implements IDatasourceDao {
                 && !searchVal.isEmpty()
                 && pluginName != null
                 && !pluginName.isEmpty()) {
-            return datasourceMapper.selectPage(
-                    page,
-                    datasourceQueryWrapper
-                            .eq("plugin_name", pluginName)
-                            .like("datasource_name", searchVal));
+            return datasourceQueryWrapper
+                    .eq("plugin_name", pluginName)
+                    .like("datasource_name", searchVal);
         }
         if (searchVal != null && !searchVal.isEmpty()) {
-            return datasourceMapper.selectPage(
-                    page, datasourceQueryWrapper.like("datasource_name", searchVal));
+            return datasourceQueryWrapper.like("datasource_name", searchVal);
         }
         if (pluginName != null && !pluginName.isEmpty()) {
-            return datasourceMapper.selectPage(
-                    page, datasourceQueryWrapper.eq("plugin_name", pluginName));
+            return datasourceQueryWrapper.eq("plugin_name", pluginName);
         }
-        return datasourceMapper.selectPage(page, datasourceQueryWrapper);
+        return datasourceQueryWrapper;
     }
 
     @Override

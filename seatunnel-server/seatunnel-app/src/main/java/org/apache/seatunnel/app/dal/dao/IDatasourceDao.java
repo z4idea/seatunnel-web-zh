@@ -60,6 +60,9 @@ public interface IDatasourceDao {
             String pluginName,
             String origin);
 
+    List<Datasource> selectDatasourceByParam(
+            List<Long> availableDatasourceIds, String searchVal, String pluginName, String origin);
+
     List<Datasource> selectDatasourceByIds(List<Long> ids);
 
     List<Datasource> queryAll();
