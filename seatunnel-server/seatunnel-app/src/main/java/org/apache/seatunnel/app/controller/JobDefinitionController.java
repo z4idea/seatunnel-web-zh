@@ -22,12 +22,18 @@ package org.apache.seatunnel.app.controller;
 
 import org.apache.seatunnel.app.common.Result;
 import org.apache.seatunnel.app.dal.entity.JobDefinition;
+import org.apache.seatunnel.app.dal.entity.User;
+import org.apache.seatunnel.app.dal.entity.Workspace;
 import org.apache.seatunnel.app.domain.request.job.JobReq;
 import org.apache.seatunnel.app.domain.response.PageInfo;
 import org.apache.seatunnel.app.domain.response.job.JobDefinitionRes;
+import org.apache.seatunnel.app.security.UserContext;
+import org.apache.seatunnel.app.security.UserContextHolder;
 import org.apache.seatunnel.app.service.IJobDefinitionService;
 import org.apache.seatunnel.app.service.IJobScheduleService;
 import org.apache.seatunnel.app.service.IJobTaskService;
+import org.apache.seatunnel.app.service.WorkspaceService;
+import org.apache.seatunnel.common.access.AccessInfo;
 import org.apache.seatunnel.server.common.CodeGenerateUtils;
 import org.apache.seatunnel.server.common.SeatunnelErrorEnum;
 
@@ -49,11 +55,16 @@ import javax.annotation.Resource;
 @RequestMapping("/seatunnel/api/v1/job/definition")
 public class JobDefinitionController {
 
+    private static final Integer DEFAULT_USER_ID = 1;
+    private static final String DEFAULT_USERNAME = "admin";
+
     @Resource private IJobDefinitionService jobService;
 
     @Resource private IJobTaskService jobTask;
 
     @Resource private IJobScheduleService jobScheduleService;
+
+    @Resource private WorkspaceService workspaceService;
 
     /**
      * create job definition
@@ -84,7 +95,12 @@ public class JobDefinitionController {
     @GetMapping("/count")
     @ApiOperation(value = "count job definitions", httpMethod = "GET")
     Result<Long> countJobDefinitions() {
-        return Result.success(jobService.countJobDefinitions());
+        UserContextHolder.setUserContext(buildDefaultUserContext());
+        try {
+            return Result.success(jobService.countJobDefinitions());
+        } finally {
+            UserContextHolder.clear();
+        }
     }
 
     @GetMapping("/{jobId}")
@@ -101,5 +117,19 @@ public class JobDefinitionController {
         jobScheduleService.deleteByJobDefineId(id);
         jobTask.deleteTaskByVersionId(id);
         return Result.success();
+    }
+
+    private UserContext buildDefaultUserContext() {
+        Workspace workspace = workspaceService.getDefaultWorkspace();
+
+        User user = new User();
+        user.setId(DEFAULT_USER_ID);
+        user.setUsername(DEFAULT_USERNAME);
+
+        AccessInfo accessInfo = new AccessInfo();
+        accessInfo.setUsername(DEFAULT_USERNAME);
+        accessInfo.setWorkspaceName(workspace.getWorkspaceName());
+
+        return new UserContext(user, workspace.getId(), accessInfo);
     }
 }
