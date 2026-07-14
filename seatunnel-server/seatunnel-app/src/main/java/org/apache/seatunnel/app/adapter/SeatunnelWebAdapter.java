@@ -1,4 +1,7 @@
 /*
+ * @author: zhjj
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -44,6 +47,8 @@ public class SeatunnelWebAdapter implements WebMvcConfigurer {
     public static final String REGISTER_PATH_PATTERN = "/users/register";
     private static final String RESOURCE_NAME_PATH_PATTERN =
             "/seatunnel/api/v1/resources/workspace";
+    private static final String JOB_DEFINITION_COUNT_PATH_PATTERN =
+            "/seatunnel/api/v1/job/definition/count";
 
     @Bean
     public AuthenticationInterceptor authenticationInterceptor() {
@@ -77,6 +82,7 @@ public class SeatunnelWebAdapter implements WebMvcConfigurer {
                         LOGIN_PATH_PATTERN,
                         REGISTER_PATH_PATTERN,
                         RESOURCE_NAME_PATH_PATTERN,
+                        JOB_DEFINITION_COUNT_PATH_PATTERN,
                         "/swagger-resources/**",
                         "/webjars/**",
                         "/v2/**",
